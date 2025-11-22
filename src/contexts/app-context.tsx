@@ -31,7 +31,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
      // Load saved role from localStorage on initial load
     const savedRole = localStorage.getItem('studyweb-role');
     if (savedRole === 'student' || savedRole === 'teacher') {
-      setRoleState(savedRole);
+      setRoleState(savedRole as UserRole);
     }
 
 
