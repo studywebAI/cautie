@@ -239,6 +239,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mode, isFinished]);
 
 
