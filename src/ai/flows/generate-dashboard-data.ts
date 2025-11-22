@@ -46,9 +46,15 @@ const AiSuggestionSchema = z.object({
   icon: z.enum(['BrainCircuit', 'FileText', 'Calendar']).describe('The icon for the suggestion.'),
 });
 
+const SubjectSchema = z.object({
+  id: z.string().describe('Unique identifier for the subject (e.g., "history").'),
+  name: z.string().describe('The name of the subject (e.g., "History").'),
+  progress: z.number().describe('The student\'s current progress in this subject, from 0 to 100.'),
+});
+
 const GenerateDashboardDataInputSchema = z.object({
   studentName: z.string().describe('The name of the student.'),
-  subjects: z.array(z.string()).describe('A list of subjects the student is taking.'),
+  subjects: z.array(z.string()).describe('A list of subject names the student is taking.'),
 });
 export type GenerateDashboardDataInput = z.infer<
   typeof GenerateDashboardDataInputSchema
@@ -59,6 +65,7 @@ const GenerateDashboardDataOutputSchema = z.object({
   alerts: z.array(AlertSchema).describe('A list of important alerts for the student.'),
   deadlines: z.array(DeadlineSchema).describe('A list of upcoming deadlines.'),
   aiSuggestions: z.array(AiSuggestionSchema).describe('A list of AI-powered suggestions.'),
+  subjects: z.array(SubjectSchema).describe('A list of the student\'s subjects with their current progress.'),
 });
 export type GenerateDashboardDataOutput = z.infer<
   typeof GenerateDashboardDataOutputSchema
@@ -77,10 +84,11 @@ const prompt = ai.definePrompt({
   prompt: `You are an AI assistant for a student named {{{studentName}}}. You need to generate a realistic and coherent set of data for their study dashboard. The student is currently taking the following subjects: {{{subjects}}}.
 
 Generate the following data in English:
-1.  **Tasks**: 4-5 realistic study tasks for today. Some should be completed.
-2.  **Alerts**: 2-3 important and varied alerts (e.g., one urgent, one informational).
-3.  **Deadlines**: 3-4 upcoming deadlines with varied subjects, dates, and statuses.
-4.  **AI Suggestions**: 3 actionable and helpful suggestions for the student.
+1.  **Subjects**: Create an array for the following subjects: {{{subjects}}}. For each subject, generate a realistic progress percentage (0-100). The ID should be the subject name in lowercase with spaces replaced by hyphens.
+2.  **Tasks**: 4-5 realistic study tasks for today. Some should be completed.
+3.  **Alerts**: 2-3 important and varied alerts (e.g., one urgent, one informational).
+4.  **Deadlines**: 3-4 upcoming deadlines with varied subjects, dates, and statuses.
+5.  **AI Suggestions**: 3 actionable and helpful suggestions for the student.
 
 Ensure all generated data is in English. All IDs should be unique strings.
 Make the data interconnected and logical. For example, a deadline for a subject should have related tasks. An alert could be about a deadline.

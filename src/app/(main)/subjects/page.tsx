@@ -9,8 +9,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 // Helper function to get image details for a subject
 function getSubjectImage(subjectName: string): { imageUrl: string, imageHint: string } {
-    const defaultImage = PlaceHolderImages.find(img => img.id === "subject-icon-history")!;
-    const subjectId = `subject-icon-${subjectName.toLowerCase().split(' ').join('-')}`;
+    const subjectId = `subject-icon-${subjectName.toLowerCase().replace(/ /g, '-')}`;
     const image = PlaceHolderImages.find(img => img.id === subjectId);
     
     return image || {
@@ -26,12 +25,10 @@ function SubjectsPageContent() {
 
   useEffect(() => {
     if (dashboardData?.subjects) {
-      const subjects = dashboardData.subjects.map((subjectName) => {
-        const { imageUrl, imageHint } = getSubjectImage(subjectName);
+      const subjects = dashboardData.subjects.map((subject) => {
+        const { imageUrl, imageHint } = getSubjectImage(subject.name);
         return {
-          id: subjectName.toLowerCase().replace(' ', '-'),
-          name: subjectName,
-          progress: Math.floor(Math.random() * 100), // Keep random progress for now
+          ...subject,
           imageUrl,
           imageHint,
         };
@@ -43,10 +40,7 @@ function SubjectsPageContent() {
   if (isLoading || !dashboardData) {
     return (
        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <Skeleton className="h-56" />
-        <Skeleton className="h-56" />
-        <Skeleton className="h-56" />
-        <Skeleton className="h-56" />
+        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-56" />)}
       </div>
     );
   }
