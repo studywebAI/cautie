@@ -41,13 +41,13 @@ export function AppHeader() {
             <Button variant="ghost" className="flex items-center gap-2 p-1 h-auto rounded-full">
               <Avatar className="h-9 w-9">
                 <AvatarImage
-                  src="https://picsum.photos/seed/user-1/40/40"
+                  src="https://picsum.photos/seed/user-alex/40/40"
                   data-ai-hint="person face"
                   alt="User avatar"
                 />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarFallback>AJ</AvatarFallback>
               </Avatar>
-              <span className="hidden md:inline font-medium">Jan de Vries</span>
+              <span className="hidden md:inline font-medium">Alex Jansen</span>
               <ChevronDown className="h-4 w-4 hidden md:inline text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>

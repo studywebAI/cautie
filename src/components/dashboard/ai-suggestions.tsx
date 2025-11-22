@@ -12,7 +12,7 @@ export function AiSuggestions() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">AI-Suggesties</CardTitle>
+        <CardTitle className="font-headline">AI Suggesties</CardTitle>
         <CardDescription>Je persoonlijke assistent</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

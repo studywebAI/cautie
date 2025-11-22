@@ -27,8 +27,8 @@ const menuItems = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "#", label: "Vakken", icon: BookOpen },
   { href: "#", label: "Agenda", icon: Calendar },
-  { href: "#", label: "Statistieken", icon: BarChart3 },
-  { href: "#", label: "Materiaal", icon: Folder },
+  { href: "#", "label": "Statistieken", "icon": BarChart3 },
+  { href: "/materiaal", label: "Materiaal", icon: Folder },
 ];
 
 export function AppSidebar() {
@@ -79,14 +79,14 @@ export function AppSidebar() {
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage
-              src="https://picsum.photos/seed/user-1/40/40"
+              src="https://picsum.photos/seed/user-alex/40/40"
               alt="User avatar"
               data-ai-hint="person face"
             />
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarFallback>AJ</AvatarFallback>
           </Avatar>
           <div className="flex flex-col overflow-hidden">
-            <span className="font-semibold truncate">Jan de Vries</span>
+            <span className="font-semibold truncate">Alex Jansen</span>
             <span className="text-sm text-muted-foreground">Student</span>
           </div>
         </div>
