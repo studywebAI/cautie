@@ -9,9 +9,10 @@ import { useContext } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { AppContext, AppContextType } from "@/contexts/app-context";
-import { Subject } from "@/lib/types";
+import { TeacherDashboard } from "@/components/dashboard/teacher/teacher-dashboard";
 
-function DashboardPageContent() {
+
+function StudentDashboard() {
   const { dashboardData, isLoading } = useContext(AppContext) as AppContextType;
 
   if (isLoading || !dashboardData) {
@@ -32,7 +33,6 @@ function DashboardPageContent() {
     </div>
   );
 }
-
 
 function DashboardSkeleton() {
     return (
@@ -74,7 +74,9 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
+  const { role } = useContext(AppContext) as AppContextType;
+
   return (
-      <DashboardPageContent />
+      role === 'student' ? <StudentDashboard /> : <TeacherDashboard />
   );
 }
