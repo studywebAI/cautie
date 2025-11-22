@@ -21,9 +21,11 @@ import {
   FileText,
   ChevronDown,
   Wrench,
+  FileSignature,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Button } from './ui/button';
+import { cn } from '@/lib/utils';
 
 const menuItems = [
   { href: '/', label: 'Dashboard', icon: Home },
@@ -34,11 +36,12 @@ const menuItems = [
 const toolsMenuItems = [
   { href: '/tools/quiz', label: 'Quiz Generator', icon: BrainCircuit },
   { href: '/tools/flashcards', label: 'Flashcard Maker', icon: Copy },
+  { href: '/tools/summary', label: 'Summary Tool', icon: FileSignature },
 ]
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const isToolsActive = pathname.startsWith('/tools');
+  const isToolsPath = pathname.startsWith('/tools');
 
   return (
     <Sidebar>
@@ -69,13 +72,16 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          <Collapsible defaultOpen={isToolsActive}>
+          <Collapsible defaultOpen={isToolsPath}>
              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start gap-2 p-2 font-medium text-sm h-auto data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+                <Link href="/tools" className={cn(
+                  "flex items-center w-full justify-start gap-2 p-2 font-medium text-sm h-auto rounded-md transition-colors",
+                  isToolsPath ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                )}>
                     <Folder className="h-5 w-5" />
                     <span>Tools</span>
-                    <ChevronDown className="h-4 w-4 ml-auto transition-transform data-[state=open]:rotate-180" />
-                </Button>
+                    <ChevronDown className={cn("h-4 w-4 ml-auto transition-transform", isToolsPath && 'rotate-180')} />
+                </Link>
              </CollapsibleTrigger>
              <CollapsibleContent>
                 <div className="pl-7 pt-2 flex flex-col gap-1">
