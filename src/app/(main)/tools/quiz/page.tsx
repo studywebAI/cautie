@@ -11,10 +11,29 @@ import { Loader2, Sparkles, CheckCircle, XCircle, RefreshCw } from 'lucide-react
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type AnswersState = { [questionId: string]: string };
+type QuizMode = "normal" | "practice" | "exam";
 
-function QuizTaker({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void; }) {
+
+const modeDetails: Record<QuizMode, { title: string; description: string }> = {
+    normal: {
+        title: "Quiz",
+        description: "Answer the questions to the best of your ability."
+    },
+    practice: {
+        title: "Practice Mode",
+        description: "Learn without pressure. Unlimited attempts and hints are available."
+    },
+    exam: {
+        title: "Exam Simulation",
+        description: "This is a timed test. No hints are allowed. Good luck."
+    }
+}
+
+
+function QuizTaker({ quiz, mode, onRestart }: { quiz: Quiz; mode: QuizMode; onRestart: () => void; }) {
   const [answers, setAnswers] = useState<AnswersState>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -87,8 +106,8 @@ function QuizTaker({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void; }) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">{quiz.title}</CardTitle>
-        <CardDescription>{quiz.description}</CardDescription>
+        <CardTitle className="font-headline">{modeDetails[mode].title}: {quiz.title}</CardTitle>
+        <CardDescription>{modeDetails[mode].description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
         {quiz.questions.map((q, index) => (
@@ -123,6 +142,7 @@ function QuizPageContent() {
   const [sourceText, setSourceText] = useState(sourceTextFromParams || '');
   const [isLoading, setIsLoading] = useState(false);
   const [generatedQuiz, setGeneratedQuiz] = useState<Quiz | null>(null);
+  const [quizMode, setQuizMode] = useState<QuizMode>('normal');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -179,7 +199,7 @@ function QuizPageContent() {
   }
 
   if (generatedQuiz) {
-    return <QuizTaker quiz={generatedQuiz} onRestart={() => setGeneratedQuiz(null)} />;
+    return <QuizTaker quiz={generatedQuiz} mode={quizMode} onRestart={() => setGeneratedQuiz(null)} />;
   }
 
   return (
@@ -195,16 +215,29 @@ function QuizPageContent() {
         <CardHeader>
           <CardTitle>Create a Quiz</CardTitle>
           <CardDescription>
-            Provide the source material for your quiz.
+            Provide the source material and choose a mode for your quiz.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <Textarea
             placeholder="Paste your notes, a book chapter, or any article here..."
             className="h-48 resize-none"
             value={sourceText}
             onChange={(e) => setSourceText(e.target.value)}
           />
+           <div className="space-y-2">
+              <Label htmlFor="quiz-mode">Quiz Mode</Label>
+              <Select value={quizMode} onValueChange={(value) => setQuizMode(value as QuizMode)}>
+                <SelectTrigger id="quiz-mode" className="w-[280px]">
+                  <SelectValue placeholder="Select mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Normal Mode</SelectItem>
+                  <SelectItem value="practice">Practice Mode</SelectItem>
+                  <SelectItem value="exam">Exam Mode</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
         </CardContent>
         <CardFooter>
           <Button onClick={handleFormSubmit} disabled={isLoading || !sourceText}>
