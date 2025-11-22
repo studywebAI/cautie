@@ -115,29 +115,30 @@ function PracticeModeTaker({ quiz, onRestart }: { quiz: Quiz, onRestart: () => v
         setIsCorrect(isAnswerCorrect);
         setIsAnswered(true);
         setAnswers(prev => ({...prev, [question.id]: selectedOptionId}));
+    }
 
-        if (isAnswerCorrect) {
-            // Correct answer logic
-        } else {
-            setIsExplanationLoading(true);
-            try {
-                const selectedAnswer = question.options.find(o => o.id === selectedOptionId)?.text || '';
-                const result = await explainAnswer({
-                    question: question.question,
-                    selectedAnswer: selectedAnswer,
-                    correctAnswer: correctOption.text,
-                    isCorrect: false,
-                });
-                setExplanation(result.explanation);
-            } catch (error) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Could not get explanation',
-                    description: 'The AI failed to generate an explanation. Please try again.',
-                })
-            } finally {
-                setIsExplanationLoading(false);
-            }
+    const handleGetExplanation = async () => {
+        if (!selectedOptionId || !correctOption) return;
+        
+        setIsExplanationLoading(true);
+        setExplanation(null);
+        try {
+            const selectedAnswer = question.options.find(o => o.id === selectedOptionId)?.text || '';
+            const result = await explainAnswer({
+                question: question.question,
+                selectedAnswer: selectedAnswer,
+                correctAnswer: correctOption.text,
+                isCorrect: false,
+            });
+            setExplanation(result.explanation);
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Could not get explanation',
+                description: 'The AI failed to generate an explanation. Please try again.',
+            })
+        } finally {
+            setIsExplanationLoading(false);
         }
     }
 
@@ -200,16 +201,22 @@ function PracticeModeTaker({ quiz, onRestart }: { quiz: Quiz, onRestart: () => v
                             </div>
                         </RadioGroup>
 
-                        {isAnswered && !isCorrect && (isExplanationLoading ? <Loader2 className="mt-4 h-5 w-5 animate-spin" /> :
-                            explanation && (
-                                <Alert className="mt-4 border-blue-500/50 text-blue-500 dark:text-blue-400 [&>svg]:text-blue-500 dark:[&>svg]:text-blue-400">
-                                    <Lightbulb className="h-4 w-4" />
-                                    <AlertTitle>Explanation</AlertTitle>
-                                    <AlertDescription>
-                                        {explanation}
-                                    </AlertDescription>
-                                </Alert>
-                            )
+                        {isAnswered && !isCorrect && (
+                            <div className="mt-4 space-y-4">
+                                <Button variant="outline" size="sm" onClick={handleGetExplanation} disabled={isExplanationLoading}>
+                                    {isExplanationLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
+                                    {isExplanationLoading ? 'Generating...' : 'Explain it to me'}
+                                </Button>
+                                {explanation && (
+                                    <Alert className="border-blue-500/50 text-blue-500 dark:text-blue-400 [&>svg]:text-blue-500 dark:[&>svg]:text-blue-400">
+                                        <Lightbulb className="h-4 w-4" />
+                                        <AlertTitle>Explanation</AlertTitle>
+                                        <AlertDescription>
+                                            {explanation}
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
                         )}
                     </motion.div>
                 </AnimatePresence>
