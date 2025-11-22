@@ -5,13 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
 import type { Deadline } from "@/lib/types";
 
@@ -34,52 +27,21 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
           An overview of your upcoming assignments and tests.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Carousel
-          opts={{
-            align: "start",
-            loop: false,
-          }}
-          className="w-full"
-        >
-          <CarouselContent>
-            {deadlines.map((deadline) => (
-              <CarouselItem
-                key={deadline.id}
-                className="md:basis-1/2 lg:basis-1/3"
-              >
-                <div className="p-1">
-                  <Card className="h-full flex flex-col">
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{deadline.subject}</CardTitle>
-                        <Badge
-                          variant="outline"
-                          className={`${
-                            statusColors[deadline.status]
-                          }`}
-                        >
-                          {deadline.status === "on-track" && "On Track"}
-                          {deadline.status === "risk" && "Risk"}
-                          {deadline.status === "behind" && "Behind"}
-                        </Badge>
-                      </div>
-                      <CardDescription>{deadline.title}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-grow flex flex-col justify-end">
-                      <div className="text-sm text-muted-foreground">
-                        <p>{deadline.date}</p>
-                        <p className="font-medium">{deadline.workload}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="hidden sm:flex" />
-          <CarouselNext className="hidden sm:flex" />
-        </Carousel>
+      <CardContent className="space-y-4">
+        {deadlines.map((deadline) => (
+           <div key={deadline.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+             <div className="flex flex-col gap-0.5">
+                <p className="font-semibold">{deadline.title}</p>
+                <p className="text-sm text-muted-foreground">{deadline.subject} - Due {deadline.date}</p>
+                <p className="text-xs text-muted-foreground">{deadline.workload}</p>
+             </div>
+             <Badge variant="outline" className={`${statusColors[deadline.status]}`}>
+                {deadline.status === "on-track" && "On Track"}
+                {deadline.status === "risk" && "Risk"}
+                {deadline.status === "behind" && "Behind"}
+             </Badge>
+           </div>
+        ))}
       </CardContent>
     </Card>
   );

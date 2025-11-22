@@ -31,7 +31,7 @@ export type Subject = {
 };
 
 export type AiSuggestion = {
-  id: string;
+  id:string;
   title: string;
   icon: "BrainCircuit" | "FileText" | "Calendar";
 };
@@ -66,3 +66,22 @@ export type ProcessMaterialResult = {
     analysis: MaterialAnalysis;
     suggestedActions: SuggestedAction[];
 }
+
+// Types for generate-quiz flow
+export type QuizOption = {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+};
+
+export type QuizQuestion = {
+  id: string;
+  question: string;
+  options: QuizOption[];
+};
+
+export type Quiz = {
+  title: string;
+  description: string;
+  questions: QuizQuestion[];
+};

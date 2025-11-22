@@ -8,3 +8,4 @@ import '@/ai/flows/provide-ai-powered-analytics-teacher.ts';
 import '@/ai/flows/generate-dashboard-data.ts';
 import '@/ai/flows/process-material.ts';
 import '@/ai/flows/generate-flashcards.ts';
+import '@/ai/flows/generate-quiz.ts';
