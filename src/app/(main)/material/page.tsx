@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useContext } from 'react';
+import { useRouter, useSearchParams, Suspense } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { UploadCloud, FileText, ImageIcon, Loader2, BrainCircuit, BookCopy } fro
 import { Textarea } from '@/components/ui/textarea';
 import { processMaterial, ProcessMaterialOutput } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
+import { AppContext } from '@/contexts/app-context';
 
 type FileType = 'text' | 'image' | 'file';
 
@@ -18,21 +19,22 @@ const iconMap = {
   BookCopy,
 };
 
-export default function MaterialPage() {
-  const [inputText, setInputText] = useState('');
+function MaterialPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const sourceTextFromParams = searchParams.get('sourceText') || '';
+
+  const [inputText, setInputText] = useState(sourceTextFromParams);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileDataUri, setFileDataUri] = useState<string | null>(null);
   const [fileType, setFileType] = useState<FileType>('text');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ProcessMaterialOutput | null>(null);
   const { toast } = useToast();
-  const router = useRouter();
+  const appContext = useContext(AppContext);
 
   const getSourceText = (): string => {
     if (inputText) return inputText;
-    // For now, we are passing the data URI for files.
-    // In a real app, you might extract text from PDF/DOCX on the server.
-    // For this prototype, we'll just pass the file name as context for the AI.
     if (uploadedFile) return `File content of: ${uploadedFile.name}`;
     return '';
   }
@@ -66,9 +68,13 @@ export default function MaterialPage() {
     setIsLoading(true);
     setResult(null);
     try {
+      if (!appContext) {
+        throw new Error("AppContext not available");
+      }
       const response = await processMaterial({
         text: inputText,
         fileDataUri: fileDataUri || undefined,
+        language: appContext.language,
       });
       setResult(response);
     } catch (error) {
@@ -207,5 +213,13 @@ export default function MaterialPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function MaterialPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <MaterialPageContent />
+    </Suspense>
   );
 }

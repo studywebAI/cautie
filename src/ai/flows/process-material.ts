@@ -13,6 +13,7 @@ import {z} from 'genkit';
 const ProcessMaterialInputSchema = z.object({
   text: z.string().optional().describe('Pasted text content.'),
   fileDataUri: z.string().optional().describe("A file encoded as a data URI. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
+  language: z.string().optional().describe('The language for the output, e.g., "en", "nl", "fr". Defaults to English.'),
 });
 export type ProcessMaterialInput = z.infer<typeof ProcessMaterialInputSchema>;
 
@@ -41,7 +42,9 @@ const prompt = ai.definePrompt({
   name: 'processMaterialPrompt',
   input: {schema: ProcessMaterialInputSchema},
   output: {schema: ProcessMaterialOutputSchema},
-  prompt: `You are an expert learning assistant. Analyze the following material, which is provided as either text or a file. Your task is to understand the content, create a summary, and suggest relevant learning activities. The entire output should be in English.
+  prompt: `You are an expert learning assistant. Analyze the following material, which is provided as either text or a file. Your task is to understand the content, create a summary, and suggest relevant learning activities.
+
+The entire output should be in the language specified by the user. The language code is: {{{language}}}. If no language is provided, default to English.
 
 Your analysis should include:
 1.  A short, descriptive title for the material.
@@ -52,7 +55,7 @@ Based on the content, suggest 3 relevant actions. The action IDs MUST be from th
 - For 'create-a-summary', the label should be 'Create a summary'.
 - For 'generate-a-quiz', the label should be 'Generate a quiz'.
 - For 'make-flashcards', the label should be 'Make flashcards'.
-Provide a brief description for each suggested action.
+Provide a brief description for each suggested action. Make sure all labels and descriptions are in the requested language.
 
 Material to analyze:
 {{#if text}}

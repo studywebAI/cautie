@@ -1,10 +1,13 @@
 'use client';
 
+import { useContext } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AppContext, AppContextType } from '@/contexts/app-context';
 
 export default function SettingsPage() {
+  const { language, setLanguage } = useContext(AppContext) as AppContextType;
 
   return (
     <div className="flex flex-col gap-8">
@@ -25,7 +28,7 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
            <div className="space-y-2">
             <Label htmlFor="language">Language</Label>
-            <Select defaultValue="en">
+            <Select value={language} onValueChange={setLanguage}>
               <SelectTrigger id="language" className="w-[280px]">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>

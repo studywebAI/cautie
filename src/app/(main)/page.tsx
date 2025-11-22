@@ -4,14 +4,16 @@ import { TodayPlan } from "@/components/dashboard/today-plan";
 import { Alerts } from "@/components/dashboard/alerts";
 import { UpcomingDeadlines } from "@/components/dashboard/upcoming-deadlines";
 import { AiSuggestions } from "@/components/dashboard/ai-suggestions";
-import { generateDashboardData, GenerateDashboardDataOutput } from "@/ai/flows/generate-dashboard-data";
-import { useEffect, useState } from "react";
+import { useContext } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AppContext, AppContextType } from "@/contexts/app-context";
 
-function DashboardPageContent({ dashboardData }: { dashboardData: GenerateDashboardDataOutput | null }) {
-  if (!dashboardData) {
+function DashboardPageContent() {
+  const { dashboardData, isLoading } = useContext(AppContext) as AppContextType;
+
+  if (isLoading || !dashboardData) {
     return <DashboardSkeleton />;
   }
   
@@ -62,21 +64,7 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
-  const [dashboardData, setDashboardData] = useState<GenerateDashboardDataOutput | null>(null);
-
-  useEffect(() => {
-    async function loadData() {
-      const data = await generateDashboardData({
-        studentName: "Alex Jansen",
-        subjects: ["History", "Mathematics", "Chemistry", "English Literature"],
-      });
-      setDashboardData(data);
-    }
-    loadData();
-  }, []);
-
-
   return (
-      <DashboardPageContent dashboardData={dashboardData} />
+      <DashboardPageContent />
   );
 }

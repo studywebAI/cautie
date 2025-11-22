@@ -18,14 +18,7 @@ type MySubjectsProps = {
 
 export function MySubjects({ subjects }: MySubjectsProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">Your Subjects</CardTitle>
-        <CardDescription>
-          Click a subject to go to its dashboard.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {subjects.map((subject) => (
           <Link key={subject.id} href="#" className="group">
             <Card className="h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-lg">
@@ -56,7 +49,6 @@ export function MySubjects({ subjects }: MySubjectsProps) {
             </Card>
           </Link>
         ))}
-      </CardContent>
-    </Card>
+    </div>
   );
 }

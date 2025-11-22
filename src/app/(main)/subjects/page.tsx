@@ -1,14 +1,48 @@
 'use client';
 
 import { MySubjects } from "@/components/dashboard/my-subjects";
-import { generateDashboardData, GenerateDashboardDataOutput } from "@/ai/flows/generate-dashboard-data";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AppContext, AppContextType } from "@/contexts/app-context";
+import { Subject } from "@/lib/types";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
-function SubjectsPageContent({ dashboardData }: { dashboardData: GenerateDashboardDataOutput | null }) {
-  if (!dashboardData) {
+// Helper function to get image details for a subject
+function getSubjectImage(subjectName: string): { imageUrl: string, imageHint: string } {
+    const defaultImage = PlaceHolderImages.find(img => img.id === "subject-icon-history")!;
+    const subjectId = `subject-icon-${subjectName.toLowerCase().split(' ').join('-')}`;
+    const image = PlaceHolderImages.find(img => img.id === subjectId);
+    
+    return image || {
+        imageUrl: `https://picsum.photos/seed/${subjectName}/600/400`,
+        imageHint: subjectName.toLowerCase()
+    };
+}
+
+
+function SubjectsPageContent() {
+  const { dashboardData, isLoading } = useContext(AppContext) as AppContextType;
+  const [subjectsWithImages, setSubjectsWithImages] = useState<Subject[]>([]);
+
+  useEffect(() => {
+    if (dashboardData?.subjects) {
+      const subjects = dashboardData.subjects.map((subjectName) => {
+        const { imageUrl, imageHint } = getSubjectImage(subjectName);
+        return {
+          id: subjectName.toLowerCase().replace(' ', '-'),
+          name: subjectName,
+          progress: Math.floor(Math.random() * 100), // Keep random progress for now
+          imageUrl,
+          imageHint,
+        };
+      });
+      setSubjectsWithImages(subjects);
+    }
+  }, [dashboardData]);
+
+  if (isLoading || !dashboardData) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <Skeleton className="h-56" />
         <Skeleton className="h-56" />
         <Skeleton className="h-56" />
@@ -17,23 +51,10 @@ function SubjectsPageContent({ dashboardData }: { dashboardData: GenerateDashboa
     );
   }
 
-  return <MySubjects subjects={dashboardData.subjects} />;
+  return <MySubjects subjects={subjectsWithImages} />;
 }
 
 export default function SubjectsPage() {
-  const [dashboardData, setDashboardData] = useState<GenerateDashboardDataOutput | null>(null);
-
-  useEffect(() => {
-    async function loadData() {
-      // We only need the subjects, so we can use a smaller list for faster generation.
-      const data = await generateDashboardData({
-        studentName: "Alex Jansen",
-        subjects: ["History", "Mathematics", "Chemistry", "English Literature"],
-      });
-      setDashboardData(data);
-    }
-    loadData();
-  }, []);
 
   return (
     <div className="flex flex-col gap-8">
@@ -43,7 +64,7 @@ export default function SubjectsPage() {
           Select a subject to view its dashboard, materials, and progress.
         </p>
       </header>
-      <SubjectsPageContent dashboardData={dashboardData} />
+      <SubjectsPageContent />
     </div>
   );
 }
