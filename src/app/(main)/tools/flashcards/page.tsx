@@ -7,82 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { generateFlashcards, Flashcard } from '@/ai/flows/generate-flashcards';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, ChevronsLeftRight, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { Loader2, Sparkles, RefreshCw } from 'lucide-react';
+import { FlashcardViewer } from '@/components/tools/flashcard-viewer';
 
-function FlashcardViewer({ cards, onRestart }: { cards: Flashcard[]; onRestart: () => void; }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-
-  const handleNext = () => {
-    setIsFlipped(false);
-    setTimeout(() => setCurrentIndex((prev) => (prev + 1) % cards.length), 150);
-  };
-
-  const handlePrev = () => {
-    setIsFlipped(false);
-    setTimeout(() => setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length), 150);
-  };
-  
-  const card = cards[currentIndex];
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">Study Flashcards</CardTitle>
-        <CardDescription>
-          Card {currentIndex + 1} of {cards.length}. Click the card to flip it.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center gap-6">
-        <div className="w-full max-w-md h-64 [perspective:1000px]">
-           <AnimatePresence initial={false}>
-              <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                transition={{ duration: 0.3 }}
-                className="relative w-full h-full"
-              >
-                  <div 
-                    className="relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]"
-                    style={{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
-                    onClick={() => setIsFlipped(!isFlipped)}
-                  >
-                    <div className="absolute flex items-center justify-center p-6 w-full h-full bg-card border rounded-lg [backface-visibility:hidden]">
-                      <p className="text-center text-lg font-medium">{card.front}</p>
-                    </div>
-                    <div className="absolute flex items-center justify-center p-6 w-full h-full bg-card border rounded-lg [transform:rotateY(180deg)] [backface-visibility:hidden]">
-                       <p className="text-center text-muted-foreground">{card.back}</p>
-                    </div>
-                  </div>
-              </motion.div>
-          </AnimatePresence>
-        </div>
-
-        <div className="flex items-center justify-center gap-4">
-          <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Previous Card">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <Button variant="secondary" onClick={() => setIsFlipped(!isFlipped)}>
-            <ChevronsLeftRight className="mr-2 h-4 w-4" />
-            Flip Card
-          </Button>
-          <Button variant="outline" size="icon" onClick={handleNext} aria-label="Next Card">
-            <ArrowRight className="h-5 w-5" />
-          </Button>
-        </div>
-      </CardContent>
-       <CardFooter className="justify-end">
-            <Button variant="ghost" onClick={onRestart}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Start Over
-            </Button>
-        </CardFooter>
-    </Card>
-  )
-}
 
 function FlashcardsPageContent() {
   const searchParams = useSearchParams();
@@ -97,6 +24,7 @@ function FlashcardsPageContent() {
     if (sourceTextFromParams) {
       handleGenerate(sourceTextFromParams);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceTextFromParams]);
 
   const handleGenerate = async (text: string) => {
