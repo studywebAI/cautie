@@ -16,7 +16,6 @@ import {
   Home,
   Settings,
   Folder,
-  MessageSquareQuote,
   BrainCircuit,
   Copy,
   FileText,
@@ -30,7 +29,6 @@ const menuItems = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/subjects', label: 'Subjects', icon: BookOpen },
   { href: '/material', label: 'Material', icon: FileText },
-  { href: '/qa', label: 'Q&A', icon: MessageSquareQuote },
 ];
 
 const toolsMenuItems = [
