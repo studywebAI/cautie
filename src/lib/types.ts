@@ -47,3 +47,22 @@ export type ProgressData = {
   day: string;
   'Study Time': number;
 };
+
+// Types for process-material flow
+export type SuggestedAction = {
+  id: string;
+  label: string;
+  description: string;
+  icon: 'FileText' | 'BrainCircuit' | 'BookCopy';
+}
+
+export type MaterialAnalysis = {
+    title: string;
+    topic: string;
+    summary: string;
+}
+
+export type ProcessMaterialResult = {
+    analysis: MaterialAnalysis;
+    suggestedActions: SuggestedAction[];
+}
