@@ -129,6 +129,7 @@ function QuizPageContent() {
     if (sourceTextFromParams) {
       handleGenerate(sourceTextFromParams);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceTextFromParams]);
 
   const handleGenerate = async (text: string) => {
@@ -221,6 +222,6 @@ export default function QuizPage() {
     return (
         <Suspense fallback={<div>Loading...</div>}>
             <QuizPageContent />
-        </Suspgense>
+        </Suspense>
     )
 }
