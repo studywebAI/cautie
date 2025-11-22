@@ -6,7 +6,6 @@ import { UpcomingDeadlines } from "@/components/dashboard/upcoming-deadlines";
 import { AiSuggestions } from "@/components/dashboard/ai-suggestions";
 import { useContext } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppContext, AppContextType } from "@/contexts/app-context";
 
@@ -20,18 +19,8 @@ function DashboardPageContent() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
       <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8">
-        <Tabs defaultValue="plan">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="plan">Today's Plan</TabsTrigger>
-            <TabsTrigger value="deadlines">Upcoming Deadlines</TabsTrigger>
-          </TabsList>
-          <TabsContent value="plan">
-             <TodayPlan tasks={dashboardData.tasks} />
-          </TabsContent>
-          <TabsContent value="deadlines">
-            <UpcomingDeadlines deadlines={dashboardData.deadlines} />
-          </TabsContent>
-        </Tabs>
+        <TodayPlan tasks={dashboardData.tasks} />
+        <UpcomingDeadlines deadlines={dashboardData.deadlines} />
       </div>
       <div className="flex flex-col gap-6 md:gap-8">
         <Alerts alerts={dashboardData.alerts} />
@@ -51,7 +40,15 @@ function DashboardSkeleton() {
                         <Skeleton className="h-10 w-full" />
                     </CardHeader>
                     <CardContent>
-                        <Skeleton className="h-64 w-full" />
+                        <Skeleton className="h-48 w-full" />
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <Skeleton className="h-10 w-full" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-32 w-full" />
                     </CardContent>
                 </Card>
             </div>
