@@ -26,8 +26,6 @@ export type Subject = {
   id: string;
   name: string;
   progress: number;
-  imageUrl: string;
-  imageHint: string;
 };
 
 export type AiSuggestion = {

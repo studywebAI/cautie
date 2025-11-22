@@ -1,51 +1,22 @@
 'use client';
 
-import { MySubjects } from "@/components/dashboard/my-subjects";
-import { useContext, useEffect, useState } from "react";
+import { MySubjectsGrid } from "@/components/dashboard/my-subjects-grid";
+import { useContext } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppContext, AppContextType } from "@/contexts/app-context";
-import { Subject } from "@/lib/types";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-
-// Helper function to get image details for a subject
-function getSubjectImage(subjectName: string): { imageUrl: string, imageHint: string } {
-    const subjectId = `subject-icon-${subjectName.toLowerCase().replace(/ /g, '-')}`;
-    const image = PlaceHolderImages.find(img => img.id === subjectId);
-    
-    return image || {
-        imageUrl: `https://picsum.photos/seed/${subjectName}/600/400`,
-        imageHint: subjectName.toLowerCase()
-    };
-}
-
 
 function SubjectsPageContent() {
   const { dashboardData, isLoading } = useContext(AppContext) as AppContextType;
-  const [subjectsWithImages, setSubjectsWithImages] = useState<Subject[]>([]);
-
-  useEffect(() => {
-    if (dashboardData?.subjects) {
-      const subjects = dashboardData.subjects.map((subject) => {
-        const { imageUrl, imageHint } = getSubjectImage(subject.name);
-        return {
-          ...subject,
-          imageUrl,
-          imageHint,
-        };
-      });
-      setSubjectsWithImages(subjects);
-    }
-  }, [dashboardData]);
 
   if (isLoading || !dashboardData) {
     return (
        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-56" />)}
+        {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-56" />)}
       </div>
     );
   }
 
-  return <MySubjects subjects={subjectsWithImages} />;
+  return <MySubjectsGrid subjects={dashboardData.subjects} />;
 }
 
 export default function SubjectsPage() {

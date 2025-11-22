@@ -23,7 +23,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       try {
         const data = await generateDashboardData({
           studentName: "Alex Jansen",
-          subjects: ["History", "Mathematics", "Chemistry", "English Literature", "Dutch"],
+          subjects: ["History", "Math", "Science", "Literature", "Art", "Geography", "Dutch"],
         });
         setDashboardData(data);
       } catch (error) {
