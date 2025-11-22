@@ -63,7 +63,7 @@ export default function SummaryPage() {
         throw new Error("AppContext not available");
       }
       const response = await processMaterial({
-        text: inputText,
+        text: inputText || undefined,
         fileDataUri: fileDataUri || undefined,
         language: appContext.language,
       });
