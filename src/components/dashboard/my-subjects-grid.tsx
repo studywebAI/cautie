@@ -20,9 +20,10 @@ function getSubjectImage(subjectName: string): { imageUrl: string, imageHint: st
     const subjectId = `subject-icon-${subjectName.toLowerCase().replace(/ /g, '-')}`;
     const image = PlaceHolderImages.find(img => img.id === subjectId);
     
+    // Return a default if no image is found to prevent build errors, though we expect all images to exist.
     return image || {
-        imageUrl: `https://picsum.photos/seed/${subjectName.replace(/ /g, '-')}/600/400`,
-        imageHint: subjectName.toLowerCase()
+        imageUrl: `https://images.unsplash.com/photo-1599507593499-a3f7d7d97667?q=80&w=1974&auto=format&fit=crop`,
+        imageHint: 'default books'
     };
 }
 
