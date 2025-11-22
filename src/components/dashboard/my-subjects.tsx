@@ -20,9 +20,9 @@ export function MySubjects({ subjects }: MySubjectsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Jouw Vakken</CardTitle>
+        <CardTitle className="font-headline">Your Subjects</CardTitle>
         <CardDescription>
-          Klik op een vak om naar het vak-dashboard te gaan.
+          Click a subject to go to its dashboard.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -50,7 +50,7 @@ export function MySubjects({ subjects }: MySubjectsProps) {
                 </div>
               </CardContent>
               <CardFooter className="p-4 pt-0 text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex justify-end items-center gap-1">
-                <span>Bekijk vak</span>
+                <span>View Subject</span>
                 <ArrowRight className="h-4 w-4" />
               </CardFooter>
             </Card>

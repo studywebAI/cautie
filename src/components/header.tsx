@@ -28,13 +28,13 @@ export function AppHeader() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Zoeken..."
+            placeholder="Search..."
             className="pl-8 w-full md:w-[200px] lg:w-[300px] bg-background"
           />
         </div>
         <Button variant="ghost" size="icon" className="rounded-full">
           <Bell className="h-5 w-5" />
-          <span className="sr-only">Notificaties</span>
+          <span className="sr-only">Notifications</span>
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -52,12 +52,12 @@ export function AppHeader() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Mijn Account</DropdownMenuLabel>
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profiel</DropdownMenuItem>
-            <DropdownMenuItem>Instellingen</DropdownMenuItem>
+            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Uitloggen</DropdownMenuItem>
+            <DropdownMenuItem>Log out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

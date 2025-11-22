@@ -18,7 +18,7 @@ export type ProcessMaterialInput = z.infer<typeof ProcessMaterialInputSchema>;
 
 const SuggestedActionSchema = z.object({
   id: z.string().describe('Unique ID for the action.'),
-  label: z.string().describe('The button text for the action (e.g., "Maak een samenvatting").'),
+  label: z.string().describe('The button text for the action (e.g., "Create a summary").'),
   description: z.string().describe('A brief description of what this action does.'),
   icon: z.enum(['FileText', 'BrainCircuit', 'BookCopy']).describe('Icon to display with the action.'),
 });
@@ -41,14 +41,14 @@ const prompt = ai.definePrompt({
   name: 'processMaterialPrompt',
   input: {schema: ProcessMaterialInputSchema},
   output: {schema: ProcessMaterialOutputSchema},
-  prompt: `You are an expert learning assistant. Analyze the following material, which is provided as either text or a file. Your task is to understand the content, create a summary, and suggest relevant learning activities. The entire output should be in Dutch.
+  prompt: `You are an expert learning assistant. Analyze the following material, which is provided as either text or a file. Your task is to understand the content, create a summary, and suggest relevant learning activities. The entire output should be in English.
 
 Your analysis should include:
 1.  A short, descriptive title for the material.
 2.  The main topic or subject (e.g., "History", "Physics", "Poetry").
 3.  A concise summary of the key points.
 
-Based on the content, suggest 3 relevant actions from the following options: "Maak een samenvatting" (Make a summary), "Genereer een quiz" (Generate a quiz), "Maak flashcards" (Make flashcards). Provide a brief description for each suggested action.
+Based on the content, suggest 3 relevant actions from the following options: "Create a summary", "Generate a quiz", "Make flashcards". Provide a brief description for each suggested action.
 
 Material to analyze:
 {{#if text}}

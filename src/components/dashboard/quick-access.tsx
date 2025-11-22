@@ -24,8 +24,8 @@ export function QuickAccess({ quickAccessItems }: QuickAccessProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Je materiaal</CardTitle>
-        <CardDescription>Snelle toegang tot je recente items.</CardDescription>
+        <CardTitle className="font-headline">Your Material</CardTitle>
+        <CardDescription>Quick access to your recent items.</CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-2 gap-3">
         {quickAccessItems.map((item) => {

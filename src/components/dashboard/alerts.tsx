@@ -31,8 +31,8 @@ export function Alerts({ alerts }: AlertsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Belangrijke waarschuwingen</CardTitle>
-        <CardDescription>Risico's en prioriteiten</CardDescription>
+        <CardTitle className="font-headline">Important Alerts</CardTitle>
+        <CardDescription>Risks and priorities</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {alerts.map((alert) => {

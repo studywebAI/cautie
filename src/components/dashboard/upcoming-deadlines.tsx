@@ -29,9 +29,9 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Komende deadlines</CardTitle>
+        <CardTitle className="font-headline">Upcoming Deadlines</CardTitle>
         <CardDescription>
-          Een overzicht van je aankomende opdrachten en toetsen.
+          An overview of your upcoming assignments and tests.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -59,8 +59,8 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
                           }`}
                         >
                           {deadline.status === "on-track" && "On Track"}
-                          {deadline.status === "risk" && "Risico"}
-                          {deadline.status === "behind" && "Achterstand"}
+                          {deadline.status === "risk" && "Risk"}
+                          {deadline.status === "behind" && "Behind"}
                         </Badge>
                       </div>
                       <CardDescription>{deadline.title}</CardDescription>

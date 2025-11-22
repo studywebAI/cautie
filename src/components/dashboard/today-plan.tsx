@@ -47,9 +47,9 @@ export function TodayPlan({ tasks: initialTasks }: TodayPlanProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Je StudyPlan voor vandaag</CardTitle>
+        <CardTitle className="font-headline">Your Study Plan for Today</CardTitle>
         <CardDescription>
-          Deze taken zijn door de AI voor je klaargezet.
+          These tasks have been prepared for you by the AI.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -110,7 +110,7 @@ export function TodayPlan({ tasks: initialTasks }: TodayPlanProps) {
                     <span className="text-3xl font-bold font-headline text-primary">
                         {completionPercentage}%
                     </span>
-                    <span className="text-sm text-muted-foreground">Voltooid</span>
+                    <span className="text-sm text-muted-foreground">Completed</span>
                 </div>
             </div>
           </div>

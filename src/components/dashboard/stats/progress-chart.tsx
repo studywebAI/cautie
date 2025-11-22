@@ -18,7 +18,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 const chartConfig = {
   "Study Time": {
-    label: "Studietijd (min)",
+    label: "Study Time (min)",
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig;
@@ -31,8 +31,8 @@ export function ProgressChart({ progressData }: ProgressChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Statistieken</CardTitle>
-        <CardDescription>Je studietijd van deze week.</CardDescription>
+        <CardTitle className="font-headline">Statistics</CardTitle>
+        <CardDescription>Your study time this week.</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-64 w-full">

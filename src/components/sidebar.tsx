@@ -25,10 +25,10 @@ import { Separator } from "@/components/ui/separator";
 
 const menuItems = [
   { href: "/", label: "Dashboard", icon: Home },
-  { href: "#", label: "Vakken", icon: BookOpen },
-  { href: "#", label: "Agenda", icon: Calendar },
-  { href: "#", "label": "Statistieken", "icon": BarChart3 },
-  { href: "/materiaal", label: "Materiaal", icon: Folder },
+  { href: "/subjects", label: "Subjects", icon: BookOpen },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/stats", "label": "Statistics", "icon": BarChart3 },
+  { href: "/materiaal", label: "Material", icon: Folder },
 ];
 
 export function AppSidebar() {
@@ -67,10 +67,10 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 flex flex-col gap-4">
          <SidebarMenu>
           <SidebarMenuItem>
-            <Link href="#" passHref>
-              <SidebarMenuButton tooltip="Instellingen" className="font-medium">
+            <Link href="/settings" passHref>
+              <SidebarMenuButton tooltip="Settings" className="font-medium" isActive={pathname === '/settings'}>
                 <Settings className="h-5 w-5" />
-                <span>Instellingen</span>
+                <span>Settings</span>
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>

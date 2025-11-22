@@ -23,8 +23,8 @@ export function AiSuggestions({ aiSuggestions }: AiSuggestionsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">AI Suggesties</CardTitle>
-        <CardDescription>Je persoonlijke assistent</CardDescription>
+        <CardTitle className="font-headline">AI Suggestions</CardTitle>
+        <CardDescription>Your personal assistant</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {aiSuggestions.map((suggestion) => {

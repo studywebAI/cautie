@@ -17,7 +17,7 @@ const iconMap = {
   BookCopy,
 };
 
-export default function MateriaalPage() {
+export default function MaterialPage() {
   const [inputText, setInputText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileDataUri, setFileDataUri] = useState<string | null>(null);
@@ -64,8 +64,8 @@ export default function MateriaalPage() {
       console.error('Error processing material:', error);
       toast({
         variant: 'destructive',
-        title: 'Er is iets misgegaan',
-        description: 'De AI kon het materiaal niet verwerken. Probeer het opnieuw.',
+        title: 'Something went wrong',
+        description: 'The AI could not process the material. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -75,17 +75,17 @@ export default function MateriaalPage() {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">Jouw Materiaal</h1>
+        <h1 className="text-3xl font-bold font-headline">Your Material</h1>
         <p className="text-muted-foreground">
-          Upload bestanden of plak tekst om samenvattingen, flashcards en meer te genereren.
+          Upload files or paste text to generate summaries, flashcards, and more.
         </p>
       </header>
 
       <Card>
         <CardHeader>
-          <CardTitle>Content Importeren</CardTitle>
+          <CardTitle>Import Content</CardTitle>
           <CardDescription>
-            Importeer een bestand of plak tekst om de AI zijn werk te laten doen.
+            Import a file or paste text to let the AI do its work.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -94,7 +94,7 @@ export default function MateriaalPage() {
                <label htmlFor="file-upload" className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <UploadCloud className="w-10 h-10 mb-3 text-muted-foreground" />
-                  <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Klik om te uploaden</span> of sleep een bestand</p>
+                  <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
                   <p className="text-xs text-muted-foreground">PDF, DOCX, TXT, PNG, JPG</p>
                 </div>
                 <Input id="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".pdf,.docx,.txt,.png,.jpg,.jpeg" />
@@ -104,7 +104,7 @@ export default function MateriaalPage() {
                   {fileType === 'image' ? <ImageIcon className="h-5 w-5 text-primary" /> : <FileText className="h-5 w-5 text-primary" />}
                   <span className="text-sm font-medium truncate">{uploadedFile.name}</span>
                   <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={clearFile}>
-                    <span className="sr-only">Verwijder</span>
+                    <span className="sr-only">Remove</span>
                     &times;
                   </Button>
                 </div>
@@ -112,7 +112,7 @@ export default function MateriaalPage() {
             </div>
 
             <Textarea
-              placeholder="Of plak hier je tekst..."
+              placeholder="Or paste your text here..."
               className="h-48 resize-none"
               value={inputText}
               onChange={(e) => {
@@ -126,7 +126,7 @@ export default function MateriaalPage() {
           <div className="flex justify-end">
             <Button onClick={handleProcess} disabled={(!uploadedFile && !inputText) || isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isLoading ? 'Verwerken...' : 'Verwerk met AI'}
+              {isLoading ? 'Processing...' : 'Process with AI'}
             </Button>
           </div>
         </CardContent>
@@ -136,15 +136,15 @@ export default function MateriaalPage() {
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline">{result.analysis.title}</CardTitle>
-                <CardDescription>Onderwerp: {result.analysis.topic}</CardDescription>
+                <CardDescription>Topic: {result.analysis.topic}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div>
-                    <h3 className="font-semibold mb-2">Samenvatting</h3>
+                    <h3 className="font-semibold mb-2">Summary</h3>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{result.analysis.summary}</p>
                 </div>
                  <div>
-                    <h3 className="font-semibold mb-2">Voorgestelde Acties</h3>
+                    <h3 className="font-semibold mb-2">Suggested Actions</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {result.suggestedActions.map((action) => {
                             const Icon = iconMap[action.icon] || BrainCircuit;
@@ -158,7 +158,7 @@ export default function MateriaalPage() {
                                         <p className="text-sm text-muted-foreground">{action.description}</p>
                                     </CardContent>
                                     <CardFooter>
-                                        <Button variant="secondary" className="w-full">Selecteer</Button>
+                                        <Button variant="secondary" className="w-full">Select</Button>
                                     </CardFooter>
                                 </Card>
                             )

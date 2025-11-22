@@ -10,7 +10,7 @@ import { generateDashboardData } from "@/ai/flows/generate-dashboard-data";
 export default async function DashboardPage() {
   const dashboardData = await generateDashboardData({
     studentName: "Alex Jansen",
-    subjects: ["Geschiedenis", "Wiskunde", "Scheikunde", "Engels"],
+    subjects: ["History", "Mathematics", "Chemistry", "English Literature"],
   });
 
   return (
