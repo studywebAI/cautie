@@ -1,19 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { generateQuiz, Quiz } from '@/ai/flows/generate-quiz';
-
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles } from 'lucide-react';
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { QuizTaker, QuizMode } from '@/components/tools/quiz-taker';
-
 
 function QuizPageContent() {
   const searchParams = useSearchParams();
@@ -25,14 +22,7 @@ function QuizPageContent() {
   const [quizMode, setQuizMode] = useState<QuizMode>('practice');
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (sourceTextFromParams) {
-      handleGenerate(sourceTextFromParams);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceTextFromParams]);
-
-  const handleGenerate = async (text: string) => {
+  const handleGenerate = useCallback(async (text: string) => {
     if (!text.trim()) {
       toast({
         variant: 'destructive',
@@ -44,7 +34,7 @@ function QuizPageContent() {
     setIsLoading(true);
     setGeneratedQuiz(null);
     try {
-      const response = await generateQuiz({ sourceText: text });
+      const response = await generateQuiz({ sourceText: text, questionCount: quizMode === 'survival' ? 10 : 7 });
       setGeneratedQuiz(response);
     } catch (error) {
       console.error('Error generating quiz:', error);
@@ -56,7 +46,13 @@ function QuizPageContent() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast, quizMode]);
+
+  useEffect(() => {
+    if (sourceTextFromParams) {
+      handleGenerate(sourceTextFromParams);
+    }
+  }, [sourceTextFromParams, handleGenerate]);
 
   const handleFormSubmit = () => {
     handleGenerate(sourceText);
@@ -79,7 +75,7 @@ function QuizPageContent() {
   }
 
   if (generatedQuiz) {
-    return <QuizTaker quiz={generatedQuiz} mode={quizMode} onRestart={() => setGeneratedQuiz(null)} />;
+    return <QuizTaker quiz={generatedQuiz} mode={quizMode} sourceText={sourceText} onRestart={() => setGeneratedQuiz(null)} />;
   }
 
   return (
@@ -115,6 +111,7 @@ function QuizPageContent() {
                   <SelectItem value="practice">Practice Mode</SelectItem>
                   <SelectItem value="normal">Normal Mode</SelectItem>
                   <SelectItem value="exam">Exam Mode</SelectItem>
+                  <SelectItem value="survival">Survival Mode</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -129,7 +126,6 @@ function QuizPageContent() {
     </div>
   );
 }
-
 
 export default function QuizPage() {
     return (

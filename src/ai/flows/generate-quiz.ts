@@ -25,7 +25,7 @@ const QuizQuestionSchema = z.object({
 const QuizSchema = z.object({
   title: z.string().describe('A suitable title for the quiz, based on the source text.'),
   description: z.string().describe('A brief description of the quiz content.'),
-  questions: z.array(QuizQuestionSchema).describe('An array of 5 to 10 multiple-choice questions.'),
+  questions: z.array(QuizQuestionSchema).describe('An array of questions.'),
 });
 
 export type QuizOption = z.infer<typeof QuizOptionSchema>;
@@ -35,6 +35,8 @@ export type Quiz = z.infer<typeof QuizSchema>;
 
 const GenerateQuizInputSchema = z.object({
   sourceText: z.string().describe('The source text from which to generate the quiz.'),
+  questionCount: z.number().optional().default(7).describe('The desired number of questions.'),
+  existingQuestionIds: z.array(z.string()).optional().describe('An array of question IDs that should not be regenerated.'),
 });
 export type GenerateQuizInput = z.infer<typeof GenerateQuizInputSchema>;
 
@@ -52,9 +54,12 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert in creating educational content. Your task is to generate a multiple-choice quiz from the provided source text.
 
 The quiz should have a relevant title and a brief description.
-Create between 5 and 10 questions.
+Create exactly {{{questionCount}}} questions.
 Each question must have 3 or 4 answer options.
 Exactly one option for each question must be correct.
+{{#if existingQuestionIds}}
+Do not generate questions that are identical or very similar to the questions represented by these IDs: {{{existingQuestionIds}}}.
+{{/if}}
 
 Source Text:
 {{{sourceText}}}
