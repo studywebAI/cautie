@@ -15,9 +15,15 @@ export const AppContext = createContext<AppContextType | null>(null);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [dashboardData, setDashboardData] = useState<GenerateDashboardDataOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguageState] = useState('en');
 
   useEffect(() => {
+    // Load saved language from localStorage on initial load
+    const savedLanguage = localStorage.getItem('studyweb-language');
+    if (savedLanguage) {
+      setLanguageState(savedLanguage);
+    }
+
     async function loadInitialData() {
       setIsLoading(true);
       try {
@@ -34,6 +40,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     loadInitialData();
   }, []);
+  
+  const setLanguage = (newLanguage: string) => {
+    setLanguageState(newLanguage);
+    localStorage.setItem('studyweb-language', newLanguage);
+  };
+
 
   return (
     <AppContext.Provider value={{ dashboardData, isLoading, language, setLanguage }}>
