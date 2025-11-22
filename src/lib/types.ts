@@ -50,7 +50,7 @@ export type ProgressData = {
 
 // Types for process-material flow
 export type SuggestedAction = {
-  id: string;
+  id: 'create-a-summary' | 'generate-a-quiz' | 'make-flashcards';
   label: string;
   description: string;
   icon: 'FileText' | 'BrainCircuit' | 'BookCopy';
@@ -60,6 +60,7 @@ export type MaterialAnalysis = {
     title: string;
     topic: string;
     summary: string;
+    sourceText: string;
 }
 
 export type ProcessMaterialResult = {

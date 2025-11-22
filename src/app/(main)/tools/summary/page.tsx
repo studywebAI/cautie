@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useContext } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { UploadCloud, FileText, ImageIcon, Loader2, BrainCircuit, BookCopy } fro
 import { Textarea } from '@/components/ui/textarea';
 import { processMaterial, ProcessMaterialOutput } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
+import { AppContext } from '@/contexts/app-context';
 
 type FileType = 'text' | 'image' | 'file';
 
@@ -18,6 +20,7 @@ const iconMap = {
 };
 
 export default function SummaryPage() {
+  const router = useRouter();
   const [inputText, setInputText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileDataUri, setFileDataUri] = useState<string | null>(null);
@@ -25,6 +28,7 @@ export default function SummaryPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ProcessMaterialOutput | null>(null);
   const { toast } = useToast();
+  const appContext = useContext(AppContext);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -55,9 +59,13 @@ export default function SummaryPage() {
     setIsLoading(true);
     setResult(null);
     try {
+       if (!appContext) {
+        throw new Error("AppContext not available");
+      }
       const response = await processMaterial({
         text: inputText,
         fileDataUri: fileDataUri || undefined,
+        language: appContext.language,
       });
       setResult(response);
     } catch (error) {
@@ -69,6 +77,22 @@ export default function SummaryPage() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const handleActionClick = (actionId: string, sourceText: string) => {
+    if (!sourceText) return;
+
+    let path = '';
+    if (actionId === 'generate-a-quiz') {
+      path = '/tools/quiz';
+    } else if (actionId === 'make-flashcards') {
+      path = '/tools/flashcards';
+    }
+
+    if (path) {
+      const params = new URLSearchParams({ sourceText });
+      router.push(`${path}?${params.toString()}`);
     }
   };
 
@@ -148,8 +172,9 @@ export default function SummaryPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {result.suggestedActions.map((action) => {
                             const Icon = iconMap[action.icon] || BrainCircuit;
+                             const isDisabled = action.id === 'create-a-summary';
                             return (
-                                <Card key={action.id} className="bg-background hover:border-primary transition-colors">
+                                <Card key={action.id} className={`bg-background transition-colors ${!isDisabled ? 'hover:border-primary' : ''}`}>
                                     <CardHeader className='flex-row items-center gap-4 space-y-0'>
                                         <Icon className="h-6 w-6 text-primary" />
                                         <CardTitle className='text-base'>{action.label}</CardTitle>
@@ -158,7 +183,15 @@ export default function SummaryPage() {
                                         <p className="text-sm text-muted-foreground">{action.description}</p>
                                     </CardContent>
                                     <CardFooter>
-                                        <Button variant="secondary" className="w-full">Select</Button>
+                                        <Button 
+                                          variant="secondary" 
+                                          className="w-full"
+                                          onClick={() => handleActionClick(action.id, result.analysis.sourceText)}
+                                          disabled={isDisabled}
+                                          aria-disabled={isDisabled}
+                                        >
+                                          {isDisabled ? 'Done' : 'Select'}
+                                        </Button>
                                     </CardFooter>
                                 </Card>
                             )

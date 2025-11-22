@@ -33,12 +33,6 @@ function MaterialPageContent() {
   const { toast } = useToast();
   const appContext = useContext(AppContext);
 
-  const getSourceText = (): string => {
-    if (inputText) return inputText;
-    if (uploadedFile) return `File content of: ${uploadedFile.name}`;
-    return '';
-  }
-
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -72,7 +66,7 @@ function MaterialPageContent() {
         throw new Error("AppContext not available");
       }
       const response = await processMaterial({
-        text: inputText,
+        text: inputText || undefined,
         fileDataUri: fileDataUri || undefined,
         language: appContext.language,
       });
@@ -89,8 +83,7 @@ function MaterialPageContent() {
     }
   };
 
-  const handleActionClick = (actionId: string) => {
-    const sourceText = getSourceText();
+  const handleActionClick = (actionId: string, sourceText: string) => {
     if (!sourceText) return;
 
     let path = '';
@@ -101,7 +94,7 @@ function MaterialPageContent() {
     }
 
     if (path) {
-      const params = new URLSearchParams({ sourceText: sourceText });
+      const params = new URLSearchParams({ sourceText });
       router.push(`${path}?${params.toString()}`);
     }
   };
@@ -197,7 +190,7 @@ function MaterialPageContent() {
                                         <Button 
                                             variant="secondary" 
                                             className="w-full"
-                                            onClick={() => handleActionClick(action.id)}
+                                            onClick={() => handleActionClick(action.id, result.analysis.sourceText)}
                                             disabled={isDisabled}
                                             aria-disabled={isDisabled}
                                         >

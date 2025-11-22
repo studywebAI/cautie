@@ -29,6 +29,7 @@ const ProcessMaterialOutputSchema = z.object({
     title: z.string().describe('A suitable title for the provided content.'),
     topic: z.string().describe('The main topic or subject of the content.'),
     summary: z.string().describe('A concise summary of the key points.'),
+    sourceText: z.string().describe('The full text extracted from the input source.'),
   }),
   suggestedActions: z.array(SuggestedActionSchema).describe('A list of AI-suggested next steps or activities.'),
 });
@@ -42,16 +43,16 @@ const prompt = ai.definePrompt({
   name: 'processMaterialPrompt',
   input: {schema: ProcessMaterialInputSchema},
   output: {schema: ProcessMaterialOutputSchema},
-  prompt: `You are an expert learning assistant. Analyze the following material, which is provided as either text or a file. Your task is to understand the content, create a summary, and suggest relevant learning activities.
+  prompt: `You are an expert learning assistant. Your first task is to extract all text from the provided material. Then, analyze the extracted text. Your analysis should result in a summary and suggestions for relevant learning activities.
 
 The entire output should be in the language specified by the user. The language code is: {{{language}}}. If no language is provided, default to English.
 
-Your analysis should include:
-1.  A short, descriptive title for the material.
-2.  The main topic or subject (e.g., "History", "Physics", "Poetry").
-3.  A concise summary of the key points.
-
-Based on the content, suggest 3 relevant actions. The action IDs MUST be from this list: "create-a-summary", "generate-a-quiz", "make-flashcards".
+Your output must include:
+1.  **sourceText**: The full, extracted text from the material.
+2.  **analysis.title**: A short, descriptive title for the material.
+3.  **analysis.topic**: The main topic or subject (e.g., "History", "Physics", "Poetry").
+4.  **analysis.summary**: A concise summary of the key points.
+5.  **suggestedActions**: Based on the content, suggest 3 relevant actions. The action IDs MUST be from this list: "create-a-summary", "generate-a-quiz", "make-flashcards".
 - For 'create-a-summary', the label should be 'Create a summary'.
 - For 'generate-a-quiz', the label should be 'Generate a quiz'.
 - For 'make-flashcards', the label should be 'Make flashcards'.
