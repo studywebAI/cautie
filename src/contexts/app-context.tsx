@@ -8,6 +8,8 @@ export type AppContextType = {
   isLoading: boolean;
   language: string;
   setLanguage: (language: string) => void;
+  soundEnabled: boolean;
+  setSoundEnabled: (enabled: boolean) => void;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -16,6 +18,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [dashboardData, setDashboardData] = useState<GenerateDashboardDataOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [language, setLanguage] = useState('en');
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   useEffect(() => {
     async function loadInitialData() {
@@ -36,7 +39,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AppContext.Provider value={{ dashboardData, isLoading, language, setLanguage }}>
+    <AppContext.Provider value={{ dashboardData, isLoading, language, setLanguage, soundEnabled, setSoundEnabled }}>
       {children}
     </AppContext.Provider>
   );

@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppContext, AppContextType } from '@/contexts/app-context';
+import { Switch } from '@/components/ui/switch';
 
 export default function SettingsPage() {
-  const { language, setLanguage } = useContext(AppContext) as AppContextType;
+  const { language, setLanguage, soundEnabled, setSoundEnabled } = useContext(AppContext) as AppContextType;
 
   return (
     <div className="flex flex-col gap-8">
@@ -25,7 +26,7 @@ export default function SettingsPage() {
             Configure your application preferences.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
            <div className="space-y-2">
             <Label htmlFor="language">Language</Label>
             <Select value={language} onValueChange={setLanguage}>
@@ -40,6 +41,19 @@ export default function SettingsPage() {
                 <SelectItem value="es">Español (Spanish)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="sound-effects" className="text-base">Sound Effects</Label>
+              <p className="text-sm text-muted-foreground">
+                Enable or disable interface sounds.
+              </p>
+            </div>
+            <Switch
+              id="sound-effects"
+              checked={soundEnabled}
+              onCheckedChange={setSoundEnabled}
+            />
           </div>
         </CardContent>
       </Card>

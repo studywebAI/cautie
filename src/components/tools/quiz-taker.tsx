@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { explainAnswer } from '@/ai/flows/explain-answer';
@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { Quiz, QuizQuestion, QuizOption } from '@/ai/flows/generate-quiz';
 import { AnimatePresence, motion } from 'framer-motion';
+import { AppContext, AppContextType } from '@/contexts/app-context';
+import { playCorrectSound, playIncorrectSound } from '@/lib/audio';
 
 type AnswersState = { [questionId: string]: string };
 export type QuizMode = "normal" | "practice" | "exam";
@@ -101,6 +103,7 @@ function PracticeModeTaker({ quiz, onRestart }: { quiz: Quiz, onRestart: () => v
     const [explanation, setExplanation] = useState<string | null>(null);
     const [isExplanationLoading, setIsExplanationLoading] = useState(false);
     const [answers, setAnswers] = useState<AnswersState>({});
+    const { soundEnabled } = useContext(AppContext) as AppContextType;
 
     const question = quiz.questions[currentIndex];
     const correctOption = question.options.find(o => o.isCorrect);
@@ -115,7 +118,10 @@ function PracticeModeTaker({ quiz, onRestart }: { quiz: Quiz, onRestart: () => v
         setIsAnswered(true);
         setAnswers(prev => ({...prev, [question.id]: selectedOptionId}));
 
-        if (!isAnswerCorrect) {
+        if (isAnswerCorrect) {
+            if (soundEnabled) playCorrectSound();
+        } else {
+             if (soundEnabled) playIncorrectSound();
             setIsExplanationLoading(true);
             try {
                 const selectedAnswer = question.options.find(o => o.id === selectedOptionId)?.text || '';
