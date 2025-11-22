@@ -21,8 +21,6 @@ import {
   Folder,
   MessageSquareQuote,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 
 const menuItems = [
   { href: "/", label: "Dashboard", icon: Home },
@@ -77,21 +75,6 @@ export function AppSidebar() {
             </Link>
           </SidebarMenuItem>
         </SidebarMenu>
-        <Separator />
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage
-              src="https://picsum.photos/seed/user-alex/40/40"
-              alt="User avatar"
-              data-ai-hint="person face"
-            />
-            <AvatarFallback>AJ</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col overflow-hidden">
-            <span className="font-semibold truncate">Alex Jansen</span>
-            <span className="text-sm text-muted-foreground">Student</span>
-          </div>
-        </div>
       </SidebarFooter>
     </Sidebar>
   );

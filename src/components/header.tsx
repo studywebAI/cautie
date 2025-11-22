@@ -3,16 +3,7 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bell, Search, ChevronDown } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Bell, Search } from "lucide-react";
 
 export function AppHeader() {
   return (
@@ -20,7 +11,7 @@ export function AppHeader() {
       <SidebarTrigger className="md:hidden" />
       <div className="flex-1">
         <h1 className="text-xl font-semibold font-headline">
-          Student Dashboard
+          Anonymous
         </h1>
       </div>
       <div className="flex items-center gap-2 md:gap-4">
@@ -36,30 +27,6 @@ export function AppHeader() {
           <Bell className="h-5 w-5" />
           <span className="sr-only">Notifications</span>
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 p-1 h-auto rounded-full">
-              <Avatar className="h-9 w-9">
-                <AvatarImage
-                  src="https://picsum.photos/seed/user-alex/40/40"
-                  data-ai-hint="person face"
-                  alt="User avatar"
-                />
-                <AvatarFallback>AJ</AvatarFallback>
-              </Avatar>
-              <span className="hidden md:inline font-medium">Alex Jansen</span>
-              <ChevronDown className="h-4 w-4 hidden md:inline text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Log out</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </header>
   );
