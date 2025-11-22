@@ -258,7 +258,7 @@ export function QuizTaker({ quiz, mode, onRestart }: { quiz: Quiz; mode: QuizMod
                     )}
                 </div>
                  <p className="text-sm font-medium text-muted-foreground pt-2">
-                    Progress: {mode === 'normal' ? Object.keys(answers).length : currentIndex} / {quiz.questions.length}
+                    Progress: {mode === 'normal' ? Object.keys(answers).length : currentIndex + 1} / {quiz.questions.length}
                 </p>
             </CardHeader>
             <CardContent className="space-y-8 overflow-hidden min-h-[20rem]">
