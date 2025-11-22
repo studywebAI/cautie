@@ -46,7 +46,7 @@ function QuizPageContent() {
     try {
       const response = await generateQuiz({ sourceText: text });
       setGeneratedQuiz(response);
-    } catch (error) => {
+    } catch (error) {
       console.error('Error generating quiz:', error);
       toast({
         variant: 'destructive',
