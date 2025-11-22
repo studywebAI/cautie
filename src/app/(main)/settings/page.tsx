@@ -8,7 +8,7 @@ import { AppContext, AppContextType } from '@/contexts/app-context';
 import { Switch } from '@/components/ui/switch';
 
 export default function SettingsPage() {
-  const { language, setLanguage, soundEnabled, setSoundEnabled } = useContext(AppContext) as AppContextType;
+  const { language, setLanguage } = useContext(AppContext) as AppContextType;
 
   return (
     <div className="flex flex-col gap-8">
@@ -41,19 +41,6 @@ export default function SettingsPage() {
                 <SelectItem value="es">Español (Spanish)</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="sound-effects" className="text-base">Sound Effects</Label>
-              <p className="text-sm text-muted-foreground">
-                Enable or disable interface sounds.
-              </p>
-            </div>
-            <Switch
-              id="sound-effects"
-              checked={soundEnabled}
-              onCheckedChange={setSoundEnabled}
-            />
           </div>
         </CardContent>
       </Card>
