@@ -30,7 +30,7 @@ const prompt = ai.definePrompt({
   name: 'generateInitialAnswerPrompt',
   input: {schema: GenerateInitialAnswerInputSchema},
   output: {schema: GenerateInitialAnswerOutputSchema},
-  prompt: `You are an AI assistant helping students by providing initial answers to their questions. Consider the context provided and generate a helpful and informative answer.\n\nContext: {{{context}}}\n\nQuestion: {{{question}}}\n\nAnswer: `,
+  prompt: `You are an AI assistant helping students by providing initial answers to their questions. The answer should be in markdown format. Consider the context provided and generate a helpful and informative answer.\n\nContext: {{{context}}}\n\nQuestion: {{{question}}}\n\nAnswer: `,
 });
 
 const generateInitialAnswerFlow = ai.defineFlow(

@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { generateInitialAnswer } from '@/ai/flows/generate-initial-answer';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { marked } from 'marked';
 
 export default function QuestionsPage() {
   const [question, setQuestion] = useState('');
@@ -33,7 +34,8 @@ export default function QuestionsPage() {
         question,
         context,
       });
-      setAnswer(response.answer);
+      const htmlAnswer = marked(response.answer);
+      setAnswer(htmlAnswer);
     } catch (error) {
       console.error('Error generating answer:', error);
       toast({
@@ -49,7 +51,7 @@ export default function QuestionsPage() {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">AI Questions</h1>
+        <h1 className="text-3xl font-bold font-headline">AI-Powered Q&A</h1>
         <p className="text-muted-foreground">
           Ask a question and get an initial answer from the AI. A teacher can verify it later.
         </p>
@@ -61,13 +63,13 @@ export default function QuestionsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea
-            placeholder="Type your question here..."
+            placeholder="Type your question here, for example: 'What were the main causes of World War I?'"
             className="h-24 resize-none"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
           />
           <Input
-            placeholder="Optional: Provide some context (e.g., subject, chapter)"
+            placeholder="Optional: Provide some context (e.g., Subject: History, Chapter: The Great War)"
             value={context}
             onChange={(e) => setContext(e.target.value)}
           />
@@ -99,13 +101,13 @@ export default function QuestionsPage() {
                     <Sparkles className="h-5 w-5" />
                 </AvatarFallback>
               </Avatar>
-              <div className="pt-1.5 prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
+              <div className="pt-1.5 prose prose-sm max-w-none text-muted-foreground">
                  {isLoading && !answer && <div className="space-y-2">
                     <div className="h-4 bg-muted rounded w-3/4 animate-pulse"></div>
                     <div className="h-4 bg-muted rounded w-full animate-pulse"></div>
                     <div className="h-4 bg-muted rounded w-1/2 animate-pulse"></div>
                 </div>}
-                {answer}
+                {answer && <div dangerouslySetInnerHTML={{ __html: answer }} />}
               </div>
             </div>
           </CardContent>
