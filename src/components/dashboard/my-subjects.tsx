@@ -30,12 +30,11 @@ export function MySubjects({ subjects }: MySubjectsProps) {
           <Link key={subject.id} href="#" className="group">
             <Card className="h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-lg">
               <CardHeader className="p-4">
-                <div className="relative h-24 w-full rounded-md overflow-hidden mb-4">
+                <div className="relative h-32 w-full rounded-md overflow-hidden mb-4">
                   <Image
                     src={subject.imageUrl}
                     alt={subject.name}
-                    width={600}
-                    height={400}
+                    fill
                     className="object-cover w-full h-full"
                     data-ai-hint={subject.imageHint}
                   />

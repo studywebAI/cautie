@@ -82,7 +82,7 @@ const GenerateDashboardDataOutputSchema = z.object({
   alerts: z.array(AlertSchema).describe('A list of important alerts for the student.'),
   deadlines: z.array(DeadlineSchema).describe('A list of upcoming deadlines.'),
   subjects: z.array(SubjectSchema).describe('A list of the student\'s subjects with progress.'),
-  aiSuggestions: zarray(AiSuggestionSchema).describe('A list of AI-powered suggestions.'),
+  aiSuggestions: z.array(AiSuggestionSchema).describe('A list of AI-powered suggestions.'),
   quickAccessItems: z.array(QuickAccessItemSchema).describe('A list of recent items for quick access.'),
   progressData: z.array(ProgressDataSchema).describe('Weekly progress data for the study time chart.'),
 });

@@ -1,40 +1,40 @@
 {
   "placeholderImages": [
     {
-      "id": "user-avatar-1",
-      "description": "User avatar",
-      "imageUrl": "https://images.unsplash.com/photo-1693039537350-3bba6975add7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc2Mzc1MDk2M3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "person face"
-    },
-    {
-      "id": "user-avatar-2",
-      "description": "Another user avatar",
-      "imageUrl": "https://images.unsplash.com/photo-1531123414780-f74242c2b052?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzYzNzExMjU0fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "person portrait"
-    },
-    {
       "id": "subject-icon-history",
       "description": "Icon for history subject",
-      "imageUrl": "https://images.unsplash.com/photo-1519884705082-b505c3001e63?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxvbGQlMjBib29rfGVufDB8fHx8MTc2MzczMjM3N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "old book"
+      "imageUrl": "https://picsum.photos/seed/history/600/400",
+      "imageHint": "history book"
     },
     {
       "id": "subject-icon-math",
       "description": "Icon for math subject",
-      "imageUrl": "https://images.unsplash.com/photo-1758685734483-e11fe75480dd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxibGFja2JvYXJkJTIwZXF1YXRpb258ZW58MHx8fHwxNzYzODIxMjcwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://picsum.photos/seed/math/600/400",
       "imageHint": "blackboard equation"
     },
     {
       "id": "subject-icon-science",
       "description": "Icon for science subject",
-      "imageUrl": "https://images.unsplash.com/photo-1616996691029-96500d6523b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjaGVtaXN0cnklMjBiZWFrZXJ8ZW58MHx8fHwxNzYzODIxMjcwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://picsum.photos/seed/chemistry/600/400",
       "imageHint": "chemistry beaker"
     },
     {
-      "id": "subject-icon-dutch",
-      "description": "Icon for Dutch language subject",
-      "imageUrl": "https://images.unsplash.com/photo-1550171691-fc34d5b3e7c1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHx3aW5kbWlsbCUyMGxhbmRzY2FwZXxlbnwwfHx8fDE3NjM4MjEyNzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "windmill landscape"
+      "id": "subject-icon-literature",
+      "description": "Icon for literature subject",
+      "imageUrl": "https://picsum.photos/seed/literature/600/400",
+      "imageHint": "classic novel"
+    },
+    {
+      "id": "subject-icon-art",
+      "description": "Icon for art subject",
+      "imageUrl": "https://picsum.photos/seed/art/600/400",
+      "imageHint": "paint brushes"
+    },
+    {
+      "id": "subject-icon-geography",
+      "description": "Icon for geography subject",
+      "imageUrl": "https://picsum.photos/seed/geography/600/400",
+      "imageHint": "world map"
     }
   ]
 }

@@ -1,46 +1,39 @@
+'use client';
+
 import { MySubjects } from "@/components/dashboard/my-subjects";
-import { generateDashboardData } from "@/ai/flows/generate-dashboard-data";
+import { generateDashboardData, GenerateDashboardDataOutput } from "@/ai/flows/generate-dashboard-data";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Note: This page is temporarily using static data to improve navigation speed.
-// The real subject dashboard will be built out later.
+function SubjectsPageContent({ dashboardData }: { dashboardData: GenerateDashboardDataOutput | null }) {
+  if (!dashboardData) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Skeleton className="h-56" />
+        <Skeleton className="h-56" />
+        <Skeleton className="h-56" />
+        <Skeleton className="h-56" />
+      </div>
+    );
+  }
 
-const staticSubjects = [
-    {
-      "id": "SUBJ_HIST_01",
-      "name": "History",
-      "progress": 65,
-      "imageUrl": "https://picsum.photos/seed/history/600/400",
-      "imageHint": "history book"
-    },
-    {
-      "id": "SUBJ_MATH_02",
-      "name": "Mathematics",
-      "progress": 82,
-      "imageUrl": "https://picsum.photos/seed/math/600/400",
-      "imageHint": "math equation"
-    },
-    {
-      "id": "SUBJ_CHEM_03",
-      "name": "Chemistry",
-      "progress": 45,
-      "imageUrl": "https://picsum.photos/seed/chemistry/600/400",
-      "imageHint": "science beaker"
-    },
-    {
-      "id": "SUBJ_ENG_04",
-      "name": "English Literature",
-      "progress": 76,
-      "imageUrl": "https://picsum.photos/seed/literature/600/400",
-      "imageHint": "classic novel"
+  return <MySubjects subjects={dashboardData.subjects} />;
+}
+
+export default function SubjectsPage() {
+  const [dashboardData, setDashboardData] = useState<GenerateDashboardDataOutput | null>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      // We only need the subjects, so we can use a smaller list for faster generation.
+      const data = await generateDashboardData({
+        studentName: "Alex Jansen",
+        subjects: ["History", "Mathematics", "Chemistry", "English Literature"],
+      });
+      setDashboardData(data);
     }
-  ];
-
-
-export default async function SubjectsPage() {
-  // const dashboardData = await generateDashboardData({
-  //   studentName: "Alex Jansen",
-  //   subjects: ["History", "Mathematics", "Chemistry", "English Literature"],
-  // });
+    loadData();
+  }, []);
 
   return (
     <div className="flex flex-col gap-8">
@@ -50,7 +43,7 @@ export default async function SubjectsPage() {
           Select a subject to view its dashboard, materials, and progress.
         </p>
       </header>
-      <MySubjects subjects={staticSubjects} />
+      <SubjectsPageContent dashboardData={dashboardData} />
     </div>
   );
 }
