@@ -15,18 +15,7 @@ export function AppHeader() {
         </h1>
       </div>
       <div className="flex items-center gap-2 md:gap-4">
-        <div className="relative hidden md:block">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="pl-8 w-full md:w-[200px] lg:w-[300px] bg-background"
-          />
-        </div>
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Notifications</span>
-        </Button>
+        {/* Empty div for any future right-aligned content */}
       </div>
     </header>
   );

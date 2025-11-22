@@ -25,8 +25,8 @@ import {
 const menuItems = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/subjects", label: "Subjects", icon: BookOpen },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/stats", "label": "Statistics", "icon": BarChart3 },
+  // { href: "/calendar", label: "Calendar", icon: Calendar },
+  // { href: "/stats", "label": "Statistics", "icon": BarChart3 },
   { href: "/material", label: "Material", icon: Folder },
   { href: "/qa", label: "Q&A", icon: MessageSquareQuote },
 ];
@@ -50,16 +50,17 @@ export function AppSidebar() {
         <SidebarMenu>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.label}>
-              <Link href={item.href} passHref>
-                <SidebarMenuButton
-                  isActive={pathname === item.href}
-                  tooltip={item.label}
-                  className="font-medium"
-                >
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === item.href}
+                tooltip={item.label}
+                className="font-medium"
+              >
+                <Link href={item.href}>
                   <item.icon className="h-5 w-5" />
                   <span>{item.label}</span>
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
@@ -67,12 +68,12 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 flex flex-col gap-4">
          <SidebarMenu>
           <SidebarMenuItem>
-            <Link href="/settings" passHref>
-              <SidebarMenuButton tooltip="Settings" className="font-medium" isActive={pathname === '/settings'}>
-                <Settings className="h-5 w-5" />
-                <span>Settings</span>
-              </SidebarMenuButton>
-            </Link>
+             <SidebarMenuButton asChild tooltip="Settings" className="font-medium" isActive={pathname === '/settings'}>
+                 <Link href="/settings">
+                    <Settings className="h-5 w-5" />
+                    <span>Settings</span>
+                </Link>
+             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
