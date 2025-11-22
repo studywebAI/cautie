@@ -35,7 +35,6 @@ export default function SummaryPage() {
     if (!file) return;
 
     setUploadedFile(file);
-    setInputText('');
     setResult(null);
 
     const reader = new FileReader();
@@ -108,8 +107,8 @@ export default function SummaryPage() {
       <Card>
         <CardHeader>
           <CardTitle>Import Content</CardTitle>
-          <CardDescription>
-            Import a file or paste text to let the AI do its work.
+           <CardDescription>
+            Provide a file, paste text, or both. The AI will use text as context for the file.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -141,9 +140,7 @@ export default function SummaryPage() {
               value={inputText}
               onChange={(e) => {
                 setInputText(e.target.value);
-                clearFile();
                 setResult(null);
-                setFileType('text');
               }}
             />
           </div>

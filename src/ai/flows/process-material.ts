@@ -45,6 +45,8 @@ const prompt = ai.definePrompt({
   output: {schema: ProcessMaterialOutputSchema},
   prompt: `You are an expert learning assistant. Your first task is to extract all text from the provided material. Then, analyze the extracted text. Your analysis should result in a summary and suggestions for relevant learning activities.
 
+If both text and a file are provided, use the text as additional context or specific instructions for analyzing the file content.
+
 The entire output should be in the language specified by the user. The language code is: {{{language}}}. If no language is provided, default to English.
 
 Your output must include:

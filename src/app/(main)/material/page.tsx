@@ -38,7 +38,6 @@ function MaterialPageContent() {
     if (!file) return;
 
     setUploadedFile(file);
-    setInputText('');
     setResult(null);
 
     const reader = new FileReader();
@@ -113,7 +112,7 @@ function MaterialPageContent() {
         <CardHeader>
           <CardTitle>Import Content</CardTitle>
           <CardDescription>
-            Import a file or paste text to let the AI do its work.
+            Provide a file, paste text, or both. The AI will use text as context for the file.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -145,7 +144,6 @@ function MaterialPageContent() {
               value={inputText}
               onChange={(e) => {
                 setInputText(e.target.value);
-                clearFile();
                 setResult(null);
                 setFileType('text');
               }}
