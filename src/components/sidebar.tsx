@@ -30,13 +30,13 @@ import { Button } from './ui/button';
 const menuItems = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/subjects', label: 'Subjects', icon: BookOpen },
+  { href: '/material', label: 'Material', icon: FileText },
 ];
 
 const toolsMenuItems = [
   { href: '/tools/questions', label: 'Questions', icon: MessageSquareQuote },
   { href: '/tools/quiz', label: 'Quiz', icon: BrainCircuit },
   { href: '/tools/flashcards', label: 'Flashcards', icon: Copy },
-  { href: '/tools/summary', label: 'Summary', icon: FileText },
 ]
 
 export function AppSidebar() {

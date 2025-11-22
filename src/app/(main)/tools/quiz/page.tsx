@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { generateQuiz, Quiz, QuizQuestion } from '@/ai/flows/generate-quiz';
+import { generateQuiz, Quiz } from '@/ai/flows/generate-quiz';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 type AnswersState = { [questionId: string]: string };
 
@@ -54,15 +56,15 @@ function QuizTaker({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void; }) 
                                 const isTheCorrectAnswer = correctOption?.id === opt.id;
 
                                 return (
-                                    <div key={opt.id} className={`flex items-center gap-3 p-3 rounded-md text-sm
-                                        ${isTheCorrectAnswer ? 'bg-green-100 dark:bg-green-900/30 border-green-500/50' : ''}
-                                        ${isSelected && !isTheCorrectAnswer ? 'bg-red-100 dark:bg-red-900/30 border-red-500/50' : ''}
-                                        ${!isSelected && !isTheCorrectAnswer ? 'bg-muted/50' : ''}
-                                    `}>
+                                    <div key={opt.id} className={cn(`flex items-center gap-3 p-3 rounded-md text-sm border`,
+                                        isTheCorrectAnswer ? 'bg-green-100 dark:bg-green-900/30 border-green-500/50' : '',
+                                        isSelected && !isTheCorrectAnswer ? 'bg-red-100 dark:bg-red-900/30 border-red-500/50' : '',
+                                        !isSelected && !isTheCorrectAnswer ? 'bg-muted/50' : ''
+                                    )}>
                                         { isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" /> }
                                         { isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" /> }
                                         { !isSelected && isTheCorrectAnswer && <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" /> }
-                                        { !isSelected && !isTheCorrectAnswer && <div className="h-5 w-5 flex-shrink-0" /> }
+                                        { !isSelected && !isTheCorrectAnswer && <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/50" /> }
                                         <span>{opt.text}</span>
                                     </div>
                                 )
@@ -114,14 +116,23 @@ function QuizTaker({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void; }) 
   )
 }
 
-export default function QuizPage() {
-  const [sourceText, setSourceText] = useState('');
+function QuizPageContent() {
+  const searchParams = useSearchParams();
+  const sourceTextFromParams = searchParams.get('sourceText');
+  
+  const [sourceText, setSourceText] = useState(sourceTextFromParams || '');
   const [isLoading, setIsLoading] = useState(false);
   const [generatedQuiz, setGeneratedQuiz] = useState<Quiz | null>(null);
   const { toast } = useToast();
 
-  const handleGenerate = async () => {
-    if (!sourceText.trim()) {
+  useEffect(() => {
+    if (sourceTextFromParams) {
+      handleGenerate(sourceTextFromParams);
+    }
+  }, [sourceTextFromParams]);
+
+  const handleGenerate = async (text: string) => {
+    if (!text.trim()) {
       toast({
         variant: 'destructive',
         title: 'Source text is empty',
@@ -132,7 +143,7 @@ export default function QuizPage() {
     setIsLoading(true);
     setGeneratedQuiz(null);
     try {
-      const response = await generateQuiz({ sourceText });
+      const response = await generateQuiz({ sourceText: text });
       setGeneratedQuiz(response);
     } catch (error) {
       console.error('Error generating quiz:', error);
@@ -145,6 +156,10 @@ export default function QuizPage() {
       setIsLoading(false);
     }
   };
+
+  const handleFormSubmit = () => {
+    handleGenerate(sourceText);
+  }
   
   if (isLoading) {
     return (
@@ -191,12 +206,21 @@ export default function QuizPage() {
           />
         </CardContent>
         <CardFooter>
-          <Button onClick={handleGenerate} disabled={isLoading}>
+          <Button onClick={handleFormSubmit} disabled={isLoading || !sourceText}>
             <Sparkles className="mr-2 h-4 w-4" />
-            Generate with AI
+            {isLoading ? 'Generating...' : 'Generate with AI'}
           </Button>
         </CardFooter>
       </Card>
     </div>
   );
+}
+
+
+export default function QuizPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <QuizPageContent />
+        </Suspgense>
+    )
 }

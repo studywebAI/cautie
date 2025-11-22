@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -83,15 +84,23 @@ function FlashcardViewer({ cards, onRestart }: { cards: Flashcard[]; onRestart: 
   )
 }
 
-
-export default function FlashcardsPage() {
-  const [sourceText, setSourceText] = useState('');
+function FlashcardsPageContent() {
+  const searchParams = useSearchParams();
+  const sourceTextFromParams = searchParams.get('sourceText');
+  
+  const [sourceText, setSourceText] = useState(sourceTextFromParams || '');
   const [isLoading, setIsLoading] = useState(false);
   const [generatedCards, setGeneratedCards] = useState<Flashcard[] | null>(null);
   const { toast } = useToast();
 
-  const handleGenerate = async () => {
-    if (!sourceText.trim()) {
+  useEffect(() => {
+    if (sourceTextFromParams) {
+      handleGenerate(sourceTextFromParams);
+    }
+  }, [sourceTextFromParams]);
+
+  const handleGenerate = async (text: string) => {
+    if (!text.trim()) {
       toast({
         variant: 'destructive',
         title: 'Source text is empty',
@@ -102,7 +111,7 @@ export default function FlashcardsPage() {
     setIsLoading(true);
     setGeneratedCards(null);
     try {
-      const response = await generateFlashcards({ sourceText });
+      const response = await generateFlashcards({ sourceText: text });
       setGeneratedCards(response.flashcards);
     } catch (error) {
       console.error('Error generating flashcards:', error);
@@ -115,6 +124,26 @@ export default function FlashcardsPage() {
       setIsLoading(false);
     }
   };
+
+  const handleFormSubmit = () => {
+      handleGenerate(sourceText);
+  }
+
+  if (isLoading) {
+     return (
+       <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-8">
+        <div className="flex flex-col items-center gap-2 text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <h3 className="text-2xl font-bold tracking-tight mt-4">
+                Generating Your Flashcards
+            </h3>
+            <p className="text-sm text-muted-foreground">
+                The AI is analyzing the text. Please wait a moment...
+            </p>
+        </div>
+      </div>
+    )
+  }
 
   if (generatedCards) {
     return <FlashcardViewer cards={generatedCards} onRestart={() => setGeneratedCards(null)} />;
@@ -145,7 +174,7 @@ export default function FlashcardsPage() {
           />
         </CardContent>
         <CardFooter>
-          <Button onClick={handleGenerate} disabled={isLoading}>
+          <Button onClick={handleFormSubmit} disabled={isLoading || !sourceText}>
             {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -157,4 +186,12 @@ export default function FlashcardsPage() {
       </Card>
     </div>
   );
+}
+
+export default function FlashcardsPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <FlashcardsPageContent />
+        </Suspense>
+    )
 }

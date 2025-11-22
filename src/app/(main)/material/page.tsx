@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,7 @@ const iconMap = {
   BookCopy,
 };
 
-export default function SummaryPage() {
+export default function MaterialPage() {
   const [inputText, setInputText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileDataUri, setFileDataUri] = useState<string | null>(null);
@@ -25,6 +26,16 @@ export default function SummaryPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ProcessMaterialOutput | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
+
+  const getSourceText = (): string => {
+    if (inputText) return inputText;
+    // For now, we are passing the data URI for files.
+    // In a real app, you might extract text from PDF/DOCX on the server.
+    // For this prototype, we'll just pass the file name as context for the AI.
+    if (uploadedFile) return `File content of: ${uploadedFile.name}`;
+    return '';
+  }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -72,10 +83,28 @@ export default function SummaryPage() {
     }
   };
 
+  const handleActionClick = (actionId: string) => {
+    const sourceText = getSourceText();
+    if (!sourceText) return;
+
+    let path = '';
+    if (actionId === 'generate-a-quiz') {
+      path = '/tools/quiz';
+    } else if (actionId === 'make-flashcards') {
+      path = '/tools/flashcards';
+    }
+
+    if (path) {
+      const params = new URLSearchParams({ sourceText: sourceText });
+      router.push(`${path}?${params.toString()}`);
+    }
+  };
+
+
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">AI Summary Tool</h1>
+        <h1 className="text-3xl font-bold font-headline">Process Material</h1>
         <p className="text-muted-foreground">
           Upload files or paste text to generate summaries, flashcards, and more.
         </p>
@@ -148,8 +177,9 @@ export default function SummaryPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {result.suggestedActions.map((action) => {
                             const Icon = iconMap[action.icon] || BrainCircuit;
+                            const isDisabled = action.id === 'create-a-summary';
                             return (
-                                <Card key={action.id} className="bg-background hover:border-primary transition-colors">
+                                <Card key={action.id} className={`bg-background transition-colors ${!isDisabled ? 'hover:border-primary' : ''}`}>
                                     <CardHeader className='flex-row items-center gap-4 space-y-0'>
                                         <Icon className="h-6 w-6 text-primary" />
                                         <CardTitle className='text-base'>{action.label}</CardTitle>
@@ -158,7 +188,15 @@ export default function SummaryPage() {
                                         <p className="text-sm text-muted-foreground">{action.description}</p>
                                     </CardContent>
                                     <CardFooter>
-                                        <Button variant="secondary" className="w-full">Select</Button>
+                                        <Button 
+                                            variant="secondary" 
+                                            className="w-full"
+                                            onClick={() => handleActionClick(action.id)}
+                                            disabled={isDisabled}
+                                            aria-disabled={isDisabled}
+                                        >
+                                          {isDisabled ? 'Done' : 'Select'}
+                                        </Button>
                                     </CardFooter>
                                 </Card>
                             )

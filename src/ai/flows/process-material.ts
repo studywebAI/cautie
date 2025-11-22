@@ -17,7 +17,7 @@ const ProcessMaterialInputSchema = z.object({
 export type ProcessMaterialInput = z.infer<typeof ProcessMaterialInputSchema>;
 
 const SuggestedActionSchema = z.object({
-  id: z.string().describe('Unique ID for the action.'),
+  id: z.enum(['create-a-summary', 'generate-a-quiz', 'make-flashcards']).describe('Unique ID for the action.'),
   label: z.string().describe('The button text for the action (e.g., "Create a summary").'),
   description: z.string().describe('A brief description of what this action does.'),
   icon: z.enum(['FileText', 'BrainCircuit', 'BookCopy']).describe('Icon to display with the action.'),
@@ -27,7 +27,7 @@ const ProcessMaterialOutputSchema = z.object({
   analysis: z.object({
     title: z.string().describe('A suitable title for the provided content.'),
     topic: z.string().describe('The main topic or subject of the content.'),
-    summary: z.string().describe('A concise summary of the material.'),
+    summary: z.string().describe('A concise summary of the key points.'),
   }),
   suggestedActions: z.array(SuggestedActionSchema).describe('A list of AI-suggested next steps or activities.'),
 });
@@ -48,7 +48,11 @@ Your analysis should include:
 2.  The main topic or subject (e.g., "History", "Physics", "Poetry").
 3.  A concise summary of the key points.
 
-Based on the content, suggest 3 relevant actions from the following options: "Create a summary", "Generate a quiz", "Make flashcards". Provide a brief description for each suggested action.
+Based on the content, suggest 3 relevant actions. The action IDs MUST be from this list: "create-a-summary", "generate-a-quiz", "make-flashcards".
+- For 'create-a-summary', the label should be 'Create a summary'.
+- For 'generate-a-quiz', the label should be 'Generate a quiz'.
+- For 'make-flashcards', the label should be 'Make flashcards'.
+Provide a brief description for each suggested action.
 
 Material to analyze:
 {{#if text}}
