@@ -9,6 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const TaskSchema = z.object({
   id: z.string().describe('Unique identifier for the task.'),
@@ -44,9 +45,10 @@ const SubjectSchema = z.object({
   id: z.string().describe('Unique identifier for the subject.'),
   name: z.string().describe('The name of the subject.'),
   progress: z.number().describe('The student\'s progress in the subject, as a percentage.'),
-  imageUrl: z.string().url().describe('A URL for an image representing the subject.'),
-  imageHint: z.string().describe('A two-word hint for the subject image (e.g., "history map").'),
+  imageUrl: z.string().url().describe('The URL for the image. This must be one of the provided image URLs.'),
+  imageHint: z.string().describe('The hint text associated with the chosen image URL.'),
 });
+
 
 const AiSuggestionSchema = z.object({
   id: z.string().describe('Unique identifier for the suggestion.'),
@@ -80,7 +82,7 @@ const GenerateDashboardDataOutputSchema = z.object({
   alerts: z.array(AlertSchema).describe('A list of important alerts for the student.'),
   deadlines: z.array(DeadlineSchema).describe('A list of upcoming deadlines.'),
   subjects: z.array(SubjectSchema).describe('A list of the student\'s subjects with progress.'),
-  aiSuggestions: z.array(AiSuggestionSchema).describe('A list of AI-powered suggestions.'),
+  aiSuggestions: zarray(AiSuggestionSchema).describe('A list of AI-powered suggestions.'),
   quickAccessItems: z.array(QuickAccessItemSchema).describe('A list of recent items for quick access.'),
   progressData: z.array(ProgressDataSchema).describe('Weekly progress data for the study time chart.'),
 });
@@ -94,17 +96,29 @@ export async function generateDashboardData(
   return generateDashboardDataFlow(input);
 }
 
+const imageOptions = PlaceHolderImages.map(image => ({
+    url: image.imageUrl,
+    hint: image.imageHint,
+    description: image.description
+}));
+
+
 const prompt = ai.definePrompt({
   name: 'generateDashboardDataPrompt',
   input: {schema: GenerateDashboardDataInputSchema},
   output: {schema: GenerateDashboardDataOutputSchema},
   prompt: `You are an AI assistant for a student named {{{studentName}}}. You need to generate a realistic and coherent set of data for their study dashboard. The student is currently taking the following subjects: {{{subjects}}}.
 
+The available images for subjects are:
+{{#each imageOptions}}
+- URL: {{{url}}}, Hint: "{{hint}}", Description: "{{description}}"
+{{/each}}
+
 Generate the following data in English:
 1.  **Tasks**: 4-5 realistic study tasks for today. Some should be completed.
 2.  **Alerts**: 2-3 important and varied alerts (e.g., one urgent, one informational).
 3.  **Deadlines**: 3-4 upcoming deadlines with varied subjects, dates, and statuses.
-4.  **Subjects**: Data for each of the student's subjects, including a realistic progress percentage and a picsum URL for a relevant image. The image URL should be in the format 'https://picsum.photos/seed/{a-random-word-or-number}/600/400'. Use a different random seed for each subject. For the 'imageHint' field, provide a two-word hint based on the subject (e.g., 'history book', 'math equation').
+4.  **Subjects**: Data for each of the student's subjects. For each subject, select the most appropriate image URL from the list of available images provided above. Ensure the 'imageUrl' and 'imageHint' in your output exactly match the chosen image's URL and hint.
 5.  **AI Suggestions**: 3 actionable and helpful suggestions for the student.
 6.  **Quick Access**: 4 varied quick access items representing recent notes, files, or quizzes.
 7.  **Progress Data**: A list of 7 items representing study time for each day of the week (Mon, Tue, Wed, Thu, Fri, Sat, Sun).
@@ -121,7 +135,7 @@ const generateDashboardDataFlow = ai.defineFlow(
     outputSchema: GenerateDashboardDataOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt({...input, imageOptions});
     return output!;
   }
 );

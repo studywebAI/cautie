@@ -34,8 +34,9 @@ export function MySubjects({ subjects }: MySubjectsProps) {
                   <Image
                     src={subject.imageUrl}
                     alt={subject.name}
-                    fill
-                    className="object-cover"
+                    width={600}
+                    height={400}
+                    className="object-cover w-full h-full"
                     data-ai-hint={subject.imageHint}
                   />
                 </div>
