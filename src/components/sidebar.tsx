@@ -19,6 +19,7 @@ import {
   BarChart3,
   GraduationCap,
   Folder,
+  MessageSquareQuote,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -28,7 +29,8 @@ const menuItems = [
   { href: "/subjects", label: "Subjects", icon: BookOpen },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/stats", "label": "Statistics", "icon": BarChart3 },
-  { href: "/materiaal", label: "Material", icon: Folder },
+  { href: "/material", label: "Material", icon: Folder },
+  { href: "/qa", label: "Q&A", icon: MessageSquareQuote },
 ];
 
 export function AppSidebar() {

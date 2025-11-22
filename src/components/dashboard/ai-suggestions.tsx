@@ -28,7 +28,7 @@ export function AiSuggestions({ aiSuggestions }: AiSuggestionsProps) {
       </CardHeader>
       <CardContent className="space-y-3">
         {aiSuggestions.map((suggestion) => {
-          const Icon = iconMap[suggestion.icon as keyof typeof iconMap] || BrainCircuit;
+          const Icon = iconMap[suggestion.icon] || BrainCircuit;
           return (
             <Button
               key={suggestion.id}

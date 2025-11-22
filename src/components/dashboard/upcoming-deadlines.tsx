@@ -16,9 +16,9 @@ import { Badge } from "@/components/ui/badge";
 import type { Deadline } from "@/lib/types";
 
 const statusColors = {
-  "on-track": "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
-  risk: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
-  behind: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+  "on-track": "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700/60",
+  risk: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700/60",
+  behind: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700/60",
 };
 
 type UpcomingDeadlinesProps = {
@@ -54,7 +54,8 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-lg">{deadline.subject}</CardTitle>
                         <Badge
-                          className={`border-transparent ${
+                          variant="outline"
+                          className={`${
                             statusColors[deadline.status]
                           }`}
                         >

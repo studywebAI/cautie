@@ -104,7 +104,7 @@ Generate the following data in English:
 1.  **Tasks**: 4-5 realistic study tasks for today. Some should be completed.
 2.  **Alerts**: 2-3 important and varied alerts (e.g., one urgent, one informational).
 3.  **Deadlines**: 3-4 upcoming deadlines with varied subjects, dates, and statuses.
-4.  **Subjects**: Data for each of the student's subjects, including a realistic progress percentage and a picsum URL for a relevant image. The image URL should be in the format 'https://picsum.photos/seed/{a-random-word-or-number}/{width}/{height}'. Use a different random seed for each subject.
+4.  **Subjects**: Data for each of the student's subjects, including a realistic progress percentage and a picsum URL for a relevant image. The image URL should be in the format 'https://picsum.photos/seed/{a-random-word-or-number}/600/400'. Use a different random seed for each subject. For the 'imageHint' field, provide a two-word hint based on the subject (e.g., 'history book', 'math equation').
 5.  **AI Suggestions**: 3 actionable and helpful suggestions for the student.
 6.  **Quick Access**: 4 varied quick access items representing recent notes, files, or quizzes.
 7.  **Progress Data**: A list of 7 items representing study time for each day of the week (Mon, Tue, Wed, Thu, Fri, Sat, Sun).

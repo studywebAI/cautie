@@ -24,12 +24,12 @@ export function QuickAccess({ quickAccessItems }: QuickAccessProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Your Material</CardTitle>
-        <CardDescription>Quick access to your recent items.</CardDescription>
+        <CardTitle className="font-headline">Quick Access</CardTitle>
+        <CardDescription>Your recently used materials.</CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-2 gap-3">
         {quickAccessItems.map((item) => {
-          const Icon = iconMap[item.icon as keyof typeof iconMap] || File;
+          const Icon = iconMap[item.icon] || File;
           return (
             <Link key={item.id} href="#">
               <div className="group flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg aspect-square text-center transition-colors hover:bg-muted">
