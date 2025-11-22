@@ -112,6 +112,7 @@ function QuizPageContent() {
                   <SelectItem value="normal">Normal Mode</SelectItem>
                   <SelectItem value="exam">Exam Mode</SelectItem>
                   <SelectItem value="survival">Survival Mode</SelectItem>
+                  <SelectItem value="speedrun">Speedrun Mode</SelectItem>
                 </SelectContent>
               </Select>
             </div>

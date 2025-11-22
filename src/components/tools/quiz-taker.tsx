@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { explainAnswer } from '@/ai/flows/explain-answer';
 import { generateQuiz } from '@/ai/flows/generate-quiz';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Ghost } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Ghost, Trophy, Zap, Bomb } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,7 @@ import type { Quiz, QuizQuestion, QuizOption } from '@/ai/flows/generate-quiz';
 import { AnimatePresence, motion } from 'framer-motion';
 
 type AnswersState = { [questionId: string]: string };
-export type QuizMode = "normal" | "practice" | "exam" | "survival";
+export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun";
 
 const SURVIVAL_PENALTY_COUNT = 3;
 
@@ -35,10 +35,14 @@ const modeDetails: Record<QuizMode, { title: string; description: string }> = {
     survival: {
         title: "Survival Mode",
         description: `Answer correctly or get more questions. You must clear the queue to win.`
+    },
+    speedrun: {
+        title: "Speedrun Mode",
+        description: "Answer as fast as you can. Three strikes and you're out."
     }
 }
 
-function FinalResults({ quiz, answers, onRestart, mode }: { quiz: Quiz, answers: AnswersState, onRestart: () => void, mode: QuizMode }) {
+function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0 }: { quiz: Quiz, answers: AnswersState, onRestart: () => void, mode: QuizMode, timeTaken?: number }) {
     const getCorrectCount = () => {
         return quiz.questions.filter(q => {
             const selectedOptionId = answers[q.id];
@@ -56,7 +60,7 @@ function FinalResults({ quiz, answers, onRestart, mode }: { quiz: Quiz, answers:
         return (
              <Card>
                 <CardHeader className="items-center text-center">
-                    <Ghost className="h-16 w-16 text-primary" />
+                    <Trophy className="h-16 w-16 text-yellow-500" />
                     <CardTitle className="font-headline text-3xl mt-4">You Survived!</CardTitle>
                     <CardDescription>You answered all {totalQuestions} questions correctly. Well done.</CardDescription>
                 </CardHeader>
@@ -64,6 +68,42 @@ function FinalResults({ quiz, answers, onRestart, mode }: { quiz: Quiz, answers:
                     <Button onClick={onRestart}>
                         <RefreshCw className="mr-2 h-4 w-4" />
                         Play Again
+                    </Button>
+                </CardFooter>
+            </Card>
+        )
+    }
+
+    if (mode === 'speedrun') {
+        const speedrunScore = Math.max(0, (correctCount * 1000) - (timeTaken * 10));
+        return (
+             <Card>
+                <CardHeader className="items-center text-center">
+                    <Zap className="h-16 w-16 text-primary" />
+                    <CardTitle className="font-headline text-3xl mt-4">Speedrun Complete!</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                    <div className="text-5xl font-bold font-headline">{speedrunScore.toLocaleString()}</div>
+                    <p className="text-muted-foreground">Final Score</p>
+                    <div className="grid grid-cols-3 divide-x rounded-lg border bg-muted/50 p-3">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Correct</p>
+                            <p className="text-xl font-semibold">{correctCount}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Strikes</p>
+                            <p className="text-xl font-semibold">{totalQuestions - correctCount}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Time</p>
+                            <p className="text-xl font-semibold">{timeTaken}s</p>
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter className="justify-center">
+                    <Button onClick={onRestart}>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Try Again
                     </Button>
                 </CardFooter>
             </Card>
@@ -170,19 +210,19 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const [explanation, setExplanation] = useState<string | null>(null);
     const [isExplanationLoading, setIsExplanationLoading] = useState(false);
     const [isPenaltyLoading, setIsPenaltyLoading] = useState(false);
-
-    // Exam mode timer
-    const timePerQuestion = 30;
-    const totalTime = quiz.questions.length * timePerQuestion;
-    const [timeLeft, setTimeLeft] = useState(totalTime);
+    
+    // Timer states
+    const [examTimeLeft, setExamTimeLeft] = useState(quiz.questions.length * 30);
+    const [speedrunTime, setSpeedrunTime] = useState(0);
+    const [strikes, setStrikes] = useState(0);
+    
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-
     const question = currentQuestions[currentIndex];
 
     useEffect(() => {
         if (mode === 'exam' && !isFinished) {
             timerRef.current = setInterval(() => {
-                setTimeLeft(prevTime => {
+                setExamTimeLeft(prevTime => {
                     if (prevTime <= 1) {
                         clearInterval(timerRef.current!);
                         handleFinishQuiz();
@@ -190,6 +230,10 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                     }
                     return prevTime - 1;
                 });
+            }, 1000);
+        } else if (mode === 'speedrun' && !isFinished) {
+            timerRef.current = setInterval(() => {
+                setSpeedrunTime(prevTime => prevTime + 1);
             }, 1000);
         }
         return () => {
@@ -201,19 +245,27 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const handleAnswerChange = (questionId: string, optionId: string) => {
         setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
 
-        if(mode === 'practice' || mode === 'survival') {
+        if(mode === 'practice' || mode === 'survival' || mode === 'speedrun') {
             const correctOption = question.options.find(o => o.isCorrect);
-            const isAnswerCorrect = selectedOptionId === correctOption?.id;
+            const isAnswerCorrect = optionId === correctOption?.id;
             setIsCorrect(isAnswerCorrect);
             setIsAnswered(true);
 
             if (mode === 'survival' && !isAnswerCorrect) {
                 handleSurvivalPenalty();
             }
+            if (mode === 'speedrun' && !isAnswerCorrect) {
+                const newStrikes = strikes + 1;
+                setStrikes(newStrikes);
+                if (newStrikes >= 3) {
+                    handleFinishQuiz();
+                }
+            }
         }
     };
     
     const handleFinishQuiz = () => {
+        if (timerRef.current) clearInterval(timerRef.current);
         setIsFinished(true);
     };
     
@@ -283,7 +335,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     }
     
     if (isFinished) {
-        return <FinalResults quiz={{...quiz, questions: currentQuestions}} answers={answers} onRestart={onRestart} mode={mode} />
+        return <FinalResults quiz={{...quiz, questions: currentQuestions}} answers={answers} onRestart={onRestart} mode={mode} timeTaken={speedrunTime} />
     }
     
     const formatTime = (seconds: number) => {
@@ -294,6 +346,32 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
 
     const selectedOptionId = answers[question.id] || null;
 
+    const renderHeaderInfo = () => {
+        if (mode === 'exam') {
+             return (
+                <div className="flex items-center gap-2 text-lg font-semibold text-primary">
+                    <Timer className="h-5 w-5" />
+                    <span>{formatTime(examTimeLeft)}</span>
+                </div>
+            );
+        }
+        if (mode === 'speedrun') {
+            return (
+                <div className="flex items-center gap-4 text-lg font-semibold">
+                    <div className="flex items-center gap-2 text-primary">
+                        <Timer className="h-5 w-5" />
+                        <span>{formatTime(speedrunTime)}</span>
+                    </div>
+                     <div className="flex items-center gap-2 text-destructive">
+                        <Bomb className="h-5 w-5" />
+                        <span>{strikes} / 3</span>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -302,12 +380,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                         <CardTitle className="font-headline">{modeDetails[mode].title}: {quiz.title}</CardTitle>
                         <CardDescription>{modeDetails[mode].description}</CardDescription>
                     </div>
-                    {mode === 'exam' && (
-                        <div className="flex items-center gap-2 text-lg font-semibold text-primary">
-                            <Timer className="h-5 w-5" />
-                            <span>{formatTime(timeLeft)}</span>
-                        </div>
-                    )}
+                   {renderHeaderInfo()}
                 </div>
                  <p className="text-sm font-medium text-muted-foreground pt-2">
                     Question: {currentIndex + 1} / {currentQuestions.length}
@@ -315,7 +388,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             </CardHeader>
             <CardContent className="space-y-8 overflow-hidden min-h-[20rem]">
                 {mode === 'normal' ? (
-                     quiz.questions.map((q, index) => (
+                     currentQuestions.map((q, index) => (
                         <div key={q.id}>
                            <p className="font-semibold mb-4">{index + 1}. {q.question}</p>
                             <RadioGroup onValueChange={(value) => handleAnswerChange(q.id, value)}>
@@ -342,7 +415,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                             <Question
                                 question={question}
                                 onAnswer={(optionId) => handleAnswerChange(question.id, optionId)}
-                                disabled={(isAnswered && (mode === 'practice' || mode === 'survival'))}
+                                disabled={(isAnswered && (mode === 'practice' || mode === 'survival' || mode === 'speedrun'))}
                                 selectedOptionId={selectedOptionId}
                             />
                              {isAnswered && !isCorrect && (
@@ -380,18 +453,18 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             </CardContent>
             <CardFooter className="flex justify-between">
                 <div>
-                   {(mode === 'practice' || mode === 'survival') && isAnswered && isCorrect && <div className="flex items-center gap-2 text-green-600"><CheckCircle className="h-5 w-5" /><span>Correct!</span></div>}
-                   {(mode === 'practice' || mode === 'survival') && isAnswered && !isCorrect && <div className="flex items-center gap-2 text-red-600"><XCircle className="h-5 w-5" /><span>Incorrect</span></div>}
+                   {(mode === 'practice' || mode === 'survival' || mode === 'speedrun') && isAnswered && isCorrect && <div className="flex items-center gap-2 text-green-600"><CheckCircle className="h-5 w-5" /><span>Correct!</span></div>}
+                   {(mode === 'practice' || mode === 'survival' || mode === 'speedrun') && isAnswered && !isCorrect && <div className="flex items-center gap-2 text-red-600"><XCircle className="h-5 w-5" /><span>Incorrect</span></div>}
                 </div>
-                {(mode === 'practice' || mode === 'survival' || mode === 'exam') ? (
-                    <Button onClick={handleNextQuestion} disabled={mode === 'survival' && isPenaltyLoading}>
+                {(mode !== 'normal') ? (
+                    <Button onClick={handleNextQuestion} disabled={(mode === 'survival' && isPenaltyLoading) || (mode !== 'exam' && !isAnswered)}>
                         {currentIndex === currentQuestions.length - 1 ? 'Finish Quiz' : 'Next Question'}
                         <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                 ) : null}
 
                 {mode === 'normal' && (
-                    <Button onClick={handleFinishQuiz} disabled={Object.keys(answers).length !== quiz.questions.length}>
+                    <Button onClick={handleFinishQuiz} disabled={Object.keys(answers).length !== currentQuestions.length}>
                         Submit Quiz
                     </Button>
                 )}
