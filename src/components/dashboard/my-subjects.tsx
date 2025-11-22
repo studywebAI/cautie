@@ -7,12 +7,16 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { subjects } from "@/lib/mock-data";
+import type { Subject } from "@/lib/types";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-export function MySubjects() {
+type MySubjectsProps = {
+  subjects: Subject[];
+};
+
+export function MySubjects({ subjects }: MySubjectsProps) {
   return (
     <Card>
       <CardHeader>

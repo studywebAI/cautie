@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { tasks } from "@/lib/mock-data";
 import type { Task } from "@/lib/types";
 import {
   ResponsiveContainer,
@@ -18,8 +17,12 @@ import {
 } from "recharts";
 import { useState, useMemo } from "react";
 
-export function TodayPlan() {
-  const [currentTasks, setCurrentTasks] = useState<Task[]>(tasks);
+type TodayPlanProps = {
+  tasks: Task[];
+};
+
+export function TodayPlan({ tasks: initialTasks }: TodayPlanProps) {
+  const [currentTasks, setCurrentTasks] = useState<Task[]>(initialTasks);
 
   const completedTasks = useMemo(
     () => currentTasks.filter((task) => task.completed).length,

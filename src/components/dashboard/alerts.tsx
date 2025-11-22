@@ -6,8 +6,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert as AlertUI, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { alerts } from "@/lib/mock-data";
+import type { Alert } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { AlertTriangle, Info, CheckCircle2 } from "lucide-react";
 
 const variantClasses = {
   destructive: "border-red-500/50 text-red-500 [&>svg]:text-red-500",
@@ -16,7 +17,17 @@ const variantClasses = {
   success: "border-green-500/50 text-green-500 [&>svg]:text-green-500",
 };
 
-export function Alerts() {
+const iconMap = {
+    AlertTriangle,
+    Info,
+    CheckCircle2
+}
+
+type AlertsProps = {
+    alerts: Alert[];
+}
+
+export function Alerts({ alerts }: AlertsProps) {
   return (
     <Card>
       <CardHeader>
@@ -24,13 +35,16 @@ export function Alerts() {
         <CardDescription>Risico's en prioriteiten</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {alerts.map((alert) => (
-          <AlertUI key={alert.id} className={cn(variantClasses[alert.variant])}>
-            <alert.icon className="h-4 w-4" />
-            <AlertTitle className="font-semibold">{alert.title}</AlertTitle>
-            <AlertDescription>{alert.description}</AlertDescription>
-          </AlertUI>
-        ))}
+        {alerts.map((alert) => {
+            const Icon = iconMap[alert.icon as keyof typeof iconMap] || AlertTriangle;
+            return (
+              <AlertUI key={alert.id} className={cn(variantClasses[alert.variant])}>
+                <Icon className="h-4 w-4" />
+                <AlertTitle className="font-semibold">{alert.title}</AlertTitle>
+                <AlertDescription>{alert.description}</AlertDescription>
+              </AlertUI>
+            );
+        })}
       </CardContent>
     </Card>
   );

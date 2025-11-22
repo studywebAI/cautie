@@ -5,10 +5,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { quickAccessItems } from "@/lib/mock-data";
+import type { QuickAccessItem } from "@/lib/types";
 import Link from "next/link";
+import { Notebook, File, BrainCircuit, FileText } from "lucide-react";
 
-export function QuickAccess() {
+const iconMap = {
+  Notebook,
+  File,
+  BrainCircuit,
+  FileText,
+};
+
+type QuickAccessProps = {
+  quickAccessItems: QuickAccessItem[];
+};
+
+export function QuickAccess({ quickAccessItems }: QuickAccessProps) {
   return (
     <Card>
       <CardHeader>
@@ -16,16 +28,19 @@ export function QuickAccess() {
         <CardDescription>Snelle toegang tot je recente items.</CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-2 gap-3">
-        {quickAccessItems.map((item) => (
-          <Link key={item.id} href="#">
-            <div className="group flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg aspect-square text-center transition-colors hover:bg-muted">
-              <item.icon className="h-8 w-8 mb-2 text-primary transition-transform group-hover:scale-110" />
-              <p className="text-sm font-medium leading-tight">
-                {item.title}
-              </p>
-            </div>
-          </Link>
-        ))}
+        {quickAccessItems.map((item) => {
+          const Icon = iconMap[item.icon as keyof typeof iconMap] || File;
+          return (
+            <Link key={item.id} href="#">
+              <div className="group flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg aspect-square text-center transition-colors hover:bg-muted">
+                <Icon className="h-8 w-8 mb-2 text-primary transition-transform group-hover:scale-110" />
+                <p className="text-sm font-medium leading-tight">
+                  {item.title}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
       </CardContent>
     </Card>
   );

@@ -13,8 +13,8 @@ import {
   ChartTooltipContent,
   ChartConfig,
 } from "@/components/ui/chart";
+import type { ProgressData } from "@/lib/types";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { progressData } from "@/lib/mock-data";
 
 const chartConfig = {
   "Study Time": {
@@ -23,7 +23,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function ProgressChart() {
+type ProgressChartProps = {
+  progressData: ProgressData[];
+};
+
+export function ProgressChart({ progressData }: ProgressChartProps) {
   return (
     <Card>
       <CardHeader>

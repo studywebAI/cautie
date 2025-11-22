@@ -10,7 +10,7 @@ export type Alert = {
   title: string;
   description: string;
   variant: "destructive" | "warning" | "info" | "success";
-  icon: React.ElementType;
+  icon: "AlertTriangle" | "Info" | "CheckCircle2";
 };
 
 export type Deadline = {
@@ -33,14 +33,14 @@ export type Subject = {
 export type AiSuggestion = {
   id: string;
   title: string;
-  icon: React.ElementType;
+  icon: "BrainCircuit" | "FileText" | "Calendar";
 };
 
 export type QuickAccessItem = {
   id: string;
   title: string;
   type: "summary" | "quiz" | "file" | "notes";
-  icon: React.ElementType;
+  icon: "Notebook" | "File" | "BrainCircuit" | "FileText";
 };
 
 export type ProgressData = {

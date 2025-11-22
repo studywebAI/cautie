@@ -13,7 +13,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
-import { deadlines } from "@/lib/mock-data";
+import type { Deadline } from "@/lib/types";
 
 const statusColors = {
   "on-track": "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
@@ -21,7 +21,11 @@ const statusColors = {
   behind: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
 };
 
-export function UpcomingDeadlines() {
+type UpcomingDeadlinesProps = {
+  deadlines: Deadline[];
+};
+
+export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
   return (
     <Card>
       <CardHeader>
