@@ -16,7 +16,7 @@ function FlashcardsPageContent() {
   const sourceTextFromParams = searchParams.get('sourceText');
   
   const [sourceText, setSourceText] = useState(sourceTextFromParams || '');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!sourceTextFromParams);
   const [generatedCards, setGeneratedCards] = useState<Flashcard[] | null>(null);
   const { toast } = useToast();
 

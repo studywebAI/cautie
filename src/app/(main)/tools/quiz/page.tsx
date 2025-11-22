@@ -20,7 +20,7 @@ function QuizPageContent() {
   const sourceTextFromParams = searchParams.get('sourceText');
   
   const [sourceText, setSourceText] = useState(sourceTextFromParams || '');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!sourceTextFromParams);
   const [generatedQuiz, setGeneratedQuiz] = useState<Quiz | null>(null);
   const [quizMode, setQuizMode] = useState<QuizMode>('practice');
   const { toast } = useToast();
