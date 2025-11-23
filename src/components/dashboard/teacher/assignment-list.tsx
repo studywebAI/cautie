@@ -48,7 +48,7 @@ export function AssignmentList({ assignments, onAssignmentCreated }: AssignmentL
             </TableHeader>
             <TableBody>
               {assignments.map((assignment) => {
-                  const submissionRate = Math.round((assignment.submissions / assignment.totalStudents) * 100);
+                  const submissionRate = assignment.totalStudents > 0 ? Math.round((assignment.submissions / assignment.totalStudents) * 100) : 0;
                   return (
                       <TableRow key={assignment.id}>
                           <TableCell className="font-medium">{assignment.title}</TableCell>
