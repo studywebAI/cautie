@@ -19,8 +19,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import type { ClassAssignment, MaterialReference } from '@/lib/teacher-types';
-import { CalendarIcon, BookOpen, BrainCircuit, Copy } from 'lucide-react';
+import { CalendarIcon, BookOpen, BrainCircuit, Copy, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 type CreateAssignmentDialogProps = {
   isOpen: boolean;
@@ -89,7 +90,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated 
         <DialogHeader>
           <DialogTitle>Create New Assignment</DialogTitle>
           <DialogDescription>
-            Assign a quiz, flashcard set, or reading material to your class.
+            Assign new or existing material to your class.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-6 py-4">
@@ -100,6 +101,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated 
 
           <div className="grid gap-2">
             <Label htmlFor="material">Select Material</Label>
+            <p className="text-sm text-muted-foreground">Choose from your existing materials or create something new with AI.</p>
             <Select value={materialId} onValueChange={setMaterialId}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose a quiz, flashcards, or text..." />
@@ -115,6 +117,15 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated 
                 ))}
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-2 mt-2">
+                <Separator className="flex-1" />
+                <span className="text-xs text-muted-foreground">OR</span>
+                <Separator className="flex-1" />
+            </div>
+             <Button variant="secondary" className="w-full mt-2">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Create New Material with AI
+             </Button>
           </div>
 
           <div className="grid gap-2">
