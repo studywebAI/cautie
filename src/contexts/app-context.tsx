@@ -3,7 +3,8 @@
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { generateDashboardData as generateStudentDashboardData, GenerateDashboardDataOutput as StudentDashboardData } from '@/ai/flows/generate-dashboard-data';
 import { generateTeacherDashboardData, GenerateTeacherDashboardDataOutput as TeacherDashboardData } from '@/ai/flows/generate-teacher-dashboard-data';
-import type { SessionRecapData } from '@/lib/types';
+import type { SessionRecapData, Deadline } from '@/lib/types';
+import type { ClassInfo, ClassAssignment, Student } from '@/lib/teacher-types';
 
 export type UserRole = 'student' | 'teacher';
 
@@ -27,6 +28,12 @@ export type AppContextType = {
   // Session Analytics
   sessionRecap: SessionRecapData | null;
   setSessionRecap: (data: SessionRecapData | null) => void;
+  // Shared Data
+  classes: ClassInfo[];
+  setClasses: React.Dispatch<React.SetStateAction<ClassInfo[]>>;
+  assignments: ClassAssignment[];
+  setAssignments: React.Dispatch<React.SetStateAction<ClassAssignment[]>>;
+  students: Student[];
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -45,6 +52,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Analytics State
   const [sessionRecap, setSessionRecap] = useState<SessionRecapData | null>(null);
+
+  // Shared application data (simulating a database)
+  const [classes, setClasses] = useState<ClassInfo[]>([]);
+  const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+
 
   // Effect for INITIAL settings load from localStorage
   useEffect(() => {
@@ -68,29 +81,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadDataForRole = async () => {
         setIsLoading(true);
-        if (role === 'student') {
-            if (!studentDashboardData) { // Only fetch if data doesn't exist
-                try {
-                    const data = await generateStudentDashboardData({
-                        studentName: "Alex Jansen",
-                        subjects: ["History", "Math", "Science", "Literature", "Art", "Geography", "Dutch"],
-                    });
-                    setStudentDashboardData(data);
-                } catch (error) {
-                    console.error("Failed to load student dashboard data:", error);
-                }
+        if (role === 'student' && !studentDashboardData) {
+            try {
+                const data = await generateStudentDashboardData({
+                    studentName: "Alex Jansen",
+                    subjects: ["History", "Math", "Science", "Literature", "Art", "Geography", "Dutch"],
+                });
+                setStudentDashboardData(data);
+            } catch (error) {
+                console.error("Failed to load student dashboard data:", error);
             }
-        } else { // role is 'teacher'
-            if (!teacherDashboardData) { // Only fetch if data doesn't exist
-                try {
-                    const data = await generateTeacherDashboardData({
-                        teacherName: 'Mr. Davison',
-                        classNames: ['History - Grade 10', 'Modern Art History', 'Geography - Grade 11', 'World History - AP'],
-                    });
-                    setTeacherDashboardData(data);
-                } catch (error) {
-                    console.error("Failed to load teacher dashboard data:", error);
-                }
+        } else if (role === 'teacher' && !teacherDashboardData) {
+            try {
+                const data = await generateTeacherDashboardData({
+                    teacherName: 'Mr. Davison',
+                    classNames: [], // Start with no classes for teacher
+                });
+                setTeacherDashboardData(data);
+                setClasses(data.classes); // Initialize shared classes state
+            } catch (error) {
+                console.error("Failed to load teacher dashboard data:", error);
             }
         }
         setIsLoading(false);
@@ -171,6 +181,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setReducedMotion,
     sessionRecap,
     setSessionRecap,
+    classes,
+    setClasses,
+    assignments,
+    setAssignments,
+    students,
   };
 
 

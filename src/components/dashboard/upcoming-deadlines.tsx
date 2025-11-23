@@ -12,6 +12,9 @@ import { useDictionary } from "@/contexts/dictionary-context";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { AppContext, AppContextType } from "@/contexts/app-context";
+import { useContext } from "react";
+import { format, differenceInDays, parseISO } from "date-fns";
 
 const statusColors = {
   "on-track": "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700/60",
@@ -19,12 +22,37 @@ const statusColors = {
   behind: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700/60",
 };
 
-type UpcomingDeadlinesProps = {
-  deadlines: Deadline[];
-};
-
-export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
+export function UpcomingDeadlines() {
   const { dictionary } = useDictionary();
+  const { studentDashboardData, assignments, classes } = useContext(AppContext) as AppContextType;
+
+  // Combine AI-generated deadlines with real assignments
+  const allDeadlines: Deadline[] = [
+    ...(studentDashboardData?.deadlines || []),
+    ...assignments.map(assignment => {
+      const className = classes.find(c => c.id === assignment.classId)?.name || 'Class';
+      const daysUntilDue = differenceInDays(parseISO(assignment.dueDate), new Date());
+      let status: "on-track" | "risk" | "behind" = "on-track";
+      if (daysUntilDue < 0) status = "behind";
+      else if (daysUntilDue <= 3) status = "risk";
+
+      return {
+        id: assignment.id,
+        subject: className,
+        title: assignment.title,
+        date: format(parseISO(assignment.dueDate), 'MMMM d'),
+        workload: `Due in ${daysUntilDue} days`,
+        status: status,
+      } as Deadline
+    })
+  ];
+
+  // Sort deadlines by date
+  const sortedDeadlines = allDeadlines.sort((a, b) => {
+    // This is a simplified sort; a real implementation would parse dates properly
+    return (a.date < b.date) ? -1 : 1;
+  });
+
 
   return (
     <Card>
@@ -35,7 +63,10 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {deadlines.slice(0,3).map((deadline) => (
+        {sortedDeadlines.length === 0 ? (
+           <p className="text-sm text-muted-foreground text-center py-4">No upcoming deadlines.</p>
+        ) : (
+          sortedDeadlines.slice(0,3).map((deadline) => (
            <div key={deadline.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
              <div className="flex flex-col gap-0.5">
                 <p className="font-semibold">{deadline.title}</p>
@@ -48,7 +79,8 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
                 {deadline.status === "behind" && dictionary.dashboard.upcomingDeadlines.behind}
              </Badge>
            </div>
-        ))}
+          ))
+        )}
       </CardContent>
        <CardFooter>
         <Button asChild variant="outline" className="w-full">

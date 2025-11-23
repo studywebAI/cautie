@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import {
@@ -23,11 +23,13 @@ import type { ClassAssignment, MaterialReference } from '@/lib/teacher-types';
 import { CalendarIcon, BookOpen, BrainCircuit, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { AppContext, AppContextType } from '@/contexts/app-context';
+
 
 type CreateAssignmentDialogProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onAssignmentCreated: (newAssignment: Omit<ClassAssignment, 'id' | 'submissions' | 'totalStudents'>) => void;
+  onAssignmentCreated: (newAssignment: Omit<ClassAssignment, 'id' | 'submissions' | 'totalStudents' | 'classId'>) => void;
   classId: string;
 };
 
@@ -52,6 +54,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated,
   const [dueDate, setDueDate] = useState<Date>();
   const [materialId, setMaterialId] = useState<string>('');
   const { toast } = useToast();
+  const { assignments, setAssignments } = useContext(AppContext) as AppContextType;
 
   const handleCreateAssignment = () => {
     if (!title || !dueDate || !materialId) {
@@ -174,7 +177,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated,
           
            <div className="grid gap-2">
             <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Add any extra instructions or context for your students." />
+            <Textarea id="description" value={description} onChange={e => setDescription(e.taget.value)} placeholder="Add any extra instructions or context for your students." />
           </div>
 
         </div>

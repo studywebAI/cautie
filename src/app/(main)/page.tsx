@@ -30,7 +30,7 @@ function StudentDashboard() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
       <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8">
         <TodayPlan tasks={studentDashboardData.tasks} />
-        <UpcomingDeadlines deadlines={studentDashboardData.deadlines} />
+        <UpcomingDeadlines />
         <MySubjects subjects={studentDashboardData.subjects.slice(0, 4)} />
         <Card>
             <CardHeader>
@@ -54,15 +54,15 @@ function StudentDashboard() {
 }
 
 function TeacherSummaryDashboard() {
-    const { teacherDashboardData, isLoading } = useContext(AppContext) as AppContextType;
+    const { classes, isLoading } = useContext(AppContext) as AppContextType;
 
-    if (isLoading || !teacherDashboardData) {
+    if (isLoading || !classes) {
         return <DashboardSkeleton />;
     }
 
-    const totalStudents = teacherDashboardData.classes.reduce((acc, c) => acc + c.studentCount, 0);
-    const totalAssignments = teacherDashboardData.classes.reduce((acc, c) => acc + c.assignmentsDue, 0);
-    const lowProgressAlerts = teacherDashboardData.classes.flatMap(c => c.alerts).length;
+    const totalStudents = classes.reduce((acc, c) => acc + c.studentCount, 0);
+    const totalAssignments = classes.reduce((acc, c) => acc + c.assignmentsDue, 0);
+    const lowProgressAlerts = classes.flatMap(c => c.alerts).length;
 
     return (
         <div className="flex flex-col gap-8">
@@ -79,7 +79,7 @@ function TeacherSummaryDashboard() {
                         <School className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{teacherDashboardData.classes.length}</div>
+                        <div className="text-2xl font-bold">{classes.length}</div>
                         <p className="text-xs text-muted-foreground">classes managed</p>
                     </CardContent>
                 </Card>
@@ -131,7 +131,7 @@ function TeacherSummaryDashboard() {
                     </div>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {teacherDashboardData.classes.slice(0, 2).map(classInfo => (
+                    {classes.slice(0, 2).map(classInfo => (
                         <ClassCard key={classInfo.id} classInfo={classInfo} />
                     ))}
                 </CardContent>

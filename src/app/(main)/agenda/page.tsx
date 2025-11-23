@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useContext, useMemo } from 'react';
-import { format, addDays, parse } from 'date-fns';
+import { format, addDays, parse, parseISO } from 'date-fns';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { useDictionary } from '@/contexts/dictionary-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -18,7 +18,14 @@ const parseAIDate = (baseDate: Date, aiDate: string): Date => {
   if (match) {
     return addDays(baseDate, parseInt(match[1], 10));
   }
-  // Fallback for other formats, though the AI is prompted for "In X days"
+  // Try parsing ISO format
+  try {
+      const parsedIso = parseISO(aiDate);
+      if(!isNaN(parsedIso.getTime())) return parsedIso;
+  } catch(e) {
+      // ignore
+  }
+  // Fallback for other formats
   try {
     const parsed = parse(aiDate, 'yyyy-MM-dd', baseDate);
     if (!isNaN(parsed.getTime())) return parsed;
@@ -29,7 +36,7 @@ const parseAIDate = (baseDate: Date, aiDate: string): Date => {
 };
 
 export default function AgendaPage() {
-  const { studentDashboardData, isLoading } = useContext(AppContext) as AppContextType;
+  const { studentDashboardData, assignments, classes, isLoading } = useContext(AppContext) as AppContextType;
   const { dictionary } = useDictionary();
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
   
@@ -37,26 +44,40 @@ export default function AgendaPage() {
   
   // Memoize the mapped events so it's not re-calculated on every render
   const eventsByDate = useMemo(() => {
-    if (!studentDashboardData?.deadlines) {
-      return new Map<string, Deadline[]>();
-    }
+    const aiDeadlines = studentDashboardData?.deadlines || [];
+    
+    const allItems: (Deadline & { type: 'ai' | 'assignment' })[] = [
+        ...aiDeadlines.map(d => ({ ...d, type: 'ai' as const })),
+        ...assignments.map(a => {
+            const className = classes.find(c => c.id === a.classId)?.name || 'Class';
+            return {
+                id: a.id,
+                title: a.title,
+                subject: className,
+                date: a.dueDate,
+                workload: '',
+                status: 'on-track' as const,
+                type: 'assignment' as const,
+            }
+        })
+    ];
 
-    const map = new Map<string, Deadline[]>();
-    studentDashboardData.deadlines.forEach(deadline => {
-      const date = parseAIDate(today, deadline.date);
+    const map = new Map<string, (Deadline & { type: 'ai' | 'assignment' })[]>();
+    allItems.forEach(item => {
+      const date = parseAIDate(today, item.date);
       const dateString = format(date, 'yyyy-MM-dd');
       if (!map.has(dateString)) {
         map.set(dateString, []);
       }
-      map.get(dateString)?.push(deadline);
+      map.get(dateString)?.push(item);
     });
     return map;
-  }, [studentDashboardData, today]);
+  }, [studentDashboardData, assignments, classes, today]);
   
   const selectedDayString = selectedDay ? format(selectedDay, 'yyyy-MM-dd') : '';
   const eventsForSelectedDay = eventsByDate.get(selectedDayString) || [];
   
-  const eventDays = Array.from(eventsByDate.keys()).map(dateString => new Date(dateString));
+  const eventDays = Array.from(eventsByDate.keys()).map(dateString => parseISO(dateString));
 
   if (isLoading) {
     return (

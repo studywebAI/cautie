@@ -11,9 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 
 export function TeacherDashboard() {
-  const { teacherDashboardData, isLoading } = useContext(AppContext) as AppContextType;
+  const { classes, setClasses, isLoading } = useContext(AppContext) as AppContextType;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [classes, setClasses] = useState<ClassInfo[]>(teacherDashboardData?.classes || []);
 
   const handleClassCreated = (newClass: { name: string; description: string }) => {
     const newClassData: ClassInfo = {
@@ -44,9 +43,6 @@ export function TeacherDashboard() {
       )
   }
 
-  const currentClasses = [...(teacherDashboardData?.classes || []), ...classes.filter(c => !teacherDashboardData?.classes.some(tdc => tdc.id === c.id))];
-
-
   return (
     <div className="flex flex-col gap-8">
       <header className="flex justify-between items-center">
@@ -62,7 +58,7 @@ export function TeacherDashboard() {
         </Button>
       </header>
 
-      {currentClasses.length === 0 ? (
+      {classes.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
           <div className="flex flex-col items-center gap-2">
             <h3 className="text-2xl font-bold tracking-tight">
@@ -79,7 +75,7 @@ export function TeacherDashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {currentClasses.map((classInfo) => (
+          {classes.map((classInfo) => (
             <ClassCard key={classInfo.id} classInfo={classInfo} />
           ))}
         </div>

@@ -22,6 +22,7 @@ export type Student = {
 
 export type ClassAssignment = {
   id: string;
+  classId: string;
   title: string;
   dueDate: string;
   submissions: number;
