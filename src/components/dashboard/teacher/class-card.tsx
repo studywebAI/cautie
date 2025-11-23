@@ -13,7 +13,7 @@ type ClassCardProps = {
 
 export function ClassCard({ classInfo }: ClassCardProps) {
   return (
-    <Link href="#" className="group">
+    <Link href={`/class/${classInfo.id}`} className="group">
       <Card className="h-full flex flex-col hover:border-primary transition-all">
         <CardHeader>
           <CardTitle className="font-headline text-xl">{classInfo.name}</CardTitle>

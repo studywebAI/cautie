@@ -15,6 +15,7 @@ This file tracks the major features that have been implemented based on the proj
 ### 1.22 & 1.26 – Teacher & AI Features
 - [x] **1.22.1 – Teacher Dashboard Foundation**: Implemented the basic UI for the teacher dashboard, showing an overview of classes.
 - [x] **1.22.1 – Create Class (UI & Frontend Logic)**: Implemented a multi-step, AI-assisted dialog for creating new classes.
+- [x] **1.22.2 & 1.22.3 – Class Details Foundation**: Created a details page for individual classes to display assignments and student lists.
 - [x] **1.26.4 – Teacher Helper Agent (Data Generation)**: Created an AI flow to generate realistic data for the teacher dashboard.
 - [x] **1.26.4 – Class Idea Agent**: Created an AI flow to help teachers brainstorm class names and descriptions.
 
