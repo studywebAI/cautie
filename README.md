@@ -2145,3 +2145,1626 @@ Support many schools safely:
 ---
 
 Ben je happy met deze set? Wil je dat ik **per punt concrete technische taken**, SQL-scripts, API endpoints, en UI-wireframes uitschrijf (per feature), of wil je dat ik met **1.61–1.80** doorga? Zeg gewoon **verder** of kies een featurenummer die ik moet uitdiepen.
+Perfect — **we gaan FULL DETAIL**, niets weglaten, geen code, alleen *feature-specificaties* op een niveau dat **Firebase / Supabase / Devs / Designers** exact snappen hoe het moet functioneren.
+
+We doen **Agenda Tab** volledig opnieuw, maar dan met:
+
+* student rolsysteem
+* docent rolsysteem
+* hoe ze samenkomen
+* automatische study-plans
+* klas-integratie
+* deadlines
+* weekoverzicht
+* AI inzichten
+* instellingen
+* filters
+* alles.
+
+Dit wordt **EXTREEM lang & extreem gedetailleerd**.
+
+---
+
+# 📅 **THE AGENDA (Calendar) TAB — ULTRA DETAILED SPECIFICATION**
+
+---
+
+# 🔥 **1. Wat de Agenda Tab EXACT is**
+
+De Agenda is een **centrale hub** waar:
+
+### 🔹 **Student ziet:**
+
+* al zijn eigen ingevoerde studie-items
+* deadlines van docenten
+* klasbrede opdrachten
+* persoonlijke AI-planningen
+* dagelijkse doelen
+* toetsdatums
+* reminders
+* real-time updates
+* progress tracking
+
+### 🔹 **Docent ziet:**
+
+* ingeplande opdrachten
+* wie het heeft gedaan
+* wie vertraagd is
+* inzicht per klas en per student
+* toetsmomenten
+* huiswerkplanning
+* deadlines instellen
+* study plan templates toewijzen
+
+Dit is dezelfde Agenda, maar **met rolgebaseerde filters** zodat iedereen ziet wat relevant is.
+
+---
+
+# 🔥 **2. Layout van de Agenda (Frontend functiemap)**
+
+Agenda bestaat uit 3 grote delen:
+
+## **2.1 Bovenbalk**
+
+```
+[➤ Month view] | [Week view] | [Day view] | [Timeline view]
+[Search bar]
+[Add Task +]
+[Filters]
+```
+
+## **2.2 Kalender**
+
+* grid per maand/week/dag
+* items hebben kleurcodes:
+
+  * blauw → student items
+  * rood → docent opgelegd item
+  * geel → AI gegenereerd study item
+  * groen → quiz/toets
+  * paars → klas-event
+
+Hover op item → popup met details (docent, klas, omschrijving, AI suggesties).
+
+## **2.3 Sidebar rechts**
+
+### **Vandaag Paneel**
+
+* “Wat moet je vandaag doen”
+* Prioriteit 1, 2, 3
+* “Achterstallig” sectie
+* “AI Smart Suggestion”
+
+  * “Start 15m mini quiz voor morgen’s toets van Engels”
+
+---
+
+# 🔥 **3. Student Functionaliteit (Alles wat student kan)**
+
+## **3.1 Student kan eigen taken toevoegen**
+
+Form fields:
+
+* Titel
+* Omschrijving
+* Deadline
+* Verwachte tijd (bv 30 min)
+* Koppeling met materiaal (document/quiz/flashcards)
+* Labels (school, sport, persoonlijk)
+* Prioriteit
+* Notificatie timings
+
+**AI-helper optie:**
+
+> “Genereer automatische studieplan voor dit item”
+
+Bijvoorbeeld:
+Titel: “Geschiedenis toets hoofdstuk 4”
+Deadline: Maandag 12:00
+AI maakt:
+
+* Dag 1: Samenvatting lezen + flashcards
+* Dag 2: Quiz 10 vragen
+* Dag 3: Last minute check (AI selecteert zwakke punten)
+  → alle items geplaatst in de Agenda
+
+## **3.2 Student ziet taken van docenten**
+
+Deze kun je niet verwijderen.
+Opties:
+
+* Markeer als gedaan
+* Start oefening (quiz, flashcards, materiaal)
+* “Vraag docent uitleg” (stuurt melding)
+
+## **3.3 Student ziet “Klasbreed geplande items”**
+
+Bijvoorbeeld:
+
+* “Klas 2A — Spreekbeurt 6 februari”
+* “Klas 2A — Natuurkunde test”
+
+Ze komen automatisch binnen door koppeling met de Classes tab.
+
+## **3.4 Student krijgt AI-notificaties**
+
+Voorbeeld:
+
+* “Je hebt morgen een wiskunde repetitie, wil je nu 15 min oefenen?”
+* “Je bent achter op Geschiedenis Hoofdstuk 3”
+* “Je hebt 3 onafgemaakte opdrachten, wil je deze inplannen?”
+
+## **3.5 Student kan agenda’s importeren**
+
+* Google Calendar
+* Apple Calendar
+* Microsoft Outlook
+  → We converteren items naar StudyWeb formaat
+  → School items worden herkend via AI (“Dit lijkt een toets, wil je dit toevoegen?”)
+
+## **3.6 Student krijgt Study Plan integratie**
+
+Study plan = AI gegenereerde set taken per hoofdstuk, over tijd verspreid.
+
+Student kan:
+
+* alles accepteren
+* items verplaatsen
+* reminder tijden aanpassen
+* volgorde aanpassen
+
+---
+
+# 🔥 **4. Docent Functionaliteit (Alles wat docent kan)**
+
+## **4.1 Docent kan huiswerk en toetsen inplannen**
+
+Fields:
+
+* Titel
+* Deadline
+* Beschrijving
+* Koppelen aan klas
+* Koppelen aan materiaal (quiz, PDF, uitleg)
+* Minimale eisen (bijv: quiz moet 70% gehaald worden)
+* Oefentijd advies (AI vult dit in)
+* Studieplan autom. genereren voor studentgroep
+
+## **4.2 Docent ziet wie het heeft gedaan**
+
+Dashboard in Agenda:
+
+* lijst met studenten
+* status per taak
+
+  * groen: voltooid
+  * oranje: bijna deadline
+  * rood: te laat
+* score (bij quiz)
+* aantal pogingen
+
+## **4.3 Docent kan taken kopiëren naar volgende week**
+
+Zo kan een docent een ritme maken:
+
+* Ma: Instructie
+* Woe: Oefentoets
+* Vr: Inleveren opdracht
+
+Met één klik dupliceren.
+
+## **4.4 Docent kan individuele leerlingen taken geven**
+
+Voor achterstanden:
+
+> “Deze student loopt achter met Frans. Automatisch inplannen?”
+
+AI maakt schema:
+
+* Zaterdag: 20 min vocab
+* Zondag: 15 min mini-quiz
+* Maandag: herhaling
+
+## **4.5 Docent kan “mass updates” doen**
+
+Bijvoorbeeld:
+
+* Deadline verschuiven
+* Opgave aanpassen
+* Extra tijd geven
+* Taak opnieuw openzetten
+
+Dit pusht updates naar alle studenten.
+
+---
+
+# 🔥 **5. Koppeling tussen Classes tab & Agenda tab**
+
+Dit is het *hart* van het systeem.
+
+## **5.1 Wat gebeurt er als docent een taak maakt in Classes?**
+
+Automatisch:
+
+* taak wordt zichtbaar in Agenda van ALLE studenten
+* taak krijgt tag: “Docent → [naam]”
+* kleur: Rood
+* Task linkt naar de Class page voor meer info
+* eventueel gekoppeld materiaal wordt clickable
+* analytics worden geactiveerd
+
+## **5.2 Wat gebeurt er als student een taak maakt?**
+
+Niet zichtbaar voor docent (privacy).
+Maar docent ziet:
+
+* AI signalen (“Student heeft veel werk de komende dagen”)
+  → NIET exacte items.
+
+## **5.3 Quiz plannen → Quiz komt in Agenda**
+
+Wanneer een docent een quiz toewijst:
+
+* student agenda toont exact wanneer quiz beschikbaar is
+* student krijgt reminders
+* student krijgt AI practice suggestions
+
+## **5.4 Flashcards plannen**
+
+Als docenten flashcards aangeven die geleerd moeten worden:
+
+* AI maakt een plan zodat student niet alles in één dag hoeft te doen
+
+---
+
+# 🔥 **6. Study Plan Engine inside the Agenda**
+
+Deze is extreem belangrijk.
+
+## **6.1 Hoe Study Plans werken**
+
+AI kijkt naar:
+
+* deadlines
+* hoeveelheid materiaal
+* eerdere prestaties
+* vrije tijd in agenda
+* hoeveel de student meestal per dag doet
+* stress-signalering (te veel taken)
+
+En maakt een schema.
+
+Voorbeeld:
+
+```
+Toets in 5 dagen → 90 pagina’s → student leert 20min/dag → AI maakt:
+
+Dag 1: Hoofdstuk 1 samenvatting + mini quiz
+Dag 2: Hoofdstuk 2 + flashcards sessie
+Dag 3: Hoofdstuk 3 + zwakke punten trainen
+Dag 4: Herhaling + moeilijkste vragen
+Dag 5: Eindquiz (25 vragen)
+```
+
+## **6.2 Study Plan is editable**
+
+Student kan:
+
+* items verschuiven
+* items verwijderen
+* extra items toevoegen
+
+AI blijft adaptive:
+
+* als student 3 dagen niets doet → schema adjust
+
+---
+
+# 🔥 **7. Agenda Filter System (extreem belangrijk)**
+
+Filters rechtsboven:
+
+* Mijn taken
+* Docent taken
+* Deadlines
+* Toetsen
+* Quizzes
+* Study Plan items
+* Klas events
+* Vrije tijd
+* Persoonlijke items
+* Verberg AI-planning
+* Toon alleen vandaag / deze week
+
+---
+
+# 🔥 **8. Agenda notifications (in browser en email)**
+
+### Voor studenten:
+
+* taak bijna deadline
+* quiz geopend
+* docent heeft iets bijgewerkt
+* AI suggestie om nu even te studeren
+
+### Voor docenten:
+
+* 5+ studenten hebben taak niet gedaan
+* student is achterstand aan het opbouwen
+* quiz resultaten klaar
+* vraag gesteld door student
+
+---
+
+# 🔥 **9. Agenda in Dashboard integratie**
+
+Dashboard toont:
+
+* Vandaag’s lijst
+* Snelle acties
+* Top 3 belangrijkste items
+* Achterstand waarschuwingen
+* Toetsen komende 7 dagen
+
+---
+
+# 🔥 **10. Agenda & Rechten systeem**
+
+Student:
+
+* kan eigen items toevoegen
+* kan docent items zien maar niet wijzigen
+* kan AI-plannen aanpassen
+* kan deadlines van docent niet verwijderen
+
+Docent:
+
+* kan items voor studenten maken
+* kan deadlines instellen/aanpassen
+* kan zien wie achterloopt
+* kan voortgang van studenten bekijken
+
+Admin:
+
+* kan klassen beheren
+* kan agenda’s resetten of archiveren
+
+---
+
+# 🔥 **11. Agenda — Feature brainstorm voor toekomstige updates**
+
+* focus mode (neemt items van agenda en zet ze in Pomodoro-modus)
+* location-based study reminders
+* AI voorspelt kans dat student iets op tijd af krijgt
+* “vrije week planning generator”
+* deelbare agenda voor ouders
+* examen survival map
+* energie-niveau planning (AI plant moeilijkere taken wanneer student meestal actief is)
+
+---
+
+# Einde van de gigantische Agenda + Classes integratie specs.
+
+Als je wilt, maak ik **volgende: Ultra Detail Flowcharts**.
+Of **schema’s voor Supabase tabellen**.
+Of **docent dashboard mapping**.
+Of **quiz/flashcard koppelingen**.
+
+Wil je:
+
+**1) Classes Tab Full Detail**
+of
+**2) Dashboard Full Detail**
+of
+**3) Student ↔ Docent communicatiesysteem**?
+
+Zeg maar welke nu.
+Top — hieronder **alles in één keer**: één samenhangend, extreem gedetailleerd product-/feature-document (geen code) dat beschrijft hoe **Classes**, **Agenda**, **Student** & **Teacher** rollen, **AI-automatisering**, **offline/sync**, **notificaties**, **privacy**, **UX flows**, **recents**, **deadlines**, **progress** enz. samen moeten werken. Dit is zó compleet dat een ontwikkelaar (Firebase of anders) exact kan begrijpen wat gebouwd moet worden en welke regels gelden.
+
+Ik houd het Nederlands, concreet, en opgesplitst in logische secties zodat je het meteen kunt doorgeven of in taken kunt converteren.
+
+# Alles-in-één product-specificatie — Classes + Agenda + Rollen + Integratie
+
+---
+
+## Samenvatting (1-zin)
+
+Classes is de inhouds- en beheereenheid (vak/klas) en Agenda is de persoonlijke, centrale planning die automatisch gevuld wordt met door docenten toegevoegde opdrachten, toetsen en AI-gegenereerde studiesessies; studenten zien hun persoonlijke + verplichte klastaken, docenten beheren klassen en deadlines en zien geaggregeerde voortgang — privacy en rollen sturen wie wat mag zien/wijzigen.
+
+---
+
+# 1. Kernbegrippen & business rules
+
+**Classes**
+
+* Een Class is een cohesieve container: docent, studenten, hoofdstukken, materiaal, opdrachten, quizzes, flashcard sets.
+* Docent = eigenaar/manager van de class (kan rollen toewijzen: teacher, assistant).
+* Class content kan worden gepubliceerd (zichtbaar) of in concept (alleen docent).
+
+**Agenda**
+
+* Persoonlijke tijdlijn per gebruiker die alle tijd-events, deadlines en study blocks toont.
+* Items komen uit: student zelf (privé), teacher/pushed (verplicht), AI/systeem (aanbevolen), externe agenda’s (geïmporteerd).
+
+**Business rules (essentieel)**
+
+* Als een docent een assignment/publiceert → voor elke relevante student verschijnt direct een Agenda-item (standaard zichtbaar).
+* Docent items kunnen configureerbaar *immutable* zijn (niet verwijderbaar door student) — instelling per school/class.
+* Student mag privé-items maken en aanpassen; docent ziet die niet behalve samenvattende signalen (geen concrete inhoud).
+* AI genereert studyplans op basis van deadlines, vrije tijd en prestaties; student kan aanpassen.
+* Privacy: docent mag voortgang per student zien (artifacted metrics) maar geen persoonlijke agenda-events van studenten.
+
+---
+
+# 2. Rollen & permissies (mensentaal)
+
+**Student**
+
+* Ziet: eigen Agenda (privé + docent items), classes waar lid van is, materiaal, opdrachten, resultaten, AI suggestions.
+* Kan: eigen events maken/wijzigen/verwijderen, items markeren als voltooid, studieplanning accepteren/wijzigen.
+* Niet toegestaan: verwijderen van docent-immutable events, bekijken van andere studenten’ persoonlijke events.
+
+**Teacher**
+
+* Ziet: classes waar docent van is, kan assignments maken/publishen, kan voor alle studenten class-events pushen, ziet per-student voortgang/analytics, kan individuele of groepsopdrachten toewijzen.
+* Kan niet: persoonlijke agenda-items van studenten lezen (behalve opt-in analytics aggregatie).
+
+**Assistant / Co-teacher**
+
+* Zelfde als teacher maar met beperktere rechten (kan niet klas verwijderen, misschien geen org-level instellingen).
+
+**Admin**
+
+* Platformbeheer, kan org-settings aanpassen, audit logs inzien.
+
+---
+
+# 3. Class-structuur & content types (geef dit aan de dev)
+
+Elke class bevat duidelijke secties, ieder met concrete features:
+
+**Class header**
+
+* Title, subject, schooljaar, teacher, join code, quickstats (open opdrachten, komende deadlines).
+
+**Modules / Chapters**
+
+* Per hoofdstuk: titel, description, materialen, links naar quizzes/flashcards, status.
+
+**Assignments**
+
+* Fields: title, description, type (homework/quiz/test/project/study), deadline (datum+tijd), estimated_time (minuten), required (boolean), settings (retries, visibility), attachments.
+* Behaviour: publishing → pushes agenda events; unpublish → optionally retract events (policy controlled).
+
+**Quizzes**
+
+* Link naar quizplayer; teacher kan publish/unpublish, set availability window, time limit, adaptive settings.
+
+**Flashcards**
+
+* Teacher kan push sets als verplicht; student krijgt study sessions via Agenda.
+
+**Materials**
+
+* Files, videos, links, AI summaries, transcripts.
+
+**People**
+
+* Members list met roles, quick messages, presence indicator.
+
+**Analytics**
+
+* Class-level and student-level metrics: completion rates, average scores, weak topics, last active.
+
+---
+
+# 4. Agenda — itemtypes, gedrag en UI
+
+**Agenda item types (en kleur/semantiek)**
+
+1. **Lesson / Class time** — door docent ingesteld, recurring; niet verwijderbaar; kleur: neutral/primary.
+2. **Assignment deadline** — gemaakt bij assignment publish; show link naar opdracht; kleur: danger/urgent.
+3. **Exam / Quiz window** — availability window; student kan alleen starten binnen window; kleur: purple.
+4. **Study session (AI generated)** — aanbevolen blok, editable; kleur: info/light-blue.
+5. **Flashcard session** — SRS-driven; kleur: green.
+6. **Personal event** — student created; kleur: grey.
+7. **Announcement / Reminder** — push-notification type; kleur: yellow.
+
+**Visuals / Views**
+
+* **Month/Week/Day**: standaard; week view is belangrijkste (drag/drop).
+* **Today panel**: “Wat moet je vandaag doen?” (prioriteitslijst).
+* **Timeline view**: compacte scrolling timeline met color-coded items.
+* **Agenda item popup**: docent, class, link naar assignment/material, expected time, source (teacher/system/personal), immutable flag, quick actions (Mark done, Start, Reschedule, Ask teacher).
+
+**Behavior rules**
+
+* Teacher-pushed items appear in each student Agenda (per-student item or computed view; recommend per-student copy for offline/editing).
+* Student cannot delete immutable items; student can mark as done; student can snooze or suggest new time (push request to teacher optionally).
+* Changing a class assignment (deadline edit) updates all linked agenda events; if a student modified their private studyblock then merging logic applies (student edits preserved, events rewritten where feasible).
+
+---
+
+# 5. Recents / Dashboard integration
+
+**Recents** shows the last N interactions across Classes + Agenda:
+
+* recent assignments (teacher-published)
+* recent events added to Agenda
+* recent study sessions completed
+* recent materials opened
+
+Dashboard pulls from Recents and shows Today summary: high-priority items, imminent deadlines, AI suggestions.
+
+---
+
+# 6. Study Plan Engine (AI) — how it behaves (user flows)
+
+**Input data**
+
+* Assignments (deadlines & estimated time), calendar free time (imported external calendars), student's historical pace & performance (quiz scores, flashcard retention), exam horizon.
+
+**Output**
+
+* Per assignment: chunked study sessions distributed over days, prioritized tasks (read, practice, flashcards, mini-quiz).
+* For each student, create Agenda events labeled auto_generated=true and suggested (editable).
+* If student ignores multiple suggestions, AI adapts: condenses or reorders.
+
+**Edge cases**
+
+* Overcommit prevented: AI should not schedule more than configurable study minutes/day.
+* Conflict handling: if student has event in that slot, AI finds next slot or prompts student.
+
+**Teacher interactions**
+
+* Teacher can choose to auto_generate study plan for class on publish of major assignment; can require students to accept/opt-out.
+
+---
+
+# 7. Notifications & reminders (rules)
+
+**Triggers**
+
+* X hours before deadline (configurable: 24h/48h/2h)
+* When AI schedules a study session
+* When teacher updates assignment
+* When student is falling behind (score thresholds / completion %)
+* When student marks task done (confirmation to teacher optional)
+
+**Channels**
+
+* In-app push (primary)
+* Email digest (daily/weekly)
+* Mobile push (if integrated)
+* Webhooks for SSO/School integrations
+
+**Notification content**
+
+* Must include: title, class, short action (open assignment / start study), due time, link.
+
+**Snooze rules**
+
+* Student can snooze reminders (snooze options: 10m/1h/1d).
+
+---
+
+# 8. Offline behavior & sync (student experience)
+
+**Goal**: student must be able to view and work on Agenda items + quizzes/flashcards offline; local changes sync when online.
+
+**Offline data**
+
+* Cached events last 30 days, downloaded assignment materials, draft answers, progress logs for flashcards/quizzes.
+
+**Sync semantics**
+
+* Events created by teacher are authoritative: if teacher changed deadline while student offline, server version wins; client receives conflict notification if student had custom reschedule attempt.
+* For student-created events: client can create locally and upload on reconnect.
+* For student progress (quiz attempts, flashcard reps): client stores logs locally and syncs; server resolves duplicates by timestamps and merges attempts where possible.
+
+**Conflict UX**
+
+* If conflict happens (teacher changed deadline while student rescheduled), show modal: "Docent heeft deadline gewijzigd — kies: accepteer nieuwe deadline / houd mijn aangepaste blok."
+
+---
+
+# 9. Accessibility & UX rules (must haves)
+
+**Design principles**
+
+* Clean, minimal, consistent (Apple-like). No noisy ambient music.
+* Prominent mute/notifications toggle.
+* Keyboard shortcuts for common actions (mark done, add event, quick create).
+* High contrast mode, dyslexia font toggle, font size slider.
+* Screen reader friendly labels; aria attributes.
+
+**Important UX flows**
+
+* Adding assignment (teacher): clear publish confirmation; option: auto_generate_studyplan toggle.
+* Student first login: guided on-boarding to import calendars and accept teacher classes.
+* Onboard students see Today summary and a single CTA: “Start next task”.
+
+---
+
+# 10. Teacher tools & views (detailed)
+
+**Teacher Agenda view**
+
+* Own teacher calendar with:
+
+  * class lessons
+  * queued assignments
+  * student deadline overviews (aggregate, not per student calendar unless drill-down)
+
+**Teacher per-class student overview**
+
+* List of students, for each:
+
+  * completion % for active assignments
+  * last active time
+  * flagged weak topics
+  * ability to give targeted assignments/study blocks
+
+**Teacher one-click actions**
+
+* Delay deadline for whole class
+* Assign extra practice to selected students (creates per-student Agenda events)
+* Release grades & feedback (students get notifications + agenda entries for revisions)
+
+**Teacher privacy constraints**
+
+* Cannot see private student events
+* Can see aggregated time spent and trends (e.g., average minutes per student)
+
+---
+
+# 11. Edge features & special behaviors
+
+**Immutable events**
+
+* Teacher sets immutable=true for high-stakes items (exam day). Students cannot delete; may request reschedule (sends request to teacher).
+
+**Recurring lessons**
+
+* Teacher sets recurring class sessions; they appear in each student agenda with recurrence.
+
+**Parent / guardian view (future)**
+
+* Optional parent access: read-only view of upcoming exams & completion summary for children.
+
+**School import**
+
+* Support bulk import of classes & rosters (CSV / SIS integration). Imported assignments become teacher items.
+
+**Shared exams**
+
+* If school sets a common exam, the system creates unified events across relevant classes.
+
+---
+
+# 12. Auditing, logging & compliance (privacy/GDPR minded)
+
+**Audit logs**
+
+* All changes to assignments, deadlines, created_by, timestamps and who performed action are logged.
+
+**Retention**
+
+* Keep study logs for X months (configurable by policy); allow export/delete per GDPR.
+
+**Data minimization**
+
+* Teacher analytics should avoid exposing personal notes; aggregate where possible.
+
+**Consent**
+
+* For calendar import (Google/Apple/Microsoft), require explicit consent and show which items will be used to schedule study sessions.
+
+---
+
+# 13. Monitoring & success metrics (product + ops)
+
+**Product metrics**
+
+* % of students with agenda items accepted
+* average time between assignment publish and student start
+* % of auto_generated study items accepted
+* completion rate per assignment
+* weekly active students
+
+**Operational metrics**
+
+* sync success rate after offline
+* events creation / update latency
+* failed AI schedule job rate
+
+**Alerts**
+
+* High rate of unaccepted studyplans (indicates AI or UX issue)
+* Large number of deadline edits in short window (teacher/backlog problems)
+
+---
+
+# 14. Test cases / QA checklist (must implement)
+
+**Teacher flows**
+
+* Create assignment → check student agendas updated across users
+* Edit assignment deadline → verify update and conflict behavior
+* Create recurring lesson → verify recurrence in student agendas
+
+**Student flows**
+
+* Student creates private event → persists offline → syncs on reconnect
+* Student marks assignment done → teacher dashboard shows updated status
+* Student accepts AI study plan → Agenda updated correctly
+
+**Edge cases**
+
+* Student offline when teacher publishes assignment (ensure sync on reconnection)
+* Two teachers editing same assignment (resolve using timestamps & owner rules)
+* Importing external calendar with overlapping times (AI rescheduling and conflict detection)
+
+---
+
+# 15. Rollout & phasing (recommended)
+
+**Phase 1 (MVP)**
+
+* Classes basic CRUD, roster join via code
+* Assignments create/publish + agenda push (no AI)
+* Student Agenda month/week/day + ability to mark done
+* Teacher per-class assignment list + completion status
+
+**Phase 2**
+
+* AI study plan generation (serverless function), basic scheduling
+* Recurring lessons support
+* Offline caching for Agenda & flashcards
+
+**Phase 3**
+
+* Advanced teacher tools (individual pushes, mass edit)
+* Notifications & reminders multi-channel
+* Auditing & GDPR tools
+
+**Phase 4**
+
+* Parent/guardian view, SSO / SIS integrations, advanced analytics
+
+---
+
+# 16. Concrete UX copy examples (how tool speaks)
+
+* When teacher publishes assignment:
+
+  * To student: “Nieuwe opdracht: *Toets H4* — Deadline 12 dec 14:00. AI heeft een studieplan gemaakt. [Bekijk plan]”
+* When AI suggests a session:
+
+  * “Je hebt morgen 35 min vrij. Wil je nu 20 min oefenen voor Geschiedenis?”
+* Conflict message:
+
+  * “Docent heeft de deadline gewijzigd naar 14 dec 12:00. Kies: Accepteer, Vraag uitstel, Bewaar mijn wijziging.”
+
+---
+
+# 17. What to hand to your Firebase dev (actionable checklist)
+
+1. **Data model summary** (describe classes, assignments, agenda_events table semantics — per above).
+2. **Event rules** (on create assignment → create per-student agenda event; on update → propagate changes).
+3. **Immutable flag behavior** (UI & API must respect).
+4. **Offline sync rules** (client stores local changes; server authoritative for teacher events).
+5. **Permissions outline** (students edit own items only; teachers manage class items; teacher cannot read personal student items).
+6. **Notification triggers** (list of triggers & channels).
+7. **AI endpoints** (interface points: request study plan for assignment, accept/decline).
+8. **UX flows** (teacher create assignment flow; student accept schedule flow).
+9. **Test cases** (above).
+10. **Privacy/consent flows** (calendar import consent UI).
+
+Geef dit document aan devs als “product contract”. Ze hoeven niets te raden.
+
+---
+
+Als je wilt, kan ik nu **(A)** dit in kant-en-klare taken omzetten per sprint (Jira/ClickUp opmaak), **(B)** alle UI-wireframes en button-copy maken, of **(C)** de AI-prompt-uitwerking voor studyplan generator leveren. Welke wil je nu?
+Hier komt een **monster-uitwerking** van hoe **Classes + Agenda** samen moeten werken, inclusief **student & teacher rollen**, **features**, **datastromen**, **permissions**, **UI-gedrag**, **notificaties**, en **integratie**. Dit is het soort document waar Firebase-devs stil van worden omdat *alles* al is uitgedacht.
+
+---
+
+# ✅ **CLASSES + AGENDA — ULTRA DETAILED SYSTEM SPEC (Student & Teacher)**
+
+*Voor StudyWeb, zonder Desk Universe. Apple-smooth, clean, duidelijk.*
+
+---
+
+# 🎓 **1. CLASSES — Volledig Systeem**
+
+## 1.1 **Wat is een Class?**
+
+Een **digitale klas**, vergelijkbaar met Learnbeat / Google Classroom.
+
+**Bevat:**
+
+* Leerlingen
+* Docenten
+* Deadlines & opdrachten
+* Studymaterialen
+* Quizzen & flashcard-sets toegewezen aan die klas
+* Studieplanning die automatisch in de Agenda van leerlingen komt
+
+---
+
+## 1.2 **Structuur van een Class**
+
+### **Class Info**
+
+* ClassID
+* Name
+* Grade level (optional)
+* School (optional)
+* Owner teacher
+* Co-teachers (array)
+* Description
+
+### **Members**
+
+* Students array: UID + role = "student"
+* Teachers array: UID + role = "teacher"
+* Pending invites
+* Join code / invite link
+
+### **Resources**
+
+* Assignments (homework)
+* Scheduled quizzes
+* Announcements
+* Study materials (PDF, docs, notes)
+* Flashcard sets
+* Links naar StudyWeb-modules
+
+### **Analytics**
+
+* Progress tracking
+* Completion % per assignment
+* Time spent studying
+
+---
+
+## 1.3 **Permissions (Firebase)**
+
+### **Teacher**
+
+* Create/update/delete class
+* Add/remove students
+* Add assignments
+* Add deadlines
+* Add quizzes (links naar quiz mode)
+* Push content naar student agenda
+* See analytics
+
+### **Student**
+
+* Join class via code
+* Can view assigned items
+* Can NOT create assignments
+* Can NOT modify deadlines
+* Can mark tasks “Done”
+* Can submit assignments
+
+---
+
+## 1.4 **Class Feature Breakdown**
+
+### **A. Feed / Timeline**
+
+Zoals Learnbeat:
+
+**Teacher posts:**
+
+* opdrachten
+* deadlines
+* announcements
+* study material
+* quiz links
+
+**Student ziet:**
+
+* alles in chronologische volgorde
+* badges en status icons (“Due Soon”, “Late”, “Completed”)
+
+---
+
+### **B. Assignments (homework)**
+
+Elke assignment heeft:
+
+* Title
+* Description
+* Attachments
+* Teacher ID
+* Due Date
+* Expected study time (minuten)
+* Belongs to ClassID
+* Status per student:
+
+  * Not started
+  * In progress
+  * Completed
+
+**Wat gebeurt er?**
+⬆️ Teacher → maakt assignment → ⬇️
+📥 Students krijgen push naar Agenda & Dashboard.
+
+---
+
+### **C. Quizzes**
+
+Teacher koppelt:
+
+* een quiz
+* planning
+* deadline
+* optional required minimum score
+
+**Student ziet:**
+
+* Quiz preview
+* Button “Start Quiz”
+* Resultaten (indien zichtbaar)
+
+**Agenda krijgt automatisch:**
+
+* “Quiz: naam — due tomorrow”
+
+---
+
+### **D. Flashcards**
+
+Teacher kan:
+
+* een set toevoegen
+* plan instellen
+* verplichte oefenmomenten toevoegen
+
+Student ziet:
+
+* Study plan: “Use flashcards — 10 min today”
+* Progress tracking
+* Spaced repetition intervals
+
+---
+
+### **E. Announcements**
+
+Tekst + bijlagen
+Altijd zichtbaar in feed
+Geen agenda-entry, behalve als teacher dat aanvinkt.
+
+---
+
+### **F. Class Chat (optional)**
+
+* Teacher moderated
+* School-friendly
+* No DM’s, only class-wide messages
+
+---
+
+---
+
+# 📅 **2. AGENDA — Ultra Detailed System**
+
+Agenda = persoonlijke kalender van de student.
+
+## 2.1 **Agenda bevat 3 soorten items**
+
+### **1. Personal Study Tasks**
+
+Door student zelf toegevoegd:
+
+* “Learn chapter 4”
+* “Do math exercises”
+* “Study biology for 30 min”
+
+### **2. Auto-Generated Study Plan Items**
+
+Automatisch door StudyWeb:
+
+* AI maakt een planning op basis van:
+
+  * deadlines uit classes
+  * hoeveelheid content
+  * beschikbare tijd in agenda
+  * student voorkeuren
+
+Voorbeeld:
+
+* “Biology — 20 min review”
+* “Flashcards: Chemistry — 15 min”
+* “Prepare for quiz — 25 min”
+
+### **3. Teacher-Assigned Tasks**
+
+Vanuit Classes:
+
+* Homework → komt in agenda
+* Quiz deadlines → komen in agenda
+* Study materials → komen als “Suggested study session”
+
+---
+
+## 2.2 **Elke agenda-item heeft:**
+
+* Title
+* Description
+* Type (Personal / AutoStudy / Assignment / Quiz / Other)
+* Source (ClassID or None)
+* Due Date
+* Estimated time
+* Status (todo, done, overdue)
+
+---
+
+## 2.3 **Imports from external calendars**
+
+Student kan verbinden:
+
+* Google Calendar
+* Apple Calendar
+* Outlook/Microsoft
+
+StudyWeb importeert:
+
+* schoolrooster
+* toetsweken
+* andere afspraken
+
+AI gebruikt deze om:
+
+* studieplan te genereren
+* drukke dagen licht te plannen
+* vrije dagen voller te plannen
+
+---
+
+## 2.4 **Teacher View in Agenda**
+
+Teacher heeft eigen agenda met:
+
+* alle klassen
+* alle deadlines gemaakt door hen
+* overzicht welke leerlingen tasks afhebben
+* reminders: “50% has not completed Assignment 3”
+* planning helpers voor lessen
+
+---
+
+## 2.5 **Student View in Agenda**
+
+Student ziet:
+
+* kleuren per type item
+* filters:
+
+  * Homework only
+  * Study plan only
+  * Personal only
+  * Quizzes
+* drag-and-drop herplannen
+* daily overview:
+
+  * tasks
+  * countdowns
+  * progress meter
+
+---
+
+# 🔗 **3. HOW CLASSES + AGENDA CONNECT**
+
+## 3.1 **Teacher maakt opdracht in Class → automatisch in Agenda**
+
+Flow:
+
+**Teacher:**
+“Add assignment → Due Friday 23:59”
+
+**System:**
+
+* Create assignment
+* Create agenda item for each student
+* Add to dashboard "Upcoming deadlines"
+* Notify students
+
+**Student Agenda Entry:**
+
+* Type: Assignment
+* Status: Not started
+* Shows: Class name
+
+---
+
+## 3.2 **Teacher plant flashcards → dagelijkse oefenmomenten**
+
+Teacher maakt:
+
+* Flashcards Chemistry
+* Study period: next 7 days
+* Requires 10 min/day
+
+**AI maakt automatisch:**
+
+* 7 agenda items
+* Smart spacing (SRS)
+* Repeats until completed
+
+---
+
+## 3.3 **Quiz scheduled → agenda krijgt meerdere items**
+
+Bijv. Quiz op donderdag:
+
+* Agenda: “Quiz — Thursday — Mandatory”
+* AI maakt: 2 practice moments (auto-study)
+
+---
+
+## 3.4 **Student maakt eigen taak → blijft privé**
+
+Dit gaat **niet** naar teachers.
+Teacher ziet alleen klas-gerelateerde voortgang.
+
+---
+
+## 3.5 **Overdue logic**
+
+Als een assignment niet op tijd gedaan is:
+
+* Agenda markeert rood
+* Dashboard waarschuwing
+* Class overzicht laat overdue zien
+* Teacher dashboard toont "5 students late"
+
+---
+
+---
+
+# 🧠 **4. Roles Interaction (like Learnbeat / SOMtoday)**
+
+## Teacher Tools (dashboard):
+
+* Overview of all classes
+* Upcoming deadlines
+* Students’ progress
+* “Create assignment” shortcuts
+* Quiz statistics
+* Submission review
+* AI suggestion:
+
+  * “Students struggled with topic X → suggest quiz?”
+  * “Low average time spent on flashcards → adjust plan?”
+
+## Student Dashboard:
+
+* Today’s plan
+* Upcoming deadlines
+* Classes list
+* Quick start:
+
+  * “Continue flashcards”
+  * “Continue quiz”
+  * “Next AI study session”
+
+---
+
+# 🎨 **5. UI Concept (Apple-style clean)**
+
+* Minimal white + soft shadows
+* No cartoon 3D shit
+* Sliding panels
+* Big readable typography
+* Gentle motion
+* Calendar view:
+
+  * month
+  * week
+  * day
+  * timeline view
+
+---
+
+# 💾 **6. Database Architecture (Essential for Firebase devs)**
+
+## **Classes Collection**
+
+```
+classes/
+  classId/
+    info: {name, owner, description}
+    teachers: [uids]
+    students: [uids]
+    assignments: [assignmentIds]
+    announcements: [announcementIds]
+```
+
+## **Assignments Collection**
+
+```
+assignments/
+  assignmentId/
+    classId
+    teacherId
+    title
+    description
+    dueDate
+    estimatedTime
+```
+
+## **Per-student Assignment Status**
+
+```
+studentAssignments/
+  studentUid_assignmentId/
+    status
+    completedAt
+```
+
+## **Agenda Items**
+
+```
+agenda/
+  uid/
+    itemId/
+      title
+      type
+      due
+      sourceClass
+      sourceAssignment
+      status
+```
+
+## **Flashcard Plans**
+
+```
+flashcardPlans/
+  planId/
+    classId
+    flashcardSetId
+    studentId
+    dailyMinutes
+```
+
+---
+
+# ⚡ **7. Summary (in 1 sentence)**
+
+Classes leveren al het verplichte schoolwerk; Agenda verzamelt het, verrijkt het met AI-planning, en toont studenten een perfect georganiseerde studie- en schoolkalender, terwijl teachers volledige controle en overzicht krijgen over voortgang.
+
+---
+
+If you want, I can now produce:
+
+✅ **Flowcharts**
+✅ **Screen mockups (text-based)**
+✅ **API routes**
+✅ **Firestore security rules**
+✅ **User stories**
+✅ **A full dev document (20+ pages)**
+
+Just tell me **what you want next**.JA.
+Ik ga je **DE ULTIEME lijst** geven van **grote, serieuze, next-level tools** die StudyWeb kan hebben — ALLEMAAL realistisch, Apple-clean, zonder 3D onzin, **en volledig te bouwen binnen jouw platform**.
+
+Niet van die domme “notes app” dingen —
+Maar **echte producten** die een docent of student zou gebruiken op LearnBeat / Magister / Google Classroom niveau.
+
+---
+
+# 🚀 **MEGA-LIJST: 14 GROTE, “HOLY SHIT DIT IS SICK”-TOOLS voor StudyWeb**
+
+Ik geef per tool:
+
+* **Wat het is**
+* **Waarom het nuttig is**
+* **Hoe het werkt voor student**
+* **Hoe het werkt voor teacher**
+* **Hoe het in Classes + Agenda past**
+
+---
+
+# 1️⃣ **AI Summary Tool**
+
+**Functie:** Upload een tekst, PDF, hoofdstuk → AI maakt een ultraduidelijke samenvatting.
+
+### Student
+
+* Summaries saved per class
+* StudyWeb maakt automatisch “study chips” van belangrijke punten
+* Flashcards automatisch gegenereerd
+
+### Teacher
+
+* Kan verplichte summaries maken voor leerlingen
+* Kan eigen commentaar toevoegen
+
+### Agenda integratie
+
+* “Read summary: Chapter 4 (15 min)”
+
+---
+
+# 2️⃣ **Explain / Whiteboard Tool**
+
+Zoals Khan Academy meet GPT, maar dan clean.
+
+### Student
+
+* Ask a question → AI tekent/legt uit op whiteboard
+* Je kan highlighten, tekenen, slides maken
+
+### Teacher
+
+* Whiteboard sessies bewaren als lesmateriaal
+* Live uitleg doen in class mode
+
+### Agenda
+
+* “Review whiteboard explanation – 10 min”
+
+---
+
+# 3️⃣ **AI Practice Sheets (Exercises Generator)**
+
+**EXAM READY tool**
+
+### Student
+
+* AI genereert oefenopgaven over elk onderwerp
+* Oplossingen, hints, uitleg
+* Moeilijkheid past zich aan
+
+### Teacher
+
+* Kan practice sheets koppelen aan klassen
+* Kan eigen vragen toevoegen
+
+### Agenda
+
+* “Practice: 8 math exercises – 20 min”
+
+---
+
+# 4️⃣ **StudyPlan Engine (Volledig automatische studieplanner)**
+
+Niet alleen agenda-items, maar een **complete studie-asistent**.
+
+### Student
+
+* Kies examen / toets
+* Upload leerstof
+* AI maakt voor 1 week / maand een complete planning
+* Dagelijkse check-in
+
+### Teacher
+
+* Kan examenweken instellen voor hele klas
+* Kan planning verplicht maken
+
+### Agenda
+
+* Volledige planning gegenereerd.
+
+---
+
+# 5️⃣ **Smart Notes (AI Notion-achtige notities)**
+
+Super simpel maar slim.
+
+### Features
+
+* AI maakt structuur
+* Highlight → “Add to flashcards”
+* Highlight → “Explain more”
+* Highlight → “Add to quiz pool”
+
+### Teacher
+
+* Kan notes delen met klas
+* Kan verplicht lezen
+
+---
+
+# 6️⃣ **Assignment Composer (AI helpt opdrachten maken)**
+
+⚠️ Voor docenten vooral
+
+### Teacher
+
+* Zet opdracht in de klas
+* AI genereert:
+
+  * rubrics (beoordelingscriteria)
+  * voorbeeld-antwoorden
+  * koppeling met onderwerpen
+  * hints
+
+### Student
+
+* Ziet volledige opdracht
+* AI geeft “drop hints” (geen answers)
+
+---
+
+# 7️⃣ **Reading Mode (Text-to-speech + uitleg)**
+
+### Student
+
+* Zet chapter in “Reading mode”
+* AI leest voor
+* Moeilijke woorden → uitleg met 1 tap
+* AI stelt controlevragen om te checken of je het snapt
+
+---
+
+# 8️⃣ **Exam Simulator**
+
+### Student
+
+* Kies onderwerp → AI maakt een realistische exam-set
+* Timer
+* Stress-simulator
+* After-review mode: alles uitgelegd
+
+### Teacher
+
+* Kan eigen exams maken
+* Zien welke leerlingen slecht scoren
+
+---
+
+# 9️⃣ **Concept Maps (Mindmap tool)**
+
+AI maakt automatische mindmaps van opgeuploade tekst.
+
+### Student
+
+* Leerstof fijn in kaart
+* Taps op nodes → opent uitleg / flashcards
+
+### Teacher
+
+* Kan mindmaps als lesmateriaal delen
+
+---
+
+# 🔟 **Projects Manager**
+
+Groepsprojecten tool.
+
+### Student
+
+* Taakverdeling
+* Chat per project
+* Files delen
+* Deadlines zichtbaar in agenda
+
+### Teacher
+
+* Kan groepen samenstellen
+* Kan progress tracken
+
+---
+
+# 1️⃣1️⃣ **Ask-AI (safe, school mode)**
+
+Een soort AI chatbot maar met beperkingen:
+
+* Geen bullshit
+* Geen adult content
+* Gefocust op schoolvakken
+* Legt uit, maakt voorbeelden, oefenopgaven
+
+Teacher kan:
+
+* bepaalde topics blokkeren
+* logs inzien
+
+---
+
+# 1️⃣2️⃣ **Audio Notes → Flashcards**
+
+Voor leerlingen die graag inspreken.
+
+### Student
+
+* Spreek paragraaf in
+* AI maakt notes
+* Daaruit flashcards
+* Daaruit quizvragen
+
+### Teacher
+
+* Kan voice voor lessen gebruiken
+
+---
+
+# 1️⃣3️⃣ **Multi-File Study Packs**
+
+Een tool om meerdere bestanden samen te voegen:
+
+### Student
+
+* Upload PDF + boekfoto's + samenvatting
+* AI combineert tot 1 mega-study pack
+* Index toegevoegd
+* Flashcards + quizzes extract
+
+### Teacher
+
+* Kan packs maken voor klas
+* Kan extra uitleg toevoegen
+
+---
+
+# 1️⃣4️⃣ **Skill Tracker (Gamified progress)**
+
+Binnen elke class en per vak:
+
+* Vocabulary mastered
+* Math skills mastered
+* Chapters finished
+* Quiz streak
+* Flashcard streak
+
+Teacher ziet per student:
+
+* waar ze vastlopen
+* waar extra oefening nodig is
+
+Student dashboard toont:
+
+* “Skills you improved this week”
+* “Weak areas detected”
+
+---
+
+# 🧠 **BONUS: Tools speciaal voor Teachers (Learnbeat-level)**
+
+## 🧩 **Curriculum Builder**
+
+* Maak een leerjaarprogramma
+* Koppel chapters
+* Deadlines
+* Toetsmomenten
+* StudyWeb maakt automatisch:
+
+  * agenda items
+  * quizzes
+  * practice moments
+
+## 🔔 **Smart Alerts**
+
+Alerts zoals:
+
+* “25% of your class is behind on Assignment 3”
+* “Students struggled with Topic X — recommend a remedial exercise sheet?”
+* “High difficulty detected in Quiz 5”
+
+## 📊 **Deep Analytics**
+
+Per student:
+
+* study-time tracking
+* time spent per topic
+* improvement scores
+* flashcard retention rate
+* quiz performance trend
+
+---
+
+# 🔥 Wil je dat ik nu…
+
+✔️ alle tools organiseer in een **product roadmap**?
+✔️ de 5 beste kies om te bouwen in **MVP versie**?
+✔️ database schema's erbij zet?
+✔️ UI wireframes begin uitwerken?
+
+Zeg gewoon **“Roadmap”**, **“MVP”**, **“Schema’s”**, of **“Wireframes”**.
+

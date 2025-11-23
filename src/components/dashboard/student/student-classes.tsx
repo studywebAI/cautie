@@ -1,13 +1,60 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import { JoinClassDialog } from './join-class-dialog';
 import { PlusCircle } from 'lucide-react';
+import type { ClassInfo } from '@/lib/teacher-types';
+import { AppContext, AppContextType } from '@/contexts/app-context';
+import { ClassCard } from '../teacher/class-card';
+
+
+// Mock data for classes a student can join. In a real app, this would come from a database.
+const joinableClasses: Record<string, Omit<ClassInfo, 'id'>> = {
+  'HIST-101': {
+    name: 'History 101: The Ancient World',
+    studentCount: 25,
+    averageProgress: 78,
+    assignmentsDue: 2,
+    alerts: [],
+  },
+  'SCI-202': {
+    name: 'Biology: The Human Body',
+    studentCount: 22,
+    averageProgress: 85,
+    assignmentsDue: 1,
+    alerts: ["Quiz on the circulatory system is next week."],
+  },
+  'ART-300': {
+    name: 'Introduction to Modern Art',
+    studentCount: 18,
+    averageProgress: 92,
+    assignmentsDue: 0,
+    alerts: [],
+  },
+};
+
 
 export function StudentClasses() {
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
-  const [enrolledClasses, setEnrolledClasses] = useState([]); // Will be populated later
+  const [enrolledClasses, setEnrolledClasses] = useState<ClassInfo[]>([]);
+
+  const handleClassJoined = (classCode: string) => {
+    // In a real app, you'd verify the classCode against a backend.
+    // Here, we'll use our mock data.
+    const classToJoinData = joinableClasses[classCode.toUpperCase()];
+
+    if (classToJoinData && !enrolledClasses.some(c => c.name === classToJoinData.name)) {
+       const newClass: ClassInfo = {
+            id: classCode.toUpperCase(),
+            ...classToJoinData,
+       }
+      setEnrolledClasses(prev => [...prev, newClass]);
+    } else {
+      // You might want to show a toast message if the code is invalid or already joined
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -41,16 +88,16 @@ export function StudentClasses() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Enrolled class cards will be rendered here */}
+          {enrolledClasses.map((classInfo) => (
+            <ClassCard key={classInfo.id} classInfo={classInfo} />
+          ))}
         </div>
       )}
 
       <JoinClassDialog
         isOpen={isJoinDialogOpen}
         setIsOpen={setIsJoinDialogOpen}
-        onClassJoined={() => {
-          // Logic to handle class joining
-        }}
+        onClassJoined={handleClassJoined}
       />
     </div>
   );
