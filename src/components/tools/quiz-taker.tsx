@@ -25,6 +25,7 @@ export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" 
 
 const SURVIVAL_PENALTY_COUNT = 3;
 const ADAPTIVE_QUESTION_COUNT = 10;
+const MAX_STRIKES = 3;
 
 const modeDetails: Record<QuizMode, { title: string; description: string }> = {
     normal: {
@@ -41,7 +42,7 @@ const modeDetails: Record<QuizMode, { title: string; description: string }> = {
     },
     survival: {
         title: "Survival Mode",
-        description: `Answer correctly or get more questions. You must clear the queue to win.`
+        description: `Answer correctly or get more questions. You have ${MAX_STRIKES} lives.`
     },
     speedrun: {
         title: "Speedrun Mode",
@@ -65,7 +66,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 
-function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, setSessionRecap }: { quiz: Quiz, answers: AnswersState, onRestart: () => void, mode: QuizMode, timeTaken?: number, setSessionRecap: (data: SessionRecapData | null) => void }) {
+function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, setSessionRecap, strikes = 0 }: { quiz: Quiz, answers: AnswersState, onRestart: () => void, mode: QuizMode, timeTaken?: number, setSessionRecap: (data: SessionRecapData | null) => void, strikes?: number }) {
     const correctCount = quiz.questions.filter(q => {
         const selectedOptionId = answers[q.id];
         if (!selectedOptionId) return false;
@@ -74,7 +75,7 @@ function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, setSessio
     }).length;
 
     const totalQuestions = quiz.questions.length;
-    const incorrectCount = totalQuestions - correctCount;
+    const incorrectCount = Object.keys(answers).length - correctCount;
     const scorePercentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
     
     useEffect(() => {
@@ -89,23 +90,46 @@ function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, setSessio
     }, [setSessionRecap, scorePercentage, correctCount, totalQuestions, timeTaken]);
 
 
-    if (mode === 'survival' && correctCount === totalQuestions && Object.keys(answers).length === totalQuestions) {
-        return (
-             <Card>
-                <CardHeader className="items-center text-center">
-                    <Trophy className="h-16 w-16 text-yellow-500" />
-                    <CardTitle className="font-headline text-3xl mt-4">You Survived!</CardTitle>
-                    <CardDescription>You answered all {totalQuestions} questions correctly. Well done.</CardDescription>
-                </CardHeader>
-                <CardFooter className="justify-center">
-                    <Button onClick={onRestart}>
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Play Again
-                    </Button>
-                </CardFooter>
-            </Card>
-        )
+    if (mode === 'survival') {
+        const survived = strikes < MAX_STRIKES;
+        if (survived && correctCount === totalQuestions && Object.keys(answers).length === totalQuestions) {
+            return (
+                 <Card>
+                    <CardHeader className="items-center text-center">
+                        <Trophy className="h-16 w-16 text-yellow-500" />
+                        <CardTitle className="font-headline text-3xl mt-4">You Survived!</CardTitle>
+                        <CardDescription>You answered all {totalQuestions} questions correctly without losing all your lives. Well done.</CardDescription>
+                    </CardHeader>
+                    <CardFooter className="justify-center">
+                        <Button onClick={onRestart}>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Play Again
+                        </Button>
+                    </CardFooter>
+                </Card>
+            )
+        } else if (!survived) {
+             return (
+                 <Card>
+                    <CardHeader className="items-center text-center">
+                        <ShieldAlert className="h-16 w-16 text-destructive" />
+                        <CardTitle className="font-headline text-3xl mt-4">Game Over</CardTitle>
+                        <CardDescription>You ran out of lives. You answered {correctCount} questions correctly.</CardDescription>
+                    </CardHeader>
+                     <CardContent className="text-center">
+                        <p className="font-semibold">You made {incorrectCount} mistakes.</p>
+                     </CardContent>
+                    <CardFooter className="justify-center">
+                        <Button onClick={onRestart}>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Try Again
+                        </Button>
+                    </CardFooter>
+                </Card>
+            )
+        }
     }
+
 
     if (mode === 'speedrun') {
         const speedrunScore = Math.max(0, (correctCount * 1000) - (timeTaken * 10));
@@ -125,7 +149,7 @@ function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, setSessio
                         </div>
                         <div>
                             <p className="text-sm text-muted-foreground">Strikes</p>
-                            <p className="text-xl font-semibold">{quiz.questions.length - correctCount}</p>
+                            <p className="text-xl font-semibold">{strikes}</p>
                         </div>
                         <div>
                             <p className="text-sm text-muted-foreground">Time</p>
@@ -398,16 +422,21 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             setIsCorrect(isAnswerCorrect);
             setIsAnswered(true);
 
-            if (mode === 'survival' && !isAnswerCorrect) {
-                handleSurvivalPenalty();
-            }
-            if (mode === 'speedrun' && !isAnswerCorrect) {
-                const newStrikes = strikes + 1;
-                setStrikes(newStrikes);
-                if (newStrikes >= 3) {
+            if (!isAnswerCorrect) {
+                 const newStrikes = strikes + 1;
+                 setStrikes(newStrikes);
+                if (mode === 'survival') {
+                    if (newStrikes >= MAX_STRIKES) {
+                        handleFinishQuiz();
+                    } else {
+                        handleSurvivalPenalty();
+                    }
+                }
+                if (mode === 'speedrun' && newStrikes >= MAX_STRIkes) {
                     handleFinishQuiz();
                 }
             }
+
             if (mode === 'adaptive') {
                 if (isAnswerCorrect) {
                     setDifficulty(d => Math.min(10, d + 1));
@@ -472,7 +501,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     }
     
     if (isFinished) {
-        return <FinalResults quiz={{...quiz, questions: currentQuestions}} answers={answers} onRestart={onRestart} mode={mode} timeTaken={speedrunTime} setSessionRecap={setSessionRecap} />
+        return <FinalResults quiz={{...quiz, questions: currentQuestions}} answers={answers} onRestart={onRestart} mode={mode} timeTaken={speedrunTime} setSessionRecap={setSessionRecap} strikes={strikes} />
     }
     
     const formatTime = (seconds: number) => {
@@ -484,6 +513,10 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const selectedOptionId = question ? answers[question.id] || null : null;
 
     const renderHeaderInfo = () => {
+        const strikeIcons = Array.from({ length: MAX_STRIKES }).map((_, i) => (
+            <Bomb key={i} className={cn("h-5 w-5", i < strikes ? "text-destructive" : "text-muted-foreground/50")} />
+        ));
+
         if (mode === 'exam') {
              return (
                 <div className="flex items-center gap-2 text-lg font-semibold text-primary">
@@ -492,16 +525,17 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                 </div>
             );
         }
-        if (mode === 'speedrun') {
+        if (mode === 'speedrun' || mode === 'survival') {
             return (
                 <div className="flex items-center gap-4 text-lg font-semibold">
-                    <div className="flex items-center gap-2 text-primary">
-                        <Timer className="h-5 w-5" />
-                        <span>{formatTime(speedrunTime)}</span>
-                    </div>
-                     <div className="flex items-center gap-2 text-destructive">
-                        <Bomb className="h-5 w-5" />
-                        <span>{strikes} / 3</span>
+                    {mode === 'speedrun' && (
+                        <div className="flex items-center gap-2 text-primary">
+                            <Timer className="h-5 w-5" />
+                            <span>{formatTime(speedrunTime)}</span>
+                        </div>
+                    )}
+                     <div className="flex items-center gap-1.5">
+                       {strikeIcons}
                     </div>
                 </div>
             );
