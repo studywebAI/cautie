@@ -1,14 +1,33 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, PlusCircle, ArrowLeft, Play, Undo2, BookCheck } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, ArrowLeft, Play, Undo2, BookCheck, Wand2, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatePresence, motion } from 'framer-motion';
 import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
-import type { Quiz, QuizQuestion } from '@/lib/types';
+import type { Quiz, QuizQuestion, QuizOption } from '@/lib/types';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { Textarea } from '../ui/textarea';
+import { Input } from '../ui/input';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Separator } from '../ui/separator';
+
+const manualQuestionSchema = z.object({
+  question: z.string().min(5, { message: "Question must be at least 5 characters long." }),
+  options: z.array(z.object({
+    text: z.string().min(1, { message: "Option text cannot be empty." }),
+  })).min(2, "You must provide at least two options."),
+  correctOptionIndex: z.string().refine(val => val !== undefined, { message: "You must select a correct answer." }),
+});
+
+type ManualQuestionFormValues = z.infer<typeof manualQuestionSchema>;
 
 type QuizEditorProps = {
   quiz: Quiz;
@@ -25,12 +44,26 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
   const [lastDeleted, setLastDeleted] = useState<{ question: QuizQuestion; index: number } | null>(null);
   const { toast } = useToast();
 
-  const handleAddQuestion = async () => {
+  const form = useForm<ManualQuestionFormValues>({
+    resolver: zodResolver(manualQuestionSchema),
+    defaultValues: {
+      question: "",
+      options: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+      correctOptionIndex: undefined,
+    },
+  });
+
+  const { fields } = useFieldArray({
+    control: form.control,
+    name: "options"
+  });
+
+  const handleAddQuestionWithAI = async () => {
     setIsAddingQuestion(true);
     try {
       const newQuestion = await generateSingleQuestion({
         sourceText: sourceText,
-        difficulty: 5, // Default to medium difficulty for added questions
+        difficulty: 5,
         existingQuestionIds: currentQuiz.questions.map(q => q.id),
       });
       setCurrentQuiz(prevQuiz => ({
@@ -47,6 +80,32 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
     } finally {
       setIsAddingQuestion(false);
     }
+  };
+
+  const handleAddManualQuestion = (data: ManualQuestionFormValues) => {
+    const newOptions: QuizOption[] = data.options.map((opt, index) => ({
+      id: String.fromCharCode(97 + index), // a, b, c, d
+      text: opt.text,
+      isCorrect: index === parseInt(data.correctOptionIndex),
+    })).filter(opt => opt.text.trim() !== '');
+
+    if (newOptions.length < 2) {
+      toast({ variant: 'destructive', title: 'Not enough options', description: 'Please provide at least two answer options.'});
+      return;
+    }
+
+    const newQuestion: QuizQuestion = {
+      id: `manual-${Date.now()}`,
+      question: data.question,
+      options: newOptions,
+    };
+
+    setCurrentQuiz(prev => ({ ...prev, questions: [...prev.questions, newQuestion] }));
+    form.reset();
+     toast({
+      title: 'Question Added',
+      description: 'The new question has been added to the quiz.',
+    });
   };
 
   const handleDeleteQuestion = (questionId: string) => {
@@ -106,15 +165,11 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="font-headline text-2xl">Review & Edit Quiz</CardTitle>
-            <CardDescription>Add, remove, or reorder questions before you start.</CardDescription>
+            <CardDescription>Add, remove, or edit questions before you start.</CardDescription>
           </div>
-           <Button onClick={handleAddQuestion} disabled={isAddingQuestion}>
-            {isAddingQuestion ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-            Add Question
-          </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
+      <CardContent className="space-y-4 max-h-[50vh] overflow-y-auto pr-4">
         {currentQuiz.questions.length === 0 ? (
           <Alert>
             <AlertTitle>Empty Quiz</AlertTitle>
@@ -154,7 +209,79 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
           </AnimatePresence>
         )}
       </CardContent>
-      <CardFooter className="flex justify-between">
+      
+      <div className="p-6 pt-2">
+        <Separator className="my-4" />
+        <Accordion type="single" collapsible>
+          <AccordionItem value="add-question">
+            <AccordionTrigger className="text-lg font-semibold">Add New Question</AccordionTrigger>
+            <AccordionContent className="pt-4">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(handleAddManualQuestion)} className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="question"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Question Text</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="What is the powerhouse of the cell?" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="correctOptionIndex"
+                      render={({ field }) => (
+                        <FormItem>
+                           <FormLabel>Options</FormLabel>
+                           <FormDescription>Fill in at least two options and select the correct one.</FormDescription>
+                           <FormControl>
+                               <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  {fields.map((item, index) => (
+                                      <FormField
+                                          key={item.id}
+                                          control={form.control}
+                                          name={`options.${index}.text`}
+                                          render={({ field: optionField }) => (
+                                                <FormItem className="flex items-center gap-2 space-y-0">
+                                                    <FormControl>
+                                                        <RadioGroupItem value={String(index)} />
+                                                    </FormControl>
+                                                    <Input placeholder={`Option ${index + 1}`} {...optionField} />
+                                                </FormItem>
+                                          )}
+                                      />
+                                  ))}
+                               </RadioGroup>
+                           </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" onClick={handleAddQuestionWithAI} variant="outline" disabled={isAddingQuestion}>
+                            {isAddingQuestion ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                            Suggest with AI
+                        </Button>
+                        <Button type="submit">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Manual Question
+                        </Button>
+                    </div>
+
+                  </form>
+                </Form>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
+
+      <CardFooter className="flex justify-between bg-muted/50 py-3 border-t">
         <Button variant="outline" onClick={onBack}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Setup
