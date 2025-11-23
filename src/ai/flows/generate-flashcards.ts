@@ -13,6 +13,7 @@ import { z } from 'genkit';
 const FlashcardSchema = z.object({
   front: z.string().describe('The front side of the flashcard, containing a key term or a question.'),
   back: z.string().describe('The back side of the flashcard, containing the definition or answer.'),
+  cloze: z.string().describe('A fill-in-the-blank sentence where the "back" of the card is the missing word. The blank should be represented by "____".'),
 });
 export type Flashcard = z.infer<typeof FlashcardSchema>;
 
@@ -36,7 +37,17 @@ const prompt = ai.definePrompt({
   name: 'generateFlashcardsPrompt',
   input: { schema: GenerateFlashcardsInputSchema },
   output: { schema: GenerateFlashcardsOutputSchema },
-  prompt: `You are an expert in creating effective learning materials. Your task is to generate a set of flashcards based on the provided source text. Each flashcard should have a clear 'front' (a term or question) and a concise 'back' (the corresponding definition or answer). Create between 5 and 10 flashcards.
+  prompt: `You are an expert in creating effective learning materials. Your task is to generate a set of flashcards based on the provided source text. Create between 5 and 10 flashcards.
+
+For each flashcard, you must provide three things:
+1.  **front**: A key term or a question.
+2.  **back**: The corresponding definition or answer.
+3.  **cloze**: A "fill-in-the-blank" sentence based on the definition where the word(s) from the 'back' are replaced with "____". This sentence should provide enough context to guess the missing word.
+
+Example:
+- front: "Mitochondria"
+- back: "powerhouse of the cell"
+- cloze: "The mitochondria is often called the ____."
 
 Source Text:
 {{{sourceText}}}

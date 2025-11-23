@@ -153,7 +153,7 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
   const getModeDescription = () => {
     switch (mode) {
         case 'flip': return 'Click the card or press Spacebar to flip it.';
-        case 'type': return 'Type the answer and press Enter to check.';
+        case 'type': return 'Type the answer to fill in the blank and press Enter.';
         case 'multiple-choice': return 'Select the correct answer from the options below.';
         default: return '';
     }

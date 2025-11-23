@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -41,10 +40,17 @@ export function TypeView({ card, onAnswered }: TypeViewProps) {
         }
     }
 
+    const clozeSentence = card.cloze || `____ is defined as: ${card.back}`;
+    const [before, after] = clozeSentence.split('____');
+
     return (
         <div className="w-full max-w-md h-64 flex flex-col items-center justify-center gap-4">
-            <div className="flex items-center justify-center p-6 w-full h-32 bg-card border rounded-lg">
-                 <p className="text-center text-lg font-medium">{card.front}</p>
+            <div className="flex items-center justify-center p-6 w-full min-h-[8rem] bg-card border rounded-lg">
+                 <p className="text-center text-lg font-medium leading-relaxed">
+                    {before}
+                    <span className='inline-block w-32 border-b-2 border-dashed align-middle mx-2'></span>
+                    {after}
+                 </p>
             </div>
             
             <div className="w-full space-y-2">
