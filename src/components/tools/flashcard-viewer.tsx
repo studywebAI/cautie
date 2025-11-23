@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { type Flashcard } from '@/ai/flows/generate-flashcards';
-import { ChevronsLeftRight, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
+import { explainAnswer } from '@/ai/flows/explain-answer';
+import { useToast } from '@/hooks/use-toast';
+import { ChevronsLeftRight, ArrowLeft, ArrowRight, RefreshCw, Lightbulb, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { TypeView } from './type-view';
 import { MultipleChoiceView } from './multiple-choice-view';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export type StudyMode = 'flip' | 'type' | 'multiple-choice';
 
@@ -62,12 +65,16 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
   const [isFlipped, setIsFlipped] = useState(false);
   const [direction, setDirection] = useState(0);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [isExplanationLoading, setIsExplanationLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleNext = () => {
     if (currentIndex === cards.length - 1) return;
     setDirection(1);
     setIsFlipped(false);
     setIsAnswered(false);
+    setExplanation(null);
     setCurrentIndex((prev) => (prev + 1));
   };
 
@@ -76,6 +83,7 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
     setDirection(-1);
     setIsFlipped(false);
     setIsAnswered(false);
+    setExplanation(null);
     setCurrentIndex((prev) => (prev - 1));
   };
   
@@ -89,6 +97,29 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
     }
   }
   
+  const handleGetExplanation = async () => {
+    const card = cards[currentIndex];
+    setIsExplanationLoading(true);
+    setExplanation(null);
+    try {
+        const result = await explainAnswer({
+            question: card.front,
+            selectedAnswer: card.back, // Treat the back as the "selected" answer
+            correctAnswer: card.back,
+            isCorrect: true, // We always want the "why is this correct" explanation
+        });
+        setExplanation(result.explanation);
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Could not get explanation',
+            description: 'The AI failed to generate an explanation. Please try again.',
+        });
+    } finally {
+        setIsExplanationLoading(false);
+    }
+  }
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         // Prevent shortcuts when user is typing in an input
@@ -105,7 +136,7 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
                 break;
             case ' ': // Spacebar
                 e.preventDefault();
-                if(mode === 'flip') handleFlipOrCheck();
+                if(mode === 'flip' || mode === 'type') handleFlipOrCheck();
                 break;
         }
     };
@@ -122,7 +153,7 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
   const getModeDescription = () => {
     switch (mode) {
         case 'flip': return 'Click the card or press Spacebar to flip it.';
-        case 'type': return 'Type the answer and press Enter.';
+        case 'type': return 'Type the answer and press Enter to check.';
         case 'multiple-choice': return 'Select the correct answer from the options below.';
         default: return '';
     }
@@ -140,6 +171,8 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
             return null;
     }
   }
+  
+  const showExplanationButton = (mode === 'flip' && isFlipped) || (mode !== 'flip' && isAnswered);
 
   return (
     <Card>
@@ -164,11 +197,34 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
             }}
             className="w-full"
           >
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center justify-center">
               {renderCardContent()}
+               {showExplanationButton && (
+                    <div className="mt-6">
+                         <Button variant="outline" size="sm" onClick={handleGetExplanation} disabled={isExplanationLoading}>
+                            {isExplanationLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
+                            {isExplanationLoading ? 'Generating...' : 'Explain this'}
+                        </Button>
+                    </div>
+                )}
             </div>
           </motion.div>
         </AnimatePresence>
+        {explanation && (
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-md"
+            >
+                <Alert className="border-blue-500/50 text-blue-500 dark:text-blue-400 [&>svg]:text-blue-500 dark:[&>svg]:text-blue-400">
+                    <Lightbulb className="h-4 w-4" />
+                    <AlertTitle>Explanation</AlertTitle>
+                    <AlertDescription>
+                        {explanation}
+                    </AlertDescription>
+                </Alert>
+            </motion.div>
+        )}
       </CardContent>
       <CardFooter className="justify-between">
         <Button variant="ghost" onClick={onRestart}>
