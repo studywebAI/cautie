@@ -2,6 +2,7 @@
   "sidebar": {
     "dashboard": "Dashboard",
     "subjects": "Subjects",
+    "classes": "Classes",
     "settings": "Settings",
     "tools": {
       "title": "AI Tools",

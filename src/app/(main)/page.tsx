@@ -9,11 +9,15 @@ import { useContext } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AppContext, AppContextType } from "@/contexts/app-context";
-import { TeacherDashboard } from "@/components/dashboard/teacher/teacher-dashboard";
 import { QuickAccess } from "@/components/dashboard/quick-access";
 import { ProgressChart } from "@/components/dashboard/stats/progress-chart";
 import { SessionRecap } from "@/components/dashboard/stats/session-recap";
-import { Separator } from "@/components/ui/separator";
+import { useDictionary } from "@/contexts/dictionary-context";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ArrowRight, School, Users, FileText, Activity } from "lucide-react";
+import { ClassCard } from "@/components/dashboard/teacher/class-card";
+
 
 function StudentDashboard() {
   const { studentDashboardData, isLoading, sessionRecap } = useContext(AppContext) as AppContextType;
@@ -47,6 +51,94 @@ function StudentDashboard() {
       </div>
     </div>
   );
+}
+
+function TeacherSummaryDashboard() {
+    const { teacherDashboardData, isLoading } = useContext(AppContext) as AppContextType;
+
+    if (isLoading || !teacherDashboardData) {
+        return <DashboardSkeleton />;
+    }
+
+    const totalStudents = teacherDashboardData.classes.reduce((acc, c) => acc + c.studentCount, 0);
+    const totalAssignments = teacherDashboardData.classes.reduce((acc, c) => acc + c.assignmentsDue, 0);
+    const lowProgressAlerts = teacherDashboardData.classes.flatMap(c => c.alerts).length;
+
+    return (
+        <div className="flex flex-col gap-8">
+            <header>
+                <h1 className="text-3xl font-bold font-headline">Welcome Back, Teacher</h1>
+                <p className="text-muted-foreground">
+                    Here's a high-level summary of your classes.
+                </p>
+            </header>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Classes</CardTitle>
+                        <School className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{teacherDashboardData.classes.length}</div>
+                        <p className="text-xs text-muted-foreground">classes managed</p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                         <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{totalStudents}</div>
+                        <p className="text-xs text-muted-foreground">students across all classes</p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Active Assignments</CardTitle>
+                         <FileText className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{totalAssignments}</div>
+                        <p className="text-xs text-muted-foreground">due this week</p>
+                    </CardContent>
+                </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
+                         <Activity className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{lowProgressAlerts}</div>
+                        <p className="text-xs text-muted-foreground">students need attention</p>
+                    </CardContent>
+                </Card>
+            </div>
+            
+             <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle className="font-headline">Your Classes</CardTitle>
+                            <CardDescription>A quick look at your most recent classes.</CardDescription>
+                        </div>
+                        <Button asChild variant="outline">
+                            <Link href="/classes">
+                                Manage All Classes
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {teacherDashboardData.classes.slice(0, 2).map(classInfo => (
+                        <ClassCard key={classInfo.id} classInfo={classInfo} />
+                    ))}
+                </CardContent>
+             </Card>
+
+        </div>
+    );
 }
 
 function DashboardSkeleton() {
@@ -132,9 +224,13 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
-  const { role } = useContext(AppContext) as AppContextType;
+  const { role, isLoading } = useContext(AppContext) as AppContextType;
+
+  if(isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
-      role === 'student' ? <StudentDashboard /> : <TeacherDashboard />
+      role === 'student' ? <StudentDashboard /> : <TeacherSummaryDashboard />
   );
 }

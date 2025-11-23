@@ -21,6 +21,7 @@ import {
   FileSignature,
   ChevronDown,
   Wrench,
+  School,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Button } from './ui/button';
@@ -35,6 +36,7 @@ export function AppSidebar() {
   const menuItems = [
     { href: '/', label: dictionary.sidebar.dashboard, icon: Home },
     { href: '/subjects', label: dictionary.sidebar.subjects, icon: BookOpen },
+    { href: '/classes', label: dictionary.sidebar.classes, icon: School },
     { href: '/material', label: dictionary.sidebar.tools.materialProcessor, icon: FileSignature },
   ];
 

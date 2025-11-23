@@ -2,6 +2,7 @@
   "sidebar": {
     "dashboard": "Dashboard",
     "subjects": "Vakken",
+    "classes": "Klassen",
     "settings": "Instellingen",
     "tools": {
       "title": "AI Hulpmiddelen",
