@@ -1,6 +1,5 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/sidebar";
 import { AppHeader } from "@/components/header";
@@ -18,9 +17,8 @@ export default async function MainLayout({
   const supabase = createRouteHandlerClient<Database>({ cookies });
   const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
-    redirect('/login');
-  }
+  // Authentication is no longer required to view the main layout.
+  // The app will now handle logged-in vs. logged-out state internally.
 
   return (
     <AppProvider session={session}>

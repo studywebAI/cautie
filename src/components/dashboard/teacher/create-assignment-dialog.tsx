@@ -55,7 +55,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
   const [materialId, setMaterialId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { refetchAssignments } = useContext(AppContext) as AppContextType;
+  const { createAssignment } = useContext(AppContext) as AppContextType;
 
   const handleCreateAssignment = async () => {
     if (!title || !dueDate || !materialId) {
@@ -69,22 +69,11 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
     
     setIsLoading(true);
     try {
-        const response = await fetch('/api/assignments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title,
-                due_date: format(dueDate, 'yyyy-MM-dd'),
-                class_id: classId,
-            })
+        await createAssignment({
+            title,
+            due_date: format(dueDate, 'yyyy-MM-dd'),
+            class_id: classId,
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to create assignment');
-        }
-        
-        await refetchAssignments();
         
         toast({
             title: 'Assignment Created',

@@ -32,17 +32,40 @@ export type AppContextType = {
   sessionRecap: SessionRecapData | null;
   setSessionRecap: (data: SessionRecapData | null) => void;
   classes: ClassInfo[];
+  createClass: (newClass: { name: string; description: string | null }) => Promise<void>;
   refetchClasses: () => Promise<void>;
   assignments: ClassAssignment[];
+  createAssignment: (newAssignment: { title: string; due_date: string; class_id: string }) => Promise<void>;
   refetchAssignments: () => Promise<void>;
   students: Student[];
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
 
+// Helper functions for local storage
+const getFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
+    if (typeof window === 'undefined') return defaultValue;
+    try {
+        const item = window.localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+        console.error(`Error reading from localStorage key “${key}”:`, error);
+        return defaultValue;
+    }
+};
+
+const saveToLocalStorage = <T,>(key: string, value: T) => {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+        console.error(`Error saving to localStorage key “${key}”:`, error);
+    }
+};
+
+
 export const AppProvider = ({ children, session }: { children: ReactNode, session: Session | null }) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   
   const [language, setLanguageState] = useState('en');
   const [role, setRoleState] = useState<UserRole>('student');
@@ -55,86 +78,123 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
-  const [teacherDataLoaded, setTeacherDataLoaded] = useState(false);
 
-  const fetchClasses = useCallback(async () => {
-    try {
-        const response = await fetch('/api/classes');
-        if (!response.ok) throw new Error('Failed to fetch classes');
-        const data = await response.json();
-        setClasses(data);
-    } catch (error) {
-        console.error(error);
+  // ---- Data Fetching ----
+  const fetchRemoteData = useCallback(async () => {
+    setIsLoading(true);
+    await Promise.all([
+      fetch('/api/classes').then(res => res.json()).then(data => setClasses(data || [])),
+      fetch('/api/assignments').then(res => res.json()).then(data => setAssignments(data || []))
+    ]);
+    setIsLoading(false);
+  }, []);
+
+  const fetchLocalData = useCallback(() => {
+    setIsLoading(true);
+    setClasses(getFromLocalStorage('studyweb-classes', []));
+    setAssignments(getFromLocalStorage('studyweb-assignments', []));
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (session) {
+      // **TODO**: Sync local data to remote on login
+      fetchRemoteData();
+    } else {
+      fetchLocalData();
     }
-  }, []);
+  }, [session, fetchRemoteData, fetchLocalData]);
 
-  const fetchAssignments = useCallback(async () => {
-    try {
-        const response = await fetch('/api/assignments');
-        if (!response.ok) throw new Error('Failed to fetch assignments');
-        const data = await response.json();
-        setAssignments(data);
-    } catch (error) {
-        console.error(error);
+
+  // ---- Data Creation ----
+  const createClass = async (newClass: { name: string; description: string | null }) => {
+    if (session) {
+      // Logged in: POST to API
+      const response = await fetch('/api/classes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newClass),
+      });
+      if (!response.ok) throw new Error('Failed to create class remotely');
+      await fetchRemoteData();
+    } else {
+      // Logged out: Save to localStorage
+      const newClassWithId: ClassInfo = {
+        ...newClass,
+        id: `local-class-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        owner_id: 'local-user',
+      };
+      const updatedClasses = [...classes, newClassWithId];
+      saveToLocalStorage('studyweb-classes', updatedClasses);
+      setClasses(updatedClasses);
     }
-  }, []);
+  };
 
-
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem('studyweb-language') || 'en';
-    setLanguageState(savedLanguage);
-    const savedRole = localStorage.getItem('studyweb-role') as UserRole || 'student';
-    setRoleState(savedRole);
-    const savedHighContrast = localStorage.getItem('studyweb-high-contrast') === 'true';
-    setHighContrastState(savedHighContrast);
-    const savedDyslexiaFont = localStorage.getItem('studyweb-dyslexia-font') === 'true';
-    setDyslexiaFontState(savedDyslexiaFont);
-    const savedReducedMotion = localStorage.getItem('studyweb-reduced-motion') === 'true';
-    setReducedMotionState(savedReducedMotion);
-    setIsInitialLoadComplete(true);
-  }, []);
+  const createAssignment = async (newAssignment: { title: string; due_date: string; class_id: string }) => {
+     if (session) {
+      // Logged in: POST to API
+      const response = await fetch('/api/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAssignment),
+      });
+      if (!response.ok) throw new Error('Failed to create assignment remotely');
+      await fetchRemoteData();
+    } else {
+      // Logged out: Save to localStorage
+       const newAssignmentWithId: ClassAssignment = {
+        ...newAssignment,
+        id: `local-assignment-${Date.now()}`,
+        created_at: new Date().toISOString(),
+      };
+      const updatedAssignments = [...assignments, newAssignmentWithId];
+      saveToLocalStorage('studyweb-assignments', updatedAssignments);
+      setAssignments(updatedAssignments);
+    }
+  };
   
-  useEffect(() => {
-    const body = document.body;
-    if (dyslexiaFont) body.classList.add('font-dyslexia');
-    else body.classList.remove('font-dyslexia');
-  }, [dyslexiaFont]);
-  
-  useEffect(() => {
-    const body = document.body;
-    if (reducedMotion) body.setAttribute('data-reduced-motion', 'true');
-    else body.removeAttribute('data-reduced-motion');
-  }, [reducedMotion]);
+  const refetchClasses = async () => {
+    if (session) await fetchRemoteData();
+    else fetchLocalData();
+  }
 
+  const refetchAssignments = async () => {
+    if (session) await fetchRemoteData();
+    else fetchLocalData();
+  }
+
+  // ---- Settings and Preferences ----
   useEffect(() => {
-    if (!isInitialLoadComplete || !session) return;
+    setLanguageState(getFromLocalStorage('studyweb-language', 'en'));
+    setRoleState(getFromLocalStorage('studyweb-role', 'student'));
     
-    async function loadDataForRole() {
-      setIsLoading(true);
-      if (role === 'teacher' && !teacherDataLoaded) {
-        await Promise.all([fetchClasses(), fetchAssignments()]);
-        setTeacherDataLoaded(true);
-      }
-      // Student data would be fetched here
-      setIsLoading(false);
-    }
-    loadDataForRole();
-  }, [role, isInitialLoadComplete, session, fetchClasses, fetchAssignments, teacherDataLoaded]);
+    const hc = getFromLocalStorage('studyweb-high-contrast', false);
+    setHighContrastState(hc);
+    if(hc) document.documentElement.classList.add('high-contrast');
+
+    const df = getFromLocalStorage('studyweb-dyslexia-font', false);
+    setDyslexiaFontState(df);
+     if(df) document.body.classList.add('font-dyslexia');
+
+    const rm = getFromLocalStorage('studyweb-reduced-motion', false);
+    setReducedMotionState(rm);
+    if(rm) document.body.setAttribute('data-reduced-motion', 'true');
+  }, []);
   
   const setLanguage = (newLanguage: string) => {
     setLanguageState(newLanguage);
-    localStorage.setItem('studyweb-language', newLanguage);
+    saveToLocalStorage('studyweb-language', newLanguage);
   };
   
   const setRole = (newRole: UserRole) => {
-    if (newRole === role) return;
     setRoleState(newRole);
-    localStorage.setItem('studyweb-role', newRole);
+    saveToLocalStorage('studyweb-role', newRole);
   };
   
   const setHighContrast = (enabled: boolean) => {
     setHighContrastState(enabled);
-    localStorage.setItem('studyweb-high-contrast', String(enabled));
+    saveToLocalStorage('studyweb-high-contrast', enabled);
      const html = document.documentElement;
     if (enabled) html.classList.add('high-contrast');
     else html.classList.remove('high-contrast');
@@ -142,12 +202,18 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
   
   const setDyslexiaFont = (enabled: boolean) => {
     setDyslexiaFontState(enabled);
-    localStorage.setItem('studyweb-dyslexia-font', String(enabled));
+    saveToLocalStorage('studyweb-dyslexia-font', enabled);
+    const body = document.body;
+    if (enabled) body.classList.add('font-dyslexia');
+    else body.classList.remove('font-dyslexia');
   };
 
   const setReducedMotion = (enabled: boolean) => {
     setReducedMotionState(enabled);
-    localStorage.setItem('studyweb-reduced-motion', String(enabled));
+    saveToLocalStorage('studyweb-reduced-motion', enabled);
+     const body = document.body;
+    if (enabled) body.setAttribute('data-reduced-motion', 'true');
+    else body.removeAttribute('data-reduced-motion');
   };
 
 
@@ -167,9 +233,11 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     sessionRecap,
     setSessionRecap,
     classes,
-    refetchClasses: fetchClasses,
+    createClass,
+    refetchClasses,
     assignments,
-    refetchAssignments: fetchAssignments,
+    createAssignment,
+    refetchAssignments,
     students,
   };
 

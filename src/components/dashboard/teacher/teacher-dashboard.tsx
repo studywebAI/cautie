@@ -6,35 +6,22 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { ClassCard } from './class-card';
 import { CreateClassDialog } from './create-class-dialog';
-import { AppContext, AppContextType, ClassInfo } from '@/contexts/app-context';
+import { AppContext, AppContextType } from '@/contexts/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
 export function TeacherDashboard() {
-  const { classes, refetchClasses, isLoading } = useContext(AppContext) as AppContextType;
+  const { classes, createClass, isLoading } = useContext(AppContext) as AppContextType;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleClassCreated = async (newClass: { name: string; description: string }) => {
+  const handleClassCreated = async (newClass: { name: string; description: string | null }) => {
      try {
-      const response = await fetch('/api/classes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newClass),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create class');
-      }
-      
+      await createClass(newClass);
       toast({
         title: 'Class Created',
         description: `"${newClass.name}" has been successfully created.`,
       });
-
-      await refetchClasses();
     } catch (error) {
       console.error(error);
       toast({
@@ -45,7 +32,7 @@ export function TeacherDashboard() {
     }
   };
   
-  if (isLoading) {
+  if (isLoading || !classes) {
       return (
         <div className="flex flex-col gap-8">
             <header className="flex justify-between items-center">
