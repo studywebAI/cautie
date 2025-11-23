@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -106,7 +105,7 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
                 break;
             case ' ': // Spacebar
                 e.preventDefault();
-                if(mode === 'flip' || mode === 'type') handleFlipOrCheck();
+                if(mode === 'flip') handleFlipOrCheck();
                 break;
         }
     };
