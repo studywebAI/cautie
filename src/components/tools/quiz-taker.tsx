@@ -7,7 +7,7 @@ import { explainAnswer } from '@/ai/flows/explain-answer';
 import { generateQuiz } from '@/ai/flows/generate-quiz';
 import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Ghost, Trophy, Zap, Bomb, TrendingUp } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Trophy, Zap, Bomb, TrendingUp } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -297,7 +297,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                 question: question.question,
                 selectedAnswer: selectedAnswer,
                 correctAnswer: correctOption.text,
-                isCorrect: false,
+                isCorrect: isCorrect,
             });
             setExplanation(result.explanation);
         } catch (error) {
@@ -476,9 +476,9 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                                     disabled={(isAnswered && (mode !== 'normal' && mode !== 'exam')) || isGeneratingNext}
                                     selectedOptionId={selectedOptionId}
                                 />
-                                {isAnswered && !isCorrect && (
+                                {isAnswered && (
                                     <div className="mt-4 space-y-4">
-                                    {mode === 'practice' && (
+                                    {(mode === 'practice' || (mode === 'adaptive' && !isCorrect)) && (
                                         <Button variant="outline" size="sm" onClick={handleGetExplanation} disabled={isExplanationLoading}>
                                             {isExplanationLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
                                             {isExplanationLoading ? 'Generating...' : 'Explain it to me'}
@@ -522,11 +522,10 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                    {(mode !== 'normal' && mode !== 'exam') && isAnswered && !isCorrect && <div className="flex items-center gap-2 text-red-600"><XCircle className="h-5 w-5" /><span>Incorrect</span></div>}
                 </div>
                 {(mode !== 'normal' && mode !== 'exam') ? (
-                    <Button onClick={handleNextQuestion} disabled={isPenaltyLoading || isGeneratingNext || !isAnswered }>
-                        {(isPenaltyLoading || isGeneratingNext) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     <Button onClick={handleNextQuestion} disabled={isPenaltyLoading || isGeneratingNext || !isAnswered }>
+                        {(isPenaltyLoading || isGeneratingNext) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="ml-2 h-4 w-4" />}
                         {mode === 'adaptive' && currentIndex === ADAPTIVE_QUESTION_COUNT - 1 ? 'Finish Quiz' : 'Next Question'}
                         {mode !== 'adaptive' && 'Next Question'}
-                        <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                 ) : null}
 
@@ -539,3 +538,5 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         </Card>
     )
 }
+
+    
