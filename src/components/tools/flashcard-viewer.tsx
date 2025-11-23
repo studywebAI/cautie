@@ -4,11 +4,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { type Flashcard } from '@/ai/flows/generate-flashcards';
-import { ChevronsLeftRight, ArrowLeft, ArrowRight, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronsLeftRight, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { TypeView } from './type-view';
 import { MultipleChoiceView } from './multiple-choice-view';
 
 export type StudyMode = 'flip' | 'type' | 'multiple-choice';
@@ -58,77 +57,6 @@ function FlipView({ card, isFlipped, setIsFlipped }: { card: Flashcard; isFlippe
   );
 }
 
-// Sub-component for Type Mode
-function TypeView({ card, onAnswerSubmit }: { card: Flashcard; onAnswerSubmit: () => void; }) {
-    const [userAnswer, setUserAnswer] = useState('');
-    const [isSubmitted, setIsSubmitted] = useState(false);
-    const [isCorrect, setIsCorrect] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        setIsSubmitted(false);
-        setUserAnswer('');
-        setIsCorrect(false);
-        inputRef.current?.focus();
-    }, [card]);
-
-
-    const handleCheckAnswer = () => {
-        if (!userAnswer) return;
-        const correct = userAnswer.trim().toLowerCase() === card.back.trim().toLowerCase();
-        setIsCorrect(correct);
-        setIsSubmitted(true);
-        onAnswerSubmit();
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' && !isSubmitted) {
-            handleCheckAnswer();
-        }
-    }
-
-    return (
-        <div className="w-full max-w-md h-64 flex flex-col items-center justify-center gap-4">
-            <div className="flex items-center justify-center p-6 w-full h-32 bg-card border rounded-lg">
-                 <p className="text-center text-lg font-medium">{card.front}</p>
-            </div>
-            
-            <div className="w-full space-y-2">
-                 <Input
-                    ref={inputRef}
-                    placeholder="Type your answer..."
-                    value={userAnswer}
-                    onChange={(e) => setUserAnswer(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={isSubmitted}
-                    className={cn(
-                        'text-center text-lg h-14',
-                        isSubmitted && isCorrect && 'border-green-500 focus-visible:ring-green-500',
-                        isSubmitted && !isCorrect && 'border-red-500 focus-visible:ring-red-500'
-                    )}
-                 />
-                 {isSubmitted && !isCorrect && (
-                     <p className="text-sm text-center text-muted-foreground">
-                         Correct answer: <span className="font-semibold text-foreground">{card.back}</span>
-                     </p>
-                 )}
-                 {isSubmitted && (
-                     <div className={cn("flex items-center justify-center gap-2 text-sm", isCorrect ? 'text-green-600' : 'text-red-600')}>
-                        {isCorrect ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                        <span>{isCorrect ? "Correct!" : "Incorrect"}</span>
-                     </div>
-                 )}
-            </div>
-
-            <div className='flex items-center justify-center'>
-                 <Button variant="secondary" onClick={handleCheckAnswer} disabled={isSubmitted || !userAnswer}>
-                    Check Answer
-                </Button>
-            </div>
-        </div>
-    )
-}
-
 // Main Viewer Component
 export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]; mode: StudyMode; onRestart: () => void; }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -157,7 +85,7 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
         setIsFlipped(f => !f);
     } else if (mode === 'type') {
         // Find the button and click it to trigger submission within TypeView
-        const checkButton = (document.querySelector('.w-full.max-w-md button') as HTMLButtonElement);
+        const checkButton = (document.getElementById('check-answer-btn') as HTMLButtonElement);
         checkButton?.click();
     }
   }
@@ -171,14 +99,15 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
 
         switch (e.key) {
             case 'ArrowRight':
-                handleNext();
+                if (mode === 'flip' || isAnswered) handleNext();
                 break;
             case 'ArrowLeft':
                 handlePrev();
                 break;
+_CH_
             case ' ': // Spacebar
                 e.preventDefault();
-                handleFlipOrCheck();
+                if(mode === 'flip') handleFlipOrCheck();
                 break;
         }
     };
@@ -188,7 +117,7 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
         document.removeEventListener('keydown', handleKeyDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, cards.length, mode]);
+  }, [currentIndex, cards.length, mode, isAnswered]);
 
   const card = cards[currentIndex];
 
@@ -206,7 +135,7 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
         case 'flip':
             return <FlipView card={card} isFlipped={isFlipped} setIsFlipped={setIsFlipped} />;
         case 'type':
-            return <TypeView card={card} onAnswerSubmit={() => setIsAnswered(true)} />;
+            return <TypeView card={card} onAnswered={() => setIsAnswered(true)} />;
         case 'multiple-choice':
             return <MultipleChoiceView card={card} onAnswered={() => setIsAnswered(true)} />;
         default:

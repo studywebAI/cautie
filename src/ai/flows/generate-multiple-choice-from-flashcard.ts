@@ -9,20 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-
-const McqOptionSchema = z.object({
-  id: z.string().describe('Unique identifier for the option (e.g., "a", "b", "c").'),
-  text: z.string().describe('The text of the answer option.'),
-});
-
-export const McqQuestionSchema = z.object({
-  question: z.string().describe('The text of the question, derived from the flashcard front.'),
-  options: z.array(McqOptionSchema).describe('An array of 3 to 4 possible answer options.'),
-  correctOptionId: z.string().describe('The ID of the correct answer option.'),
-});
-
-export type McqOption = z.infer<typeof McqOptionSchema>;
-export type McqQuestion = z.infer<typeof McqQuestionSchema>;
+import { McqQuestionSchema, type McqQuestion } from '@/lib/types';
 
 
 const GenerateMultipleChoiceFromFlashcardInputSchema = z.object({
@@ -54,7 +41,7 @@ Your task:
 3.  Generate 2 or 3 plausible but incorrect "distractor" options. They should be related to the topic but clearly wrong.
 4.  The total number of options should be 3 or 4.
 5.  Shuffle the options so the correct answer is not always in the same position.
-6.  Identify which of the generated options is the correct one.
+6.  Identify which of the generated options is the correct one by setting its isCorrect flag to true.
 `,
 });
 

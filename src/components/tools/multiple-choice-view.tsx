@@ -94,7 +94,7 @@ export function MultipleChoiceView({ card, onAnswered }: MultipleChoiceViewProps
               >
                 <RadioGroupItem value={opt.id} id={`${mcq.question}-${opt.id}`} className="flex-shrink-0" />
                 <span>{opt.text}</span>
-                {isAnswered && isSelected && (isTheCorrectAnswer ? <CheckCircle className="h-5 w-5 text-green-600 ml-auto" /> : <XCircle className="h-5 w-5 text-red-600 ml-auto" />)}
+                {isAnswered && (isSelected || isTheCorrectAnswer) && (isTheCorrectAnswer ? <CheckCircle className="h-5 w-5 text-green-600 ml-auto" /> : <XCircle className="h-5 w-5 text-red-600 ml-auto" />)}
               </Label>
             );
           })}

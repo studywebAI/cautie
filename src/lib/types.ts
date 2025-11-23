@@ -91,6 +91,21 @@ export type QuizOption = z.infer<typeof QuizOptionSchema>;
 export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
 export type Quiz = z.infer<typeof QuizSchema>;
 
+// Types for MCQ from flashcard
+const McqOptionSchema = z.object({
+  id: z.string().describe('Unique identifier for the option (e.g., "a", "b", "c").'),
+  text: z.string().describe('The text of the answer option.'),
+});
+
+export const McqQuestionSchema = z.object({
+  question: z.string().describe('The text of the question, derived from the flashcard front.'),
+  options: z.array(McqOptionSchema).describe('An array of 3 to 4 possible answer options.'),
+  correctOptionId: z.string().describe('The ID of the correct answer option.'),
+});
+
+export type McqOption = z.infer<typeof McqOptionSchema>;
+export type McqQuestion = z.infer<typeof McqQuestionSchema>;
+
 
 export type SessionRecapData = {
   score: number;
