@@ -3,8 +3,6 @@
  * @fileOverview An AI agent that generates mock data for a 1v1 quiz duel.
  *
  * - generateQuizDuelData - Generates data for a quiz duel.
- * - GenerateQuizDuelDataInput - The input type for the function.
- * - QuizDuelData - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -25,7 +23,7 @@ const DuelRoundSchema = z.object({
   answeredCorrectly: z.boolean().optional().describe('True if the winner answered correctly.'),
 });
 
-export const QuizDuelDataSchema = z.object({
+const QuizDuelDataSchema = z.object({
   player1: DuelPlayerSchema,
   player2: DuelPlayerSchema,
   rounds: z.array(DuelRoundSchema).describe('An array of quiz rounds for the duel.'),
@@ -40,7 +38,7 @@ const GenerateQuizDuelDataInputSchema = z.object({
   questionCount: z.number().optional().default(10).describe('The number of questions for the duel.'),
 });
 
-export type GenerateQuizDuelDataInput = z.infer<typeof GenerateQuizDuelDataInputSchema>;
+type GenerateQuizDuelDataInput = z.infer<typeof GenerateQuizDuelDataInputSchema>;
 
 export async function generateQuizDuelData(input: GenerateQuizDuelDataInput): Promise<QuizDuelData> {
   return generateQuizDuelDataFlow(input);

@@ -3,8 +3,6 @@
  * @fileOverview An AI agent that generates creative ideas for a new class.
  *
  * - generateClassIdeas - A function that returns a list of class ideas.
- * - GenerateClassIdeasInput - The input type for the function.
- * - GenerateClassIdeasOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -19,7 +17,7 @@ const ClassIdeaSchema = z.object({
 const GenerateClassIdeasInputSchema = z.object({
   subject: z.string().describe('The general subject for the class (e.g., "History", "Physics").'),
 });
-export type GenerateClassIdeasInput = z.infer<typeof GenerateClassIdeasInputSchema>;
+type GenerateClassIdeasInput = z.infer<typeof GenerateClassIdeasInputSchema>;
 
 const GenerateClassIdeasOutputSchema = z.object({
   ideas: z.array(ClassIdeaSchema).describe('An array of 3-4 creative class ideas.'),

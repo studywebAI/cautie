@@ -3,8 +3,6 @@
  * @fileOverview An AI agent that generates all data for the student dashboard.
  *
  * - generateDashboardData - A function that returns tasks, alerts, and deadlines.
- * - GenerateDashboardDataInput - The input type for the generateDashboardData function.
- * - GenerateDashboardDataOutput - The return type for the generateDashboardData function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -69,7 +67,7 @@ const GenerateDashboardDataInputSchema = z.object({
   studentName: z.string().describe('The name of the student.'),
   subjects: z.array(z.string()).describe('A list of subject names the student is taking.'),
 });
-export type GenerateDashboardDataInput = z.infer<
+type GenerateDashboardDataInput = z.infer<
   typeof GenerateDashboardDataInputSchema
 >;
 

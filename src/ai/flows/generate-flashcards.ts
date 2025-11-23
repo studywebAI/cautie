@@ -3,20 +3,18 @@
  * @fileOverview An AI agent that generates flashcards from a given text.
  *
  * - generateFlashcards - A function that creates flashcards.
- * - GenerateFlashcardsInput - The input type for the function.
- * - GenerateFlashcardsOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { FlashcardSchema, type Flashcard } from '@/lib/types';
+import { FlashcardSchema } from '@/lib/types';
 
 const GenerateFlashcardsInputSchema = z.object({
   sourceText: z.string().describe('The source text from which to generate flashcards.'),
   count: z.number().optional().default(10).describe('The number of flashcards to generate.'),
   existingFlashcardIds: z.array(z.string()).optional().describe('An array of flashcard front texts that should not be regenerated.'),
 });
-export type GenerateFlashcardsInput = z.infer<typeof GenerateFlashcardsInputSchema>;
+type GenerateFlashcardsInput = z.infer<typeof GenerateFlashcardsInputSchema>;
 
 const GenerateFlashcardsOutputSchema = z.object({
   flashcards: z.array(FlashcardSchema).describe('An array of generated flashcards.'),

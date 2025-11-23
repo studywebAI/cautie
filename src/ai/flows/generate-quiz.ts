@@ -3,8 +3,6 @@
  * @fileOverview An AI agent that generates a multiple-choice quiz from source text.
  *
  * - generateQuiz - A function that creates a quiz.
- * - GenerateQuizInput - The input type for the function.
- * - Quiz - The return type for the function (the quiz object).
  */
 
 import { ai } from '@/ai/genkit';
@@ -17,7 +15,7 @@ const GenerateQuizInputSchema = z.object({
   questionCount: z.number().optional().default(7).describe('The desired number of questions.'),
   existingQuestionIds: z.array(z.string()).optional().describe('An array of question IDs that should not be regenerated.'),
 });
-export type GenerateQuizInput = z.infer<typeof GenerateQuizInputSchema>;
+type GenerateQuizInput = z.infer<typeof GenerateQuizInputSchema>;
 
 
 export async function generateQuiz(

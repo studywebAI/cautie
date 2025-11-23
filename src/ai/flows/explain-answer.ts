@@ -3,25 +3,23 @@
  * @fileOverview An AI agent that explains why a quiz answer is correct or incorrect.
  *
  * - explainAnswer - A function that generates an explanation.
- * - ExplainAnswerInput - The input type for the function.
- * - ExplainAnswerOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const ExplainAnswerInputSchema = z.object({
+const ExplainAnswerInputSchema = z.object({
   question: z.string().describe('The quiz question that was asked.'),
   selectedAnswer: z.string().describe('The answer the user selected.'),
   correctAnswer: z.string().describe('The correct answer to the question.'),
   isCorrect: z.boolean().describe('Whether the user\'s answer was correct.'),
 });
-export type ExplainAnswerInput = z.infer<typeof ExplainAnswerInputSchema>;
+type ExplainAnswerInput = z.infer<typeof ExplainAnswerInputSchema>;
 
-export const ExplainAnswerOutputSchema = z.object({
+const ExplainAnswerOutputSchema = z.object({
   explanation: z.string().describe('A brief explanation tailored to the user\'s answer.'),
 });
-export type ExplainAnswerOutput = z.infer<typeof ExplainAnswerOutputSchema>;
+type ExplainAnswerOutput = z.infer<typeof ExplainAnswerOutputSchema>;
 
 export async function explainAnswer(
   input: ExplainAnswerInput

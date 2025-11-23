@@ -3,8 +3,6 @@
  * @fileOverview An AI agent that generates a single multiple-choice question.
  *
  * - generateSingleQuestion - A function that creates one question.
- * - GenerateSingleQuestionInput - The input type for the function.
- * - QuizQuestion - The return type for the function (the question object).
  */
 
 import { ai } from '@/ai/genkit';
@@ -16,7 +14,7 @@ const GenerateSingleQuestionInputSchema = z.object({
   difficulty: z.number().min(1).max(10).describe('The desired difficulty of the question, from 1 (easiest) to 10 (hardest).'),
   existingQuestionIds: z.array(z.string()).optional().describe('An array of question IDs that should not be regenerated to avoid duplicates.'),
 });
-export type GenerateSingleQuestionInput = z.infer<typeof GenerateSingleQuestionInputSchema>;
+type GenerateSingleQuestionInput = z.infer<typeof GenerateSingleQuestionInputSchema>;
 
 
 export async function generateSingleQuestion(

@@ -3,8 +3,6 @@
  * @fileOverview An AI agent that provides students with personalized learning analytics.
  *
  * - provideAiPoweredAnalytics - A function that returns learning analytics and tailored study suggestions.
- * - ProvideAiPoweredAnalyticsInput - The input type for the provideAiPoweredAnalytics function.
- * - ProvideAiPoweredAnalyticsOutput - The return type for the provideAiPoweredAnalytics function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -14,14 +12,14 @@ const ProvideAiPoweredAnalyticsInputSchema = z.object({
   studentId: z.string().describe('The ID of the student to analyze.'),
   learningHistory: z.string().describe('The learning history of the student, including topics studied, quiz scores, and time spent on each topic.'),
 });
-export type ProvideAiPoweredAnalyticsInput = z.infer<typeof ProvideAiPoweredAnalyticsInputSchema>;
+type ProvideAiPoweredAnalyticsInput = z.infer<typeof ProvideAiPoweredAnalyticsInputSchema>;
 
 const ProvideAiPoweredAnalyticsOutputSchema = z.object({
   summary: z.string().describe('A summary of the student learning progress.'),
   weakAreas: z.string().describe('Specific weak areas where the student needs to focus.'),
   suggestedMaterials: z.string().describe('Tailored study materials recommended for the student.'),
 });
-export type ProvideAiPoweredAnalyticsOutput = z.infer<typeof ProvideAiPoweredAnalyticsOutputSchema>;
+type ProvideAiPoweredAnalyticsOutput = z.infer<typeof ProvideAiPoweredAnalyticsOutputSchema>;
 
 export async function provideAiPoweredAnalytics(
   input: ProvideAiPoweredAnalyticsInput

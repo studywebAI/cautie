@@ -3,8 +3,6 @@
  * @fileOverview An AI agent that generates a personalized study plan based on deadlines, learning habits, and calendar.
  *
  * - generatePersonalizedStudyPlan - A function that generates a personalized study plan.
- * - GeneratePersonalizedStudyPlanInput - The input type for the generatePersonalizedStudyPlan function.
- * - GeneratePersonalizedStudyPlanOutput - The return type for the generatePersonalizedStudyPlan function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -25,14 +23,14 @@ const GeneratePersonalizedStudyPlanInputSchema = z.object({
       'The students calendar, including scheduled classes, appointments, and other commitments.'
     ),
 });
-export type GeneratePersonalizedStudyPlanInput = z.infer<
+type GeneratePersonalizedStudyPlanInput = z.infer<
   typeof GeneratePersonalizedStudyPlanInputSchema
 >;
 
 const GeneratePersonalizedStudyPlanOutputSchema = z.object({
   studyPlan: z.string().describe('A personalized study plan for the student.'),
 });
-export type GeneratePersonalizedStudyPlanOutput = z.infer<
+type GeneratePersonalizedStudyPlanOutput = z.infer<
   typeof GeneratePersonalizedStudyPlanOutputSchema
 >;
 

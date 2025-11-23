@@ -3,8 +3,6 @@
  * @fileOverview Processes user-provided material (text or file) and suggests learning activities.
  *
  * - processMaterial - Analyzes content and provides a summary and suggested actions.
- * - ProcessMaterialInput - The input type for the processMaterial function.
- * - ProcessMaterialOutput - The return type for the processMaterial function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -15,7 +13,7 @@ const ProcessMaterialInputSchema = z.object({
   fileDataUri: z.string().optional().describe("A file encoded as a data URI. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
   language: z.string().optional().describe('The language for the output, e.g., "en", "nl", "fr". Defaults to English.'),
 });
-export type ProcessMaterialInput = z.infer<typeof ProcessMaterialInputSchema>;
+type ProcessMaterialInput = z.infer<typeof ProcessMaterialInputSchema>;
 
 const SuggestedActionSchema = z.object({
   id: z.enum(['create-a-summary', 'generate-a-quiz', 'make-flashcards']).describe('Unique ID for the action.'),

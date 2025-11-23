@@ -6,8 +6,6 @@
  *
  * @file        src/ai/flows/provide-ai-powered-analytics-teacher.ts
  * @exports   provideAiPoweredAnalyticsTeacher - The function to trigger the flow.
- * @exports   ProvideAiPoweredAnalyticsTeacherInput - The input type for the flow.
- * @exports   ProvideAiPoweredAnalyticsTeacherOutput - The output type for the flow.
  */
 
 import {ai} from '@/ai/genkit';
@@ -17,13 +15,13 @@ const ProvideAiPoweredAnalyticsTeacherInputSchema = z.object({
   classProgressData: z.string().describe('Data representing the class progress, including student scores, common mistakes, and engagement metrics.'),
   teachingStrategy: z.string().describe('The current teaching strategy being employed.'),
 });
-export type ProvideAiPoweredAnalyticsTeacherInput = z.infer<typeof ProvideAiPoweredAnalyticsTeacherInputSchema>;
+type ProvideAiPoweredAnalyticsTeacherInput = z.infer<typeof ProvideAiPoweredAnalyticsTeacherInputSchema>;
 
 const ProvideAiPoweredAnalyticsTeacherOutputSchema = z.object({
   suggestedAdjustments: z.string().describe('AI-suggested adjustments to the teaching strategy based on the class progress data.'),
   rationale: z.string().describe('The rationale behind the suggested adjustments, explaining why they are recommended.'),
 });
-export type ProvideAiPoweredAnalyticsTeacherOutput = z.infer<typeof ProvideAiPoweredAnalyticsTeacherOutputSchema>;
+type ProvideAiPoweredAnalyticsTeacherOutput = z.infer<typeof ProvideAiPoweredAnalyticsTeacherOutputSchema>;
 
 export async function provideAiPoweredAnalyticsTeacher(input: ProvideAiPoweredAnalyticsTeacherInput): Promise<ProvideAiPoweredAnalyticsTeacherOutput> {
   return provideAiPoweredAnalyticsTeacherFlow(input);

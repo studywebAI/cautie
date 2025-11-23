@@ -3,8 +3,6 @@
  * @fileOverview An AI agent that generates all data for the teacher dashboard.
  *
  * - generateTeacherDashboardData - A function that returns class overviews.
- * - GenerateTeacherDashboardDataInput - The input type for the function.
- * - GenerateTeacherDashboardDataOutput - The return type for the function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -23,7 +21,7 @@ const GenerateTeacherDashboardDataInputSchema = z.object({
   teacherName: z.string().describe('The name of the teacher.'),
   classNames: z.array(z.string()).describe('A list of class names the teacher is teaching.'),
 });
-export type GenerateTeacherDashboardDataInput = z.infer<
+type GenerateTeacherDashboardDataInput = z.infer<
   typeof GenerateTeacherDashboardDataInputSchema
 >;
 

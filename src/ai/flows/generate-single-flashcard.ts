@@ -3,8 +3,6 @@
  * @fileOverview An AI agent that generates a single flashcard from a given text.
  *
  * - generateSingleFlashcard - A function that creates one flashcard.
- * - GenerateSingleFlashcardInput - The input type for the function.
- * - Flashcard - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -16,7 +14,7 @@ const GenerateSingleFlashcardInputSchema = z.object({
   sourceText: z.string().describe('The source text from which to generate the flashcard.'),
   existingFlashcardIds: z.array(z.string()).optional().describe('An array of flashcard front texts that should not be regenerated to avoid duplicates.'),
 });
-export type GenerateSingleFlashcardInput = z.infer<typeof GenerateSingleFlashcardInputSchema>;
+type GenerateSingleFlashcardInput = z.infer<typeof GenerateSingleFlashcardInputSchema>;
 
 
 export async function generateSingleFlashcard(
