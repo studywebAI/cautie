@@ -59,6 +59,11 @@ const QuickAccessItemSchema = z.object({
   icon: z.enum(['Notebook', 'File', 'BrainCircuit', 'FileText']).describe('The icon for the item.'),
 });
 
+const ProgressDataSchema = z.object({
+  day: z.string().describe("The day of the week, as a three-letter abbreviation (e.g., 'Mon', 'Tue')."),
+  'Study Time': z.number().describe('The total study time in minutes for that day.'),
+});
+
 
 const GenerateDashboardDataInputSchema = z.object({
   studentName: z.string().describe('The name of the student.'),
@@ -75,6 +80,7 @@ const GenerateDashboardDataOutputSchema = z.object({
   aiSuggestions: z.array(AiSuggestionSchema).describe('A list of AI-powered suggestions.'),
   subjects: z.array(SubjectSchema).describe('A list of the student\'s subjects with their current progress.'),
   quickAccessItems: z.array(QuickAccessItemSchema).describe('A list of 4 recently accessed items.'),
+  progressData: z.array(ProgressDataSchema).describe('A list of study time data for the last 7 days.'),
 });
 export type GenerateDashboardDataOutput = z.infer<
   typeof GenerateDashboardDataOutputSchema
@@ -99,6 +105,7 @@ Generate the following data in English:
 4.  **Deadlines**: 3-4 upcoming deadlines with varied subjects, dates, and statuses.
 5.  **AI Suggestions**: 3 actionable and helpful suggestions for the student.
 6.  **Quick Access Items**: Generate exactly 4 realistic, recently used items. For example, a recently opened summary, a quiz that was just taken, an uploaded file, or some notes.
+7.  **Progress Data**: Generate an array representing study time for the last 7 days. The days should be abbreviated ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'). The study time should be a number of minutes (e.g., between 0 and 180). Make the data look realistic for a student, with some days having more study time than others.
 
 Ensure all generated data is in English. All IDs should be unique strings.
 Make the data interconnected and logical. For example, a deadline for a subject should have related tasks. An alert could be about a deadline. A quick access item might relate to a recent task.
