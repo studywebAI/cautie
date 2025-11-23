@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense, useCallback, useContext } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { generateQuiz } from '@/ai/flows/generate-quiz';
 import { processMaterial } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon, Swords } from 'lucide-react';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, SelectLabel } from '@/components/ui/select';
+import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon, Swords, BookCheck } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { QuizTaker, QuizMode } from '@/components/tools/quiz-taker';
@@ -21,8 +21,12 @@ import { QuizEditor } from '@/components/tools/quiz-editor';
 
 
 function QuizPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const sourceTextFromParams = searchParams.get('sourceText');
+  const context = searchParams.get('context');
+  const classId = searchParams.get('classId');
+  const isAssignmentContext = context === 'assignment';
   
   const [sourceText, setSourceText] = useState(sourceTextFromParams || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -77,10 +81,10 @@ function QuizPageContent() {
   }, [toast, quizMode, questionCount, isEditMode]);
 
   useEffect(() => {
-    if (sourceTextFromParams) {
+    if (sourceTextFromParams && !isAssignmentContext) {
       handleGenerate(sourceTextFromParams);
     }
-  }, [sourceTextFromParams, handleGenerate]);
+  }, [sourceTextFromParams, handleGenerate, isAssignmentContext]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -138,12 +142,29 @@ function QuizPageContent() {
     setCurrentView('take');
   }
 
+  const handleCreateForAssignment = (finalQuiz: Quiz) => {
+    // In a real app, this would save the quiz and associate it with the classId
+    console.log("Creating quiz for assignment in class:", classId, finalQuiz);
+    toast({
+      title: "Quiz Created for Assignment",
+      description: `"${finalQuiz.title}" is ready to be assigned.`,
+    });
+    router.push(`/class/${classId}`);
+  };
+
   const handleRestart = () => {
     setGeneratedQuiz(null);
     setCurrentView('setup');
+    if (isAssignmentContext) {
+        router.push(`/class/${classId}`);
+    }
   }
 
   const totalLoading = isLoading || isProcessingFile;
+  const mainButtonAction = isAssignmentContext ? () => {} : handleFormSubmit;
+  const mainButtonIcon = isAssignmentContext ? <BookCheck className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />;
+  const mainButtonText = isAssignmentContext ? 'Create for Assignment' : 'Generate with AI';
+
 
   if (isLoading) {
     return (
@@ -162,7 +183,7 @@ function QuizPageContent() {
   }
 
   if (generatedQuiz && currentView === 'edit') {
-    return <QuizEditor quiz={generatedQuiz} sourceText={sourceText} onStartQuiz={handleStartQuiz} onBack={() => setCurrentView('setup')} />;
+    return <QuizEditor quiz={generatedQuiz} sourceText={sourceText} onStartQuiz={handleStartQuiz} onBack={() => setCurrentView('setup')} isAssignmentContext={isAssignmentContext} onCreateForAssignment={handleCreateForAssignment} />;
   }
   if (generatedQuiz && currentView === 'take') {
     return <QuizTaker quiz={generatedQuiz} mode={quizMode} sourceText={sourceText} onRestart={handleRestart} />;
@@ -174,9 +195,9 @@ function QuizPageContent() {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">AI Quiz Generator</h1>
+        <h1 className="text-3xl font-bold font-headline">{isAssignmentContext ? 'Create New Quiz Assignment' : 'AI Quiz Generator'}</h1>
         <p className="text-muted-foreground">
-          Paste text or upload a file to automatically generate a multiple-choice quiz.
+          {isAssignmentContext ? `Create a new quiz from text or a file to assign to your class.` : `Paste text or upload a file to automatically generate a multiple-choice quiz.`}
         </p>
       </header>
 
@@ -283,8 +304,8 @@ function QuizPageContent() {
         </CardContent>
         <CardFooter>
           <Button onClick={handleFormSubmit} disabled={totalLoading || !sourceText}>
-            {quizMode === 'duel' ? <Swords className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            {isLoading ? 'Generating...' : (quizMode === 'duel' ? 'Start Duel' : 'Generate with AI')}
+            {quizMode === 'duel' ? <Swords className="mr-2 h-4 w-4" /> : mainButtonIcon}
+            {isLoading ? 'Generating...' : (quizMode === 'duel' ? 'Start Duel' : mainButtonText)}
           </Button>
         </CardFooter>
       </Card>

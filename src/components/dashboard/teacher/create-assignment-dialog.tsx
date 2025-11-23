@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -19,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import type { ClassAssignment, MaterialReference } from '@/lib/teacher-types';
-import { CalendarIcon, BookOpen, BrainCircuit, Copy, PlusCircle } from 'lucide-react';
+import { CalendarIcon, BookOpen, BrainCircuit, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
@@ -27,6 +28,7 @@ type CreateAssignmentDialogProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onAssignmentCreated: (newAssignment: Omit<ClassAssignment, 'id' | 'submissions' | 'totalStudents'>) => void;
+  classId: string;
 };
 
 // Placeholder data for materials. This will be replaced with real data fetching.
@@ -43,7 +45,8 @@ const materialIcons = {
     Reading: <BookOpen className="mr-2 h-4 w-4" />,
 }
 
-export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated }: CreateAssignmentDialogProps) {
+export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated, classId }: CreateAssignmentDialogProps) {
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date>();
@@ -72,6 +75,15 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated 
     
     resetAndClose();
   };
+
+  const navigateToTool = (tool: 'quiz' | 'flashcards') => {
+    const params = new URLSearchParams({
+      context: 'assignment',
+      classId: classId,
+      // We could pass more context here, like a draft assignment ID
+    });
+    router.push(`/tools/${tool}?${params.toString()}`);
+  }
   
   const resetAndClose = () => {
     setTitle('');
@@ -123,11 +135,11 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated 
                 <Separator className="flex-1" />
             </div>
              <div className="grid grid-cols-2 gap-2 mt-2">
-                <Button variant="secondary">
+                <Button variant="secondary" onClick={() => navigateToTool('quiz')}>
                   <BrainCircuit className="mr-2 h-4 w-4" />
                   New Quiz
                 </Button>
-                <Button variant="secondary">
+                <Button variant="secondary" onClick={() => navigateToTool('flashcards')}>
                   <Copy className="mr-2 h-4 w-4" />
                   New Flashcards
                 </Button>

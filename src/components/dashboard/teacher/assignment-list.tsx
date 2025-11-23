@@ -18,9 +18,10 @@ import { CreateAssignmentDialog } from './create-assignment-dialog';
 type AssignmentListProps = {
   assignments: ClassAssignment[];
   onAssignmentCreated: (newAssignment: Omit<ClassAssignment, 'id' | 'submissions' | 'totalStudents'>) => void;
+  classId: string;
 };
 
-export function AssignmentList({ assignments, onAssignmentCreated }: AssignmentListProps) {
+export function AssignmentList({ assignments, onAssignmentCreated, classId }: AssignmentListProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
@@ -85,6 +86,7 @@ export function AssignmentList({ assignments, onAssignmentCreated }: AssignmentL
         isOpen={isCreateOpen}
         setIsOpen={setIsCreateOpen}
         onAssignmentCreated={onAssignmentCreated}
+        classId={classId}
       />
     </>
   );

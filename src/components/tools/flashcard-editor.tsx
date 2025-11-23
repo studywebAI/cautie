@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, PlusCircle, ArrowLeft, Play, Undo2 } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, ArrowLeft, Play, Undo2, BookCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatePresence, motion } from 'framer-motion';
 import { generateSingleFlashcard } from '@/ai/flows/generate-single-flashcard';
@@ -15,9 +15,11 @@ type FlashcardEditorProps = {
   sourceText: string;
   onStartStudy: (finalCards: Flashcard[]) => void;
   onBack: () => void;
+  isAssignmentContext?: boolean;
+  onCreateForAssignment?: (finalCards: Flashcard[]) => void;
 };
 
-export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack }: FlashcardEditorProps) {
+export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack, isAssignmentContext = false, onCreateForAssignment }: FlashcardEditorProps) {
   const [currentCards, setCurrentCards] = useState<Flashcard[]>(cards);
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [lastDeleted, setLastDeleted] = useState<{ card: Flashcard; index: number } | null>(null);
@@ -72,6 +74,20 @@ export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack }: Fla
     setCurrentCards(newCards);
     setLastDeleted(null);
   };
+
+  const handlePrimaryAction = () => {
+    if (isAssignmentContext && onCreateForAssignment) {
+      onCreateForAssignment(currentCards);
+    } else {
+      onStartStudy(currentCards);
+    }
+  };
+
+  const primaryButtonText = isAssignmentContext
+    ? `Create for Assignment (${currentCards.length} cards)`
+    : `Start Studying (${currentCards.length} cards)`;
+
+  const PrimaryButtonIcon = isAssignmentContext ? BookCheck : Play;
 
 
   return (
@@ -134,9 +150,9 @@ export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack }: Fla
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Setup
         </Button>
-        <Button onClick={() => onStartStudy(currentCards)} disabled={currentCards.length === 0}>
-          <Play className="mr-2 h-4 w-4" />
-          Start Studying ({currentCards.length} cards)
+        <Button onClick={handlePrimaryAction} disabled={currentCards.length === 0}>
+          <PrimaryButtonIcon className="mr-2 h-4 w-4" />
+          {primaryButtonText}
         </Button>
       </CardFooter>
     </Card>

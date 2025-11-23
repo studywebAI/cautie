@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, PlusCircle, ArrowLeft, Play, Undo2 } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, ArrowLeft, Play, Undo2, BookCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatePresence, motion } from 'framer-motion';
 import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
@@ -15,9 +15,11 @@ type QuizEditorProps = {
   sourceText: string;
   onStartQuiz: (finalQuiz: Quiz) => void;
   onBack: () => void;
+  isAssignmentContext?: boolean;
+  onCreateForAssignment?: (finalQuiz: Quiz) => void;
 };
 
-export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack }: QuizEditorProps) {
+export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignmentContext = false, onCreateForAssignment }: QuizEditorProps) {
   const [currentQuiz, setCurrentQuiz] = useState<Quiz>(quiz);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [lastDeleted, setLastDeleted] = useState<{ question: QuizQuestion; index: number } | null>(null);
@@ -82,6 +84,20 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack }: QuizEditor
     }));
     setLastDeleted(null);
   };
+  
+  const handlePrimaryAction = () => {
+    if (isAssignmentContext && onCreateForAssignment) {
+        onCreateForAssignment(currentQuiz);
+    } else {
+        onStartQuiz(currentQuiz);
+    }
+  }
+
+  const primaryButtonText = isAssignmentContext 
+    ? `Create for Assignment (${currentQuiz.questions.length} questions)`
+    : `Start Quiz (${currentQuiz.questions.length} questions)`;
+    
+  const PrimaryButtonIcon = isAssignmentContext ? BookCheck : Play;
 
 
   return (
@@ -98,7 +114,7 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack }: QuizEditor
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
         {currentQuiz.questions.length === 0 ? (
           <Alert>
             <AlertTitle>Empty Quiz</AlertTitle>
@@ -143,9 +159,9 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack }: QuizEditor
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Setup
         </Button>
-        <Button onClick={() => onStartQuiz(currentQuiz)} disabled={currentQuiz.questions.length === 0}>
-          <Play className="mr-2 h-4 w-4" />
-          Start Quiz ({currentQuiz.questions.length} questions)
+        <Button onClick={handlePrimaryAction} disabled={currentQuiz.questions.length === 0}>
+          <PrimaryButtonIcon className="mr-2 h-4 w-4" />
+          {primaryButtonText}
         </Button>
       </CardFooter>
     </Card>

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense, useContext, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { generateFlashcards } from '@/ai/flows/generate-flashcards';
 import { processMaterial } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon } from 'lucide-react';
+import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon, BookCheck } from 'lucide-react';
 import { FlashcardViewer, StudyMode } from '@/components/tools/flashcard-viewer';
 import { AppContext } from '@/contexts/app-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,8 +21,12 @@ import type { Flashcard } from '@/lib/types';
 
 
 function FlashcardsPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const sourceTextFromParams = searchParams.get('sourceText');
+  const context = searchParams.get('context');
+  const classId = searchParams.get('classId');
+  const isAssignmentContext = context === 'assignment';
   
   const [sourceText, setSourceText] = useState(sourceTextFromParams || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -71,7 +75,7 @@ function FlashcardsPageContent() {
   }, [toast, isEditMode]);
 
   useEffect(() => {
-    if (sourceTextFromParams) {
+    if (sourceTextFromParams && !isAssignmentContext) {
       handleGenerate(sourceTextFromParams);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -132,13 +136,28 @@ function FlashcardsPageContent() {
     setGeneratedCards(finalCards);
     setCurrentView('study');
   };
+  
+  const handleCreateForAssignment = (finalCards: Flashcard[]) => {
+    // In a real app, this would save the flashcards and associate with the classId
+    console.log("Creating flashcards for assignment in class:", classId, finalCards);
+    toast({
+      title: "Flashcards Created for Assignment",
+      description: `The new set is ready to be assigned.`,
+    });
+    router.push(`/class/${classId}`);
+  };
 
   const handleRestart = () => {
     setGeneratedCards(null);
     setCurrentView('setup');
+     if (isAssignmentContext) {
+        router.push(`/class/${classId}`);
+    }
   };
 
   const totalLoading = isLoading || isProcessingFile;
+  const mainButtonIcon = isAssignmentContext ? <BookCheck className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />;
+  const mainButtonText = isAssignmentContext ? 'Create for Assignment' : 'Generate with AI';
 
   if (isLoading) {
      return (
@@ -157,7 +176,7 @@ function FlashcardsPageContent() {
   }
 
   if (generatedCards && currentView === 'edit') {
-    return <FlashcardEditor cards={generatedCards} sourceText={sourceText} onStartStudy={handleStartStudy} onBack={handleRestart} />;
+    return <FlashcardEditor cards={generatedCards} sourceText={sourceText} onStartStudy={handleStartStudy} onBack={handleRestart} isAssignmentContext={isAssignmentContext} onCreateForAssignment={handleCreateForAssignment} />;
   }
 
   if (generatedCards && currentView === 'study') {
@@ -167,9 +186,9 @@ function FlashcardsPageContent() {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">AI Flashcards</h1>
+        <h1 className="text-3xl font-bold font-headline">{isAssignmentContext ? 'Create New Flashcard Assignment' : 'AI Flashcards'}</h1>
         <p className="text-muted-foreground">
-          Paste any text or upload a file to automatically generate a set of flashcards.
+          {isAssignmentContext ? `Create a new set of flashcards to assign to your class.` : `Paste any text or upload a file to automatically generate a set of flashcards.`}
         </p>
       </header>
 
@@ -252,9 +271,9 @@ function FlashcardsPageContent() {
             {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <Sparkles className="mr-2 h-4 w-4" />
+              mainButtonIcon
             )}
-            {isLoading ? 'Generating...' : 'Generate with AI'}
+            {isLoading ? 'Generating...' : mainButtonText}
           </Button>
         </CardFooter>
       </Card>
