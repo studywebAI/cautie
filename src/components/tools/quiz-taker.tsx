@@ -21,7 +21,7 @@ import type { Quiz, QuizQuestion, SessionRecapData } from '@/lib/types';
 
 
 type AnswersState = { [questionId: string]: string };
-export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" | "adaptive";
+export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" | "adaptive" | "duel";
 
 const SURVIVAL_PENALTY_COUNT = 3;
 const SURVIVAL_QUESTION_TIME = 20; // 20 seconds per question
@@ -52,6 +52,10 @@ const modeDetails: Record<QuizMode, { title: string; description: string }> = {
     adaptive: {
         title: "Adaptive Mode",
         description: "The question difficulty adapts to your performance."
+    },
+    duel: {
+        title: "Duel Mode",
+        description: "Challenge another player in a real-time quiz battle."
     }
 }
 

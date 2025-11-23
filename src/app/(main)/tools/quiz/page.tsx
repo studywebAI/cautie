@@ -9,12 +9,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { generateQuiz } from '@/ai/flows/generate-quiz';
 import { processMaterial } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon } from 'lucide-react';
+import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon, Swords } from 'lucide-react';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, SelectLabel } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { QuizTaker, QuizMode } from '@/components/tools/quiz-taker';
 import { AppContext } from '@/contexts/app-context';
 import type { Quiz } from '@/lib/types';
+import { QuizDuel } from '@/components/tools/quiz-duel';
 
 
 function QuizPageContent() {
@@ -45,9 +46,15 @@ function QuizPageContent() {
     setIsLoading(true);
     setGeneratedQuiz(null);
     try {
-      const count = quizMode === 'survival' || quizMode === 'adaptive' ? 1 : questionCount;
-      const response = await generateQuiz({ sourceText: text, questionCount: count });
-      setGeneratedQuiz(response);
+      if (quizMode === 'duel') {
+        // The duel component will handle its own data generation.
+        // We just need to trigger the loading state and set the quiz to a placeholder.
+        setGeneratedQuiz({title: "Duel Mode", description: "Preparing duel...", questions: []});
+      } else {
+        const count = (quizMode === 'survival' || quizMode === 'adaptive') ? 1 : questionCount;
+        const response = await generateQuiz({ sourceText: text, questionCount: count });
+        setGeneratedQuiz(response);
+      }
     } catch (error) {
       console.error('Error generating quiz:', error);
       toast({
@@ -55,17 +62,18 @@ function QuizPageContent() {
         title: 'Something went wrong',
         description: 'The AI could not generate a quiz. Please try again.',
       });
+      setGeneratedQuiz(null); // Clear on error
     } finally {
       setIsLoading(false);
     }
   }, [toast, quizMode, questionCount]);
 
   useEffect(() => {
-    if (sourceTextFromParams) {
-      // Don't set loading to true here, let handleGenerate do it.
+    if (sourceTextFromParams && quizMode !== 'duel') {
+      // Don't auto-generate for duel mode
       handleGenerate(sourceTextFromParams);
     }
-  }, [sourceTextFromParams, handleGenerate]);
+  }, [sourceTextFromParams, handleGenerate, quizMode]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -137,6 +145,9 @@ function QuizPageContent() {
   }
 
   if (generatedQuiz) {
+    if (quizMode === 'duel') {
+      return <QuizDuel sourceText={sourceText} onRestart={() => setGeneratedQuiz(null)} />
+    }
     return <QuizTaker quiz={generatedQuiz} mode={quizMode} sourceText={sourceText} onRestart={() => setGeneratedQuiz(null)} />;
   }
 
@@ -214,6 +225,7 @@ function QuizPageContent() {
                     <SelectItem value="survival">Survival Mode</SelectItem>
                     <SelectItem value="speedrun">Speedrun Mode</SelectItem>
                     <SelectItem value="adaptive">Adaptive Mode</SelectItem>
+                    <SelectItem value="duel">Duel Mode (1v1)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -222,7 +234,7 @@ function QuizPageContent() {
                  <Select 
                     value={String(questionCount)} 
                     onValueChange={(value) => setQuestionCount(Number(value))}
-                    disabled={quizMode === 'survival' || quizMode === 'adaptive'}
+                    disabled={quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel'}
                  >
                   <SelectTrigger id="question-count">
                     <SelectValue placeholder="Select number of questions" />
@@ -236,14 +248,14 @@ function QuizPageContent() {
                     <SelectItem value="50">50 Questions (Long Exam)</SelectItem>
                   </SelectContent>
                 </Select>
-                 {(quizMode === 'survival' || quizMode === 'adaptive') && <p className="text-xs text-muted-foreground">Number of questions is managed by the AI in this mode.</p>}
+                 {(quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel') && <p className="text-xs text-muted-foreground">Number of questions is managed by the AI in this mode.</p>}
               </div>
            </div>
         </CardContent>
         <CardFooter>
           <Button onClick={handleFormSubmit} disabled={totalLoading || !sourceText}>
-            <Sparkles className="mr-2 h-4 w-4" />
-            {isLoading ? 'Generating...' : 'Generate with AI'}
+            {quizMode === 'duel' ? <Swords className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {isLoading ? 'Generating...' : (quizMode === 'duel' ? 'Start Duel' : 'Generate with AI')}
           </Button>
         </CardFooter>
       </Card>
