@@ -7,6 +7,7 @@ import { AppHeader } from "@/components/header";
 import { AppProvider } from "@/contexts/app-context";
 import { DictionaryProvider } from "@/contexts/dictionary-context";
 import type { Database } from "@/lib/supabase/database.types";
+import type { CookieOptions } from '@supabase/ssr';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,16 +17,17 @@ export default async function MainLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = cookies();
-  const supabase = createServerClient<Database>({
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
       },
-    },
-  }, {
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  });
+    }
+  );
   
   const { data: { session } } = await supabase.auth.getSession();
 

@@ -1,5 +1,5 @@
 
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic'
 
 // GET all assignments (in a real app, you'd likely filter by user/class)
 export async function GET(request: Request) {
-  const supabase = createRouteHandlerClient<Database>({ cookies })
+  const cookieStore = cookies();
+  const supabase = createServerClient({ cookies: () => cookieStore });
   const { data, error } = await supabase.from('assignments').select()
 
   if (error) {
@@ -22,7 +23,8 @@ export async function GET(request: Request) {
 // POST a new assignment
 export async function POST(request: Request) {
   const { title, due_date, class_id } = await request.json();
-  const supabase = createRouteHandlerClient<Database>({ cookies })
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
   
   const { data: { user } } = await supabase.auth.getUser();
 
