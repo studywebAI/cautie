@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
@@ -13,12 +12,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import type { Quiz, QuizQuestion, QuizOption, SessionRecapData } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
 import { Pie, PieChart } from 'recharts';
 import { Progress } from '../ui/progress';
+import type { Quiz, QuizQuestion, SessionRecapData } from '@/lib/types';
+
 
 type AnswersState = { [questionId: string]: string };
 export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" | "adaptive";
@@ -319,7 +319,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const [isPenaltyLoading, setIsPenaltyLoading] = useState(false);
     
     // Timer states
-    const [examTimeLeft, setExamTimeLeft] = useState(quiz.questions.length * 30);
+    const [examTimeLeft, setExamTimeLeft] = useState(currentQuestions.length * 60);
     const [speedrunTime, setSpeedrunTime] = useState(0);
     const [strikes, setStrikes] = useState(0);
     const [questionTimeLeft, setQuestionTimeLeft] = useState(SURVIVAL_QUESTION_TIME);
@@ -347,7 +347,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             if (newStrikes >= MAX_STRIKES) {
                 handleFinishQuiz();
             } else {
-                handleSurvivalPenalty();
+                // handleSurvivalPenalty();
             }
         }
         if (mode === 'speedrun' && newStrikes >= MAX_STRIKES) {
@@ -481,6 +481,9 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
 
             if (!isAnswerCorrect) {
                  handleIncorrectAnswer();
+                 if (mode === 'survival') {
+                    handleSurvivalPenalty();
+                 }
             }
 
             if (mode === 'adaptive') {
@@ -547,7 +550,10 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     }
     
     if (isFinished) {
-        return <FinalResults quiz={{...quiz, questions: currentQuestions}} answers={answers} onRestart={onRestart} mode={mode} timeTaken={speedrunTime} setSessionRecap={setSessionRecap} strikes={strikes} />
+        let finalTime = speedrunTime;
+        if(mode === 'exam') finalTime = (currentQuestions.length * 60) - examTimeLeft;
+
+        return <FinalResults quiz={{...quiz, questions: currentQuestions}} answers={answers} onRestart={onRestart} mode={mode} timeTaken={finalTime} setSessionRecap={setSessionRecap} strikes={strikes} />
     }
     
     const formatTime = (seconds: number) => {
@@ -625,7 +631,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                      currentQuestions.map((q, index) => (
                         <div key={q.id}>
                            <p className="font-semibold mb-4">{index + 1}. {q.question}</p>
-                            <RadioGroup onValueChange={(value) => handleAnswerChange(q.id, value)}>
+                            <RadioGroup onValueChange={(value) => handleAnswerChange(q.id, value)} value={answers[q.id] || ""}>
                                 <div className="space-y-2">
                                     {q.options.map((opt) => (
                                         <div key={opt.id} className="flex items-center space-x-2">
@@ -702,8 +708,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                 {(mode !== 'normal' && mode !== 'exam') ? (
                      <Button onClick={handleNextQuestion} disabled={isPenaltyLoading || isGeneratingNext || !isAnswered }>
                         {currentIndex === currentQuestions.length -1 && mode !== 'adaptive' ? 'Finish Quiz' : 'Next Question' }
-                        {(isPenaltyLoading || isGeneratingNext) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <ArrowRight className="ml-2 h-4 w-4" />
+                        {(isPenaltyLoading || isGeneratingNext) ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ArrowRight className="ml-2 h-4 w-4" />}
                     </Button>
                 ) : null}
 

@@ -6,14 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { generateQuiz, Quiz } from '@/ai/flows/generate-quiz';
+import { generateQuiz } from '@/ai/flows/generate-quiz';
 import { processMaterial } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, SelectLabel } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { QuizTaker, QuizMode } from '@/components/tools/quiz-taker';
 import { AppContext } from '@/contexts/app-context';
+import type { Quiz } from '@/lib/types';
 
 
 function QuizPageContent() {
@@ -25,6 +26,7 @@ function QuizPageContent() {
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [generatedQuiz, setGeneratedQuiz] = useState<Quiz | null>(null);
   const [quizMode, setQuizMode] = useState<QuizMode>('practice');
+  const [questionCount, setQuestionCount] = useState(7);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<'image' | 'file' | null>(null);
   const { toast } = useToast();
@@ -43,8 +45,8 @@ function QuizPageContent() {
     setIsLoading(true);
     setGeneratedQuiz(null);
     try {
-      const questionCount = quizMode === 'survival' || quizMode === 'adaptive' ? 1 : 7;
-      const response = await generateQuiz({ sourceText: text, questionCount });
+      const count = quizMode === 'survival' || quizMode === 'adaptive' ? 1 : questionCount;
+      const response = await generateQuiz({ sourceText: text, questionCount: count });
       setGeneratedQuiz(response);
     } catch (error) {
       console.error('Error generating quiz:', error);
@@ -56,7 +58,7 @@ function QuizPageContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, quizMode]);
+  }, [toast, quizMode, questionCount]);
 
   useEffect(() => {
     if (sourceTextFromParams) {
@@ -151,13 +153,13 @@ function QuizPageContent() {
         <CardHeader>
           <CardTitle>Create a Quiz</CardTitle>
           <CardDescription>
-            Provide source material by uploading a file or pasting text, then choose a mode.
+            Provide source material, choose your settings, and let the AI build your quiz.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <div className="flex flex-col gap-4">
-               <label htmlFor="file-upload" className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted">
+               <label htmlFor="file-upload" className="relative flex flex-col items-center justify-center w-full h-full min-h-[12rem] border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted">
                 {isProcessingFile ? (
                     <div className="flex flex-col items-center justify-center">
                          <Loader2 className="w-10 h-10 mb-3 text-primary animate-spin" />
@@ -187,7 +189,7 @@ function QuizPageContent() {
             </div>
              <Textarea
               placeholder="Or paste your text here... The content from an uploaded file will appear here."
-              className="h-48 resize-none"
+              className="h-full min-h-[12rem] resize-none"
               value={sourceText}
               onChange={(e) => {
                   setSourceText(e.target.value);
@@ -198,22 +200,44 @@ function QuizPageContent() {
             />
           </div>
 
-           <div className="space-y-2">
-              <Label htmlFor="quiz-mode">Quiz Mode</Label>
-              <Select value={quizMode} onValueChange={(value) => setQuizMode(value as QuizMode)}>
-                <SelectTrigger id="quiz-mode" className="w-[280px]">
-                  <SelectValue placeholder="Select mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="practice">Practice Mode</SelectItem>
-                  <SelectItem value="normal">Normal Mode</SelectItem>
-                  <SelectItem value="exam">Exam Mode</SelectItem>
-                  <SelectItem value="survival">Survival Mode</SelectItem>
-                  <SelectItem value="speedrun">Speedrun Mode</SelectItem>
-                  <SelectItem value="adaptive">Adaptive Mode</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="quiz-mode">Quiz Mode</Label>
+                <Select value={quizMode} onValueChange={(value) => setQuizMode(value as QuizMode)}>
+                  <SelectTrigger id="quiz-mode">
+                    <SelectValue placeholder="Select mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="practice">Practice Mode</SelectItem>
+                    <SelectItem value="normal">Normal Mode</SelectItem>
+                    <SelectItem value="exam">Exam Mode</SelectItem>
+                    <SelectItem value="survival">Survival Mode</SelectItem>
+                    <SelectItem value="speedrun">Speedrun Mode</SelectItem>
+                    <SelectItem value="adaptive">Adaptive Mode</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="question-count">Number of Questions</Label>
+                 <Select 
+                    value={String(questionCount)} 
+                    onValueChange={(value) => setQuestionCount(Number(value))}
+                    disabled={quizMode === 'survival' || quizMode === 'adaptive'}
+                 >
+                  <SelectTrigger id="question-count">
+                    <SelectValue placeholder="Select number of questions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 Questions</SelectItem>
+                    <SelectItem value="7">7 Questions</SelectItem>
+                    <SelectItem value="10">10 Questions (Short Exam)</SelectItem>
+                    <SelectItem value="15">15 Questions</SelectItem>
+                    <SelectItem value="25">25 Questions (Long Exam)</SelectItem>
+                  </SelectContent>
+                </Select>
+                 {(quizMode === 'survival' || quizMode === 'adaptive') && <p className="text-xs text-muted-foreground">Number of questions is managed by the AI in this mode.</p>}
+              </div>
+           </div>
         </CardContent>
         <CardFooter>
           <Button onClick={handleFormSubmit} disabled={totalLoading || !sourceText}>
