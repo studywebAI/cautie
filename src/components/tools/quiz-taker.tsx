@@ -12,11 +12,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import type { Quiz, QuizQuestion, QuizOption, SessionRecapData } from '@/ai/flows/generate-quiz';
+import type { Quiz, QuizQuestion, QuizOption } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
 import { Pie, PieChart } from 'recharts';
+import { SessionRecapData } from '@/lib/types';
 
 type AnswersState = { [questionId: string]: string };
 export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" | "adaptive";
@@ -600,9 +601,11 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                 </div>
                 {(mode !== 'normal' && mode !== 'exam') ? (
                      <Button onClick={handleNextQuestion} disabled={isPenaltyLoading || isGeneratingNext || !isAnswered }>
-                        {(isPenaltyLoading || isGeneratingNext) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="ml-2 h-4 w-4" />}
-                        {mode === 'adaptive' && currentIndex === ADAPTIVE_QUESTION_COUNT - 1 ? 'Finish Quiz' : 'Next Question'}
-                        {mode !== 'adaptive' && 'Next Question'}
+                        {currentIndex === currentQuestions.length -1 && mode !== 'adaptive' ? null : <ArrowRight className="mr-2 h-4 w-4" />}
+                        {(isPenaltyLoading || isGeneratingNext) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        {currentIndex === currentQuestions.length - 1 && mode !== 'adaptive' ? 'Finish Quiz' : 'Next Question'}
+                        {mode === 'adaptive' && currentIndex === ADAPTIVE_QUESTION_COUNT - 1 ? 'Finish Quiz' : ''}
+                        {mode === 'adaptive' && currentIndex !== ADAPTIVE_QUESTION_COUNT - 1 ? 'Next Question' : ''}
                     </Button>
                 ) : null}
 
