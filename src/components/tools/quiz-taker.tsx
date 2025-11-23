@@ -103,7 +103,7 @@ function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, correctCo
                         </div>
                         <div>
                             <p className="text-sm text-muted-foreground">Strikes</p>
-                            <p className="text-xl font-semibold">{totalQuestions - correctCount}</p>
+                            <p className="text-xl font-semibold">{quiz.questions.length - correctCount}</p>
                         </div>
                         <div>
                             <p className="text-sm text-muted-foreground">Time</p>
