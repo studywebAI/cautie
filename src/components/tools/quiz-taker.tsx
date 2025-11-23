@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
@@ -310,6 +311,45 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         setIsFinished(true);
     }, []);
 
+    const handleNextQuestion = useCallback(async () => {
+        const nextIndex = currentIndex + 1;
+
+        if (mode === 'adaptive') {
+            if (nextIndex >= ADAPTIVE_QUESTION_COUNT) {
+                handleFinishQuiz();
+                return;
+            }
+            setIsGeneratingNext(true);
+            try {
+                const newQuestion = await generateSingleQuestion({
+                    sourceText,
+                    difficulty,
+                    existingQuestionIds: currentQuestions.map(q => q.id),
+                });
+                setCurrentQuestions(prev => [...prev, newQuestion]);
+                setCurrentIndex(nextIndex);
+            } catch(e) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Failed to generate next question',
+                    description: 'Please try again.',
+                });
+            } finally {
+                setIsGeneratingNext(false);
+            }
+        } else {
+            if (nextIndex < currentQuestions.length) {
+                setCurrentIndex(nextIndex);
+            } else {
+                handleFinishQuiz();
+            }
+        }
+        
+        setIsAnswered(false);
+        setIsCorrect(false);
+        setExplanation(null);
+    }, [currentIndex, currentQuestions, difficulty, handleFinishQuiz, mode, sourceText, toast]);
+
     useEffect(() => {
         if (mode === 'exam' && !isFinished) {
             timerRef.current = setInterval(() => {
@@ -331,6 +371,22 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, [mode, isFinished, handleFinishQuiz]);
+    
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+                return;
+            }
+            if ((e.key === 'ArrowRight' || e.key === 'Enter') && isAnswered) {
+                handleNextQuestion();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isAnswered, handleNextQuestion]);
 
     const handleAnswerChange = (questionId: string, optionId: string) => {
         setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
@@ -413,45 +469,6 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         } finally {
             setIsPenaltyLoading(false);
         }
-    }
-
-    const handleNextQuestion = async () => {
-        const nextIndex = currentIndex + 1;
-
-        if (mode === 'adaptive') {
-            if (nextIndex >= ADAPTIVE_QUESTION_COUNT) {
-                handleFinishQuiz();
-                return;
-            }
-            setIsGeneratingNext(true);
-            try {
-                const newQuestion = await generateSingleQuestion({
-                    sourceText,
-                    difficulty,
-                    existingQuestionIds: currentQuestions.map(q => q.id),
-                });
-                setCurrentQuestions(prev => [...prev, newQuestion]);
-                setCurrentIndex(nextIndex);
-            } catch(e) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Failed to generate next question',
-                    description: 'Please try again.',
-                });
-            } finally {
-                setIsGeneratingNext(false);
-            }
-        } else {
-            if (nextIndex < currentQuestions.length) {
-                setCurrentIndex(nextIndex);
-            } else {
-                handleFinishQuiz();
-            }
-        }
-        
-        setIsAnswered(false);
-        setIsCorrect(false);
-        setExplanation(null);
     }
     
     if (isFinished) {

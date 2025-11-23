@@ -59,7 +59,7 @@ function FlipView({ card, isFlipped, setIsFlipped }: { card: Flashcard; isFlippe
 }
 
 // Sub-component for Type Mode
-function TypeView({ card }: { card: Flashcard; }) {
+function TypeView({ card, onAnswerSubmit }: { card: Flashcard; onAnswerSubmit: () => void; }) {
     const [userAnswer, setUserAnswer] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isCorrect, setIsCorrect] = useState(false);
@@ -78,6 +78,7 @@ function TypeView({ card }: { card: Flashcard; }) {
         const correct = userAnswer.trim().toLowerCase() === card.back.trim().toLowerCase();
         setIsCorrect(correct);
         setIsSubmitted(true);
+        onAnswerSubmit();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -133,26 +134,67 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [direction, setDirection] = useState(0);
+  const [isAnswered, setIsAnswered] = useState(false);
 
   const handleNext = () => {
     if (currentIndex === cards.length - 1) return;
     setDirection(1);
     setIsFlipped(false);
-    setTimeout(() => setCurrentIndex((prev) => (prev + 1)), 150);
+    setIsAnswered(false);
+    setCurrentIndex((prev) => (prev + 1));
   };
 
   const handlePrev = () => {
     if (currentIndex === 0) return;
     setDirection(-1);
     setIsFlipped(false);
-    setTimeout(() => setCurrentIndex((prev) => (prev - 1)), 150);
+    setIsAnswered(false);
+    setCurrentIndex((prev) => (prev - 1));
   };
+  
+  const handleFlipOrCheck = () => {
+    if (mode === 'flip') {
+        setIsFlipped(f => !f);
+    } else if (mode === 'type') {
+        // Find the button and click it to trigger submission within TypeView
+        const checkButton = (document.querySelector('.w-full.max-w-md button') as HTMLButtonElement);
+        checkButton?.click();
+    }
+  }
+  
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        // Prevent shortcuts when user is typing in an input
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowRight':
+                handleNext();
+                break;
+            case 'ArrowLeft':
+                handlePrev();
+                break;
+            case ' ': // Spacebar
+                e.preventDefault();
+                handleFlipOrCheck();
+                break;
+        }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex, cards.length, mode]);
 
   const card = cards[currentIndex];
 
   const getModeDescription = () => {
     switch (mode) {
-        case 'flip': return 'Click the card to flip it.';
+        case 'flip': return 'Click the card or press Spacebar to flip it.';
         case 'type': return 'Type the answer and press Enter.';
         case 'multiple-choice': return 'Select the correct answer from the options below.';
         default: return '';
@@ -164,9 +206,9 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
         case 'flip':
             return <FlipView card={card} isFlipped={isFlipped} setIsFlipped={setIsFlipped} />;
         case 'type':
-            return <TypeView card={card} />;
+            return <TypeView card={card} onAnswerSubmit={() => setIsAnswered(true)} />;
         case 'multiple-choice':
-            return <MultipleChoiceView card={card} onAnswered={() => { /* Can add scoring logic here later */ }} />;
+            return <MultipleChoiceView card={card} onAnswered={() => setIsAnswered(true)} />;
         default:
             return null;
     }
@@ -210,7 +252,13 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
           <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Previous Card" disabled={currentIndex === 0}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <Button variant="outline" size="icon" onClick={handleNext} aria-label="Next Card" disabled={currentIndex === cards.length - 1}>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleNext} 
+            aria-label="Next Card" 
+            disabled={currentIndex === cards.length - 1 || (mode !== 'flip' && !isAnswered)}
+          >
             <ArrowRight className="h-5 w-5" />
           </Button>
         </div>
