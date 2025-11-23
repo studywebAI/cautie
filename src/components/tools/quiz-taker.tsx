@@ -416,7 +416,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                             <Question
                                 question={question}
                                 onAnswer={(optionId) => handleAnswerChange(question.id, optionId)}
-                                disabled={(isAnswered && (mode === 'practice' || mode === 'survival' || mode === 'speedrun'))}
+                                disabled={(isAnswered && (mode === 'practice' || mode === 'survival' || mode === 'speedrun' || mode === 'exam'))}
                                 selectedOptionId={selectedOptionId}
                             />
                              {isAnswered && !isCorrect && (
