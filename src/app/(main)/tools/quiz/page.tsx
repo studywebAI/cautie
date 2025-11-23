@@ -230,9 +230,10 @@ function QuizPageContent() {
                   <SelectContent>
                     <SelectItem value="5">5 Questions</SelectItem>
                     <SelectItem value="7">7 Questions</SelectItem>
-                    <SelectItem value="10">10 Questions (Short Exam)</SelectItem>
+                    <SelectItem value="10">10 Questions</SelectItem>
                     <SelectItem value="15">15 Questions</SelectItem>
-                    <SelectItem value="25">25 Questions (Long Exam)</SelectItem>
+                    <SelectItem value="25">25 Questions (Short Exam)</SelectItem>
+                    <SelectItem value="50">50 Questions (Long Exam)</SelectItem>
                   </SelectContent>
                 </Select>
                  {(quizMode === 'survival' || quizMode === 'adaptive') && <p className="text-xs text-muted-foreground">Number of questions is managed by the AI in this mode.</p>}

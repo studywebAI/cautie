@@ -7,7 +7,7 @@ import { explainAnswer } from '@/ai/flows/explain-answer';
 import { generateQuiz } from '@/ai/flows/generate-quiz';
 import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Trophy, Zap, Bomb, TrendingUp, BookOpen, Clock, Target } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Trophy, Zap, Bomb, TrendingUp, BookOpen, Clock, Target, ArrowLeft } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -75,31 +75,32 @@ function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, setSessio
         return correctOption?.id === selectedOptionId;
     }).length;
 
-    const totalQuestions = quiz.questions.length;
-    const incorrectCount = Object.keys(answers).length - correctCount;
-    const scorePercentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+    const totalQuestionsAnswered = Object.keys(answers).length;
+    const totalQuestionsInQuiz = quiz.questions.length;
+    const incorrectCount = totalQuestionsAnswered - correctCount;
+    const scorePercentage = totalQuestionsAnswered > 0 ? Math.round((correctCount / totalQuestionsAnswered) * 100) : 0;
     
     useEffect(() => {
         setSessionRecap({
             score: scorePercentage,
             correctAnswers: correctCount,
-            totalQuestions: totalQuestions,
+            totalQuestions: totalQuestionsAnswered,
             timeTaken: timeTaken,
         });
         // Clear recap on unmount
         return () => setSessionRecap(null);
-    }, [setSessionRecap, scorePercentage, correctCount, totalQuestions, timeTaken]);
+    }, [setSessionRecap, scorePercentage, correctCount, totalQuestionsAnswered, timeTaken]);
 
 
     if (mode === 'survival') {
         const survived = strikes < MAX_STRIKES;
-        if (survived && correctCount === totalQuestions && Object.keys(answers).length === totalQuestions) {
+        if (survived && correctCount === totalQuestionsInQuiz && totalQuestionsAnswered === totalQuestionsInQuiz) {
             return (
                  <Card>
                     <CardHeader className="items-center text-center">
                         <Trophy className="h-16 w-16 text-yellow-500" />
                         <CardTitle className="font-headline text-3xl mt-4">You Survived!</CardTitle>
-                        <CardDescription>You answered all {totalQuestions} questions correctly without losing all your lives. Well done.</CardDescription>
+                        <CardDescription>You answered all {totalQuestionsInQuiz} questions correctly without losing all your lives. Well done.</CardDescription>
                     </CardHeader>
                     <CardFooter className="justify-center">
                         <Button onClick={onRestart}>
@@ -320,7 +321,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     
     // Timer states
     const [examTimeLeft, setExamTimeLeft] = useState(currentQuestions.length * 60);
-    const [speedrunTime, setSpeedrunTime] = useState(0);
+    const [mainTimer, setMainTimer] = useState(0);
     const [strikes, setStrikes] = useState(0);
     const [questionTimeLeft, setQuestionTimeLeft] = useState(SURVIVAL_QUESTION_TIME);
     
@@ -397,6 +398,12 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         setExplanation(null);
     }, [currentIndex, currentQuestions, difficulty, handleFinishQuiz, mode, sourceText, toast]);
 
+    const handlePreviousQuestion = () => {
+        if (currentIndex > 0) {
+            setCurrentIndex(prev => prev - 1);
+        }
+    }
+
     // Overall Quiz Timer
     useEffect(() => {
         if (isFinished) return;
@@ -414,7 +421,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             }, 1000);
         } else if (mode === 'speedrun' || mode === 'normal' || mode === 'practice') {
             timerRef.current = setInterval(() => {
-                setSpeedrunTime(prevTime => prevTime + 1);
+                setMainTimer(prevTime => prevTime + 1);
             }, 1000);
         }
         return () => {
@@ -466,11 +473,11 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     }, [isAnswered, handleNextQuestion]);
 
     const handleAnswerChange = (questionId: string, optionId: string) => {
-        if (isAnswered && (mode !== 'normal' && mode !== 'exam')) return; // Prevent changing answer after submission in single-question modes
+        if (isAnswered && (mode !== 'normal')) return;
 
         setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
 
-        if(mode === 'practice' || mode === 'survival' || mode === 'speedrun' || mode === 'adaptive') {
+        if(mode !== 'normal') {
             if (questionTimerRef.current) clearInterval(questionTimerRef.current);
 
             const currentQuestion = currentQuestions.find(q => q.id === questionId) || question;
@@ -550,8 +557,8 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     }
     
     if (isFinished) {
-        let finalTime = speedrunTime;
-        if(mode === 'exam') finalTime = (currentQuestions.length * 60) - examTimeLeft;
+        let finalTime = mainTimer;
+        if(mode === 'exam') finalTime = (quiz.questions.length * 60) - examTimeLeft;
 
         return <FinalResults quiz={{...quiz, questions: currentQuestions}} answers={answers} onRestart={onRestart} mode={mode} timeTaken={finalTime} setSessionRecap={setSessionRecap} strikes={strikes} />
     }
@@ -583,7 +590,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                     {mode === 'speedrun' && (
                         <div className="flex items-center gap-2 text-primary">
                             <Timer className="h-5 w-5" />
-                            <span>{formatTime(speedrunTime)}</span>
+                            <span>{formatTime(mainTimer)}</span>
                         </div>
                     )}
                      <div className="flex items-center gap-1.5">
@@ -605,7 +612,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
 
     const questionCounter = () => {
         if (mode === 'adaptive') return `${currentIndex + 1} / ${ADAPTIVE_QUESTION_COUNT}`;
-        if (mode === 'exam' || mode === 'normal') return `${Object.keys(answers).length} / ${currentQuestions.length}`;
+        if (mode === 'normal' || mode === 'exam') return `${currentIndex + 1} / ${currentQuestions.length}`;
         return `${currentIndex + 1} / ${currentQuestions.length}`;
     }
 
@@ -623,11 +630,12 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                     <p className="text-sm font-medium text-muted-foreground">
                         Question: {questionCounter()}
                     </p>
+                    {(mode === 'survival' || mode === 'exam') && <Progress value={(currentIndex / currentQuestions.length) * 100} className="h-1.5" />}
                     {mode === 'survival' && <Progress value={(questionTimeLeft / SURVIVAL_QUESTION_TIME) * 100} className="h-1.5" />}
                  </div>
             </CardHeader>
             <CardContent className="space-y-8 overflow-hidden min-h-[20rem]">
-                {mode === 'normal' || mode === 'exam' ? (
+                {mode === 'normal' ? (
                      currentQuestions.map((q, index) => (
                         <div key={q.id}>
                            <p className="font-semibold mb-4">{index + 1}. {q.question}</p>
@@ -657,7 +665,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                                 <Question
                                     question={question}
                                     onAnswer={(optionId) => handleAnswerChange(question.id, optionId)}
-                                    disabled={(isAnswered && (mode !== 'normal' && mode !== 'exam')) || isGeneratingNext}
+                                    disabled={(isAnswered && mode !== 'exam') || isGeneratingNext}
                                     selectedOptionId={selectedOptionId}
                                 />
                                 {isAnswered && (
@@ -700,22 +708,28 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                     </AnimatePresence>
                 )}
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex justify-between items-center">
                 <div>
-                   {(mode !== 'normal' && mode !== 'exam') && isAnswered && isCorrect && <div className="flex items-center gap-2 text-green-600"><CheckCircle className="h-5 w-5" /><span>Correct!</span></div>}
-                   {(mode !== 'normal' && mode !== 'exam') && isAnswered && !isCorrect && <div className="flex items-center gap-2 text-red-600"><XCircle className="h-5 w-5" /><span>Incorrect</span></div>}
+                   {isAnswered && isCorrect && <div className="flex items-center gap-2 text-green-600"><CheckCircle className="h-5 w-5" /><span>Correct!</span></div>}
+                   {isAnswered && !isCorrect && <div className="flex items-center gap-2 text-red-600"><XCircle className="h-5 w-5" /><span>Incorrect</span></div>}
                 </div>
-                {(mode !== 'normal' && mode !== 'exam') ? (
-                     <Button onClick={handleNextQuestion} disabled={isPenaltyLoading || isGeneratingNext || !isAnswered }>
-                        {currentIndex === currentQuestions.length -1 && mode !== 'adaptive' ? 'Finish Quiz' : 'Next Question' }
-                        {(isPenaltyLoading || isGeneratingNext) ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ArrowRight className="ml-2 h-4 w-4" />}
-                    </Button>
-                ) : null}
-
-                {(mode === 'normal' || mode === 'exam') && (
+                {mode === 'normal' ? (
                     <Button onClick={handleFinishQuiz} disabled={Object.keys(answers).length !== currentQuestions.length}>
                         Submit Quiz
                     </Button>
+                ) : (
+                    <div className="flex items-center gap-2">
+                        {mode === 'exam' && (
+                            <Button variant="outline" onClick={handlePreviousQuestion} disabled={currentIndex === 0}>
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Previous
+                            </Button>
+                        )}
+                        <Button onClick={handleNextQuestion} disabled={isPenaltyLoading || isGeneratingNext || !isAnswered }>
+                            {currentIndex === currentQuestions.length -1 && mode !== 'adaptive' ? 'Finish Quiz' : 'Next Question' }
+                            {(isPenaltyLoading || isGeneratingNext) ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ArrowRight className="ml-2 h-4 w-4" />}
+                        </Button>
+                    </div>
                 )}
             </CardFooter>
         </Card>
