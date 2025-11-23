@@ -52,6 +52,14 @@ const SubjectSchema = z.object({
   progress: z.number().describe('The student\'s current progress in this subject, from 0 to 100.'),
 });
 
+const QuickAccessItemSchema = z.object({
+  id: z.string().describe('Unique identifier for the quick access item.'),
+  title: z.string().describe('The title of the item (e.g., "Industrial Revolution Quiz").'),
+  type: z.enum(['summary', 'quiz', 'file', 'notes']).describe('The type of the material.'),
+  icon: z.enum(['Notebook', 'File', 'BrainCircuit', 'FileText']).describe('The icon for the item.'),
+});
+
+
 const GenerateDashboardDataInputSchema = z.object({
   studentName: z.string().describe('The name of the student.'),
   subjects: z.array(z.string()).describe('A list of subject names the student is taking.'),
@@ -66,6 +74,7 @@ const GenerateDashboardDataOutputSchema = z.object({
   deadlines: z.array(DeadlineSchema).describe('A list of upcoming deadlines.'),
   aiSuggestions: z.array(AiSuggestionSchema).describe('A list of AI-powered suggestions.'),
   subjects: z.array(SubjectSchema).describe('A list of the student\'s subjects with their current progress.'),
+  quickAccessItems: z.array(QuickAccessItemSchema).describe('A list of 4 recently accessed items.'),
 });
 export type GenerateDashboardDataOutput = z.infer<
   typeof GenerateDashboardDataOutputSchema
@@ -89,9 +98,10 @@ Generate the following data in English:
 3.  **Alerts**: 2-3 important and varied alerts (e.g., one urgent, one informational).
 4.  **Deadlines**: 3-4 upcoming deadlines with varied subjects, dates, and statuses.
 5.  **AI Suggestions**: 3 actionable and helpful suggestions for the student.
+6.  **Quick Access Items**: Generate exactly 4 realistic, recently used items. For example, a recently opened summary, a quiz that was just taken, an uploaded file, or some notes.
 
 Ensure all generated data is in English. All IDs should be unique strings.
-Make the data interconnected and logical. For example, a deadline for a subject should have related tasks. An alert could be about a deadline.
+Make the data interconnected and logical. For example, a deadline for a subject should have related tasks. An alert could be about a deadline. A quick access item might relate to a recent task.
 `,
 });
 

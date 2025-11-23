@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { AppContext, AppContextType } from "@/contexts/app-context";
 import { TeacherDashboard } from "@/components/dashboard/teacher/teacher-dashboard";
+import { QuickAccess } from "@/components/dashboard/quick-access";
 
 
 function StudentDashboard() {
@@ -29,6 +30,7 @@ function StudentDashboard() {
       <div className="flex flex-col gap-6 md:gap-8">
         <Alerts alerts={dashboardData.alerts} />
         <AiSuggestions aiSuggestions={dashboardData.aiSuggestions} />
+        <QuickAccess quickAccessItems={dashboardData.quickAccessItems} />
       </div>
     </div>
   );
@@ -40,7 +42,8 @@ function DashboardSkeleton() {
             <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8">
                 <Card>
                     <CardHeader>
-                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
                     </CardHeader>
                     <CardContent>
                         <Skeleton className="h-48 w-full" />
@@ -48,7 +51,8 @@ function DashboardSkeleton() {
                 </Card>
                  <Card>
                     <CardHeader>
-                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-8 w-1/2" />
+                        <Skeleton className="h-4 w-1/3" />
                     </CardHeader>
                     <CardContent>
                         <Skeleton className="h-32 w-full" />
@@ -56,7 +60,8 @@ function DashboardSkeleton() {
                 </Card>
                  <Card>
                     <CardHeader>
-                        <Skeleton className="h-10 w-full" />
+                         <Skeleton className="h-8 w-1/2" />
+                        <Skeleton className="h-4 w-1/3" />
                     </CardHeader>
                     <CardContent>
                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -66,8 +71,39 @@ function DashboardSkeleton() {
                 </Card>
             </div>
             <div className="flex flex-col gap-6 md:gap-8">
-                <Skeleton className="h-48" />
-                <Skeleton className="h-52" />
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/2" />
+                        <Skeleton className="h-4 w-1/3" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Skeleton className="h-20 w-full" />
+                        <Skeleton className="h-20 w-full" />
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/2" />
+                        <Skeleton className="h-4 w-1/3" />
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/2" />
+                        <Skeleton className="h-4 w-1/3" />
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-2 gap-4">
+                        <Skeleton className="h-24 w-full" />
+                        <Skeleton className="h-24 w-full" />
+                         <Skeleton className="h-24 w-full" />
+                        <Skeleton className="h-24 w-full" />
+                    </CardContent>
+                </Card>
             </div>
         </div>
     )
