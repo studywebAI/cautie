@@ -80,88 +80,62 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
   const [students, setStudents] = useState<Student[]>([]);
 
   // ---- Data Fetching ----
-  const fetchRemoteData = useCallback(async () => {
+  const fetchAllData = useCallback(async () => {
+    if (!session) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
-    await Promise.all([
-      fetch('/api/classes').then(res => res.json()).then(data => setClasses(data || [])),
-      fetch('/api/assignments').then(res => res.json()).then(data => setAssignments(data || []))
-    ]);
-    setIsLoading(false);
-  }, []);
-
-  const fetchLocalData = useCallback(() => {
-    setIsLoading(true);
-    setClasses(getFromLocalStorage('studyweb-classes', []));
-    setAssignments(getFromLocalStorage('studyweb-assignments', []));
-    setIsLoading(false);
-  }, []);
+    try {
+      const [classesRes, assignmentsRes] = await Promise.all([
+        fetch('/api/classes'),
+        fetch('/api/assignments')
+      ]);
+      const classesData = await classesRes.json();
+      const assignmentsData = await assignmentsRes.json();
+      setClasses(classesData || []);
+      setAssignments(assignmentsData || []);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      setClasses([]);
+      setAssignments([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [session]);
 
   useEffect(() => {
-    if (session) {
-      // **TODO**: Sync local data to remote on login
-      fetchRemoteData();
-    } else {
-      fetchLocalData();
-    }
-  }, [session, fetchRemoteData, fetchLocalData]);
+    fetchAllData();
+  }, [fetchAllData]);
 
 
   // ---- Data Creation ----
   const createClass = async (newClass: { name: string; description: string | null }) => {
-    if (session) {
-      // Logged in: POST to API
-      const response = await fetch('/api/classes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newClass),
-      });
-      if (!response.ok) throw new Error('Failed to create class remotely');
-      await fetchRemoteData();
-    } else {
-      // Logged out: Save to localStorage
-      const newClassWithId: ClassInfo = {
-        ...newClass,
-        id: `local-class-${Date.now()}`,
-        created_at: new Date().toISOString(),
-        owner_id: 'local-user',
-      };
-      const updatedClasses = [...classes, newClassWithId];
-      saveToLocalStorage('studyweb-classes', updatedClasses);
-      setClasses(updatedClasses);
-    }
+    const response = await fetch('/api/classes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newClass),
+    });
+    if (!response.ok) throw new Error('Failed to create class');
+    await fetchAllData();
   };
 
   const createAssignment = async (newAssignment: { title: string; due_date: string; class_id: string }) => {
-     if (session) {
-      // Logged in: POST to API
-      const response = await fetch('/api/assignments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newAssignment),
-      });
-      if (!response.ok) throw new Error('Failed to create assignment remotely');
-      await fetchRemoteData();
-    } else {
-      // Logged out: Save to localStorage
-       const newAssignmentWithId: ClassAssignment = {
-        ...newAssignment,
-        id: `local-assignment-${Date.now()}`,
-        created_at: new Date().toISOString(),
-      };
-      const updatedAssignments = [...assignments, newAssignmentWithId];
-      saveToLocalStorage('studyweb-assignments', updatedAssignments);
-      setAssignments(updatedAssignments);
-    }
+     const response = await fetch('/api/assignments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newAssignment),
+    });
+    if (!response.ok) throw new Error('Failed to create assignment');
+    await fetchAllData();
   };
   
   const refetchClasses = async () => {
-    if (session) await fetchRemoteData();
-    else fetchLocalData();
+    await fetchAllData();
   }
 
   const refetchAssignments = async () => {
-    if (session) await fetchRemoteData();
-    else fetchLocalData();
+    await fetchAllData();
   }
 
   // ---- Settings and Preferences ----

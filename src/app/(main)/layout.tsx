@@ -1,5 +1,6 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { redirect } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/sidebar";
 import { AppHeader } from "@/components/header";
@@ -14,11 +15,23 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createRouteHandlerClient<Database>({ cookies });
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>({
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value
+      },
+    },
+  }, {
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  });
+  
   const { data: { session } } = await supabase.auth.getSession();
 
-  // Authentication is no longer required to view the main layout.
-  // The app will now handle logged-in vs. logged-out state internally.
+  if (!session) {
+    redirect('/login');
+  }
 
   return (
     <AppProvider session={session}>
