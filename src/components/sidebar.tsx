@@ -18,10 +18,9 @@ import {
   Folder,
   BrainCircuit,
   Copy,
-  FileText,
+  FileSignature,
   ChevronDown,
   Wrench,
-  FileSignature,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Button } from './ui/button';

@@ -1,46 +1,16 @@
 {
   "placeholderImages": [
     {
-      "id": "subject-icon-history",
-      "description": "Icon for history subject",
-      "imageUrl": "https://images.unsplash.com/photo-1519884705082-b505c3001e63?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxvbGQlMjBib29rfGVufDB8fHx8MTc2MzczMjM3N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "old book"
+      "id": "user-avatar-1",
+      "description": "User avatar",
+      "imageUrl": "https://images.unsplash.com/photo-1531123414780-f74242c2b052?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageHint": "person portrait"
     },
     {
-      "id": "subject-icon-math",
-      "description": "Icon for math subject",
-      "imageUrl": "https://images.unsplash.com/photo-1509228468518-180dd4864904?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      "imageHint": "blackboard equation"
-    },
-    {
-      "id": "subject-icon-science",
-      "description": "Icon for science subject",
-      "imageUrl": "https://images.unsplash.com/photo-1564325724739-bae0bd08762c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%G%3D",
-      "imageHint": "chemistry beaker"
-    },
-    {
-      "id": "subject-icon-dutch",
-      "description": "Icon for Dutch language subject",
-      "imageUrl": "https://images.unsplash.com/photo-1526495124232-a04e1849168c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      "imageHint": "amsterdam canal"
-    },
-    {
-      "id": "subject-icon-literature",
-      "description": "Icon for literature subject",
-      "imageUrl": "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      "imageHint": "reading book"
-    },
-    {
-      "id": "subject-icon-art",
-      "description": "Icon for art subject",
-      "imageUrl": "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      "imageHint": "paint brushes"
-    },
-    {
-      "id": "subject-icon-geography",
-      "description": "Icon for geography subject",
-      "imageUrl": "https://images.unsplash.com/photo-1542045095-243553758ab7?q=80&w=1964&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      "imageHint": "world globe"
+      "id": "user-avatar-2",
+      "description": "Another user avatar",
+      "imageUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageHint": "man portrait"
     }
   ]
 }
