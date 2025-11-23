@@ -101,14 +101,17 @@ const prompt = ai.definePrompt({
 Generate the following data in English:
 1.  **Subjects**: Create an array for the following subjects: {{{subjects}}}. For each subject, generate a realistic progress percentage (0-100). The ID should be the subject name in lowercase with spaces replaced by hyphens.
 2.  **Tasks**: 4-5 realistic study tasks for today. Some should be completed.
-3.  **Alerts**: 2-3 important and varied alerts (e.g., one urgent, one informational).
-4.  **Deadlines**: 3-4 upcoming deadlines with varied subjects, dates, and statuses.
+3.  **Deadlines**: 3-4 upcoming deadlines with varied subjects, dates, and statuses. Make sure at least one deadline is 'behind' and at least one is 'risk'.
+4.  **Alerts**: 2-3 important alerts. **Crucially, these alerts must be based on the deadlines you just generated.**
+    *   If a deadline status is 'behind', create a 'destructive' alert about it.
+    *   If a deadline status is 'risk', create a 'warning' alert about it.
+    *   You can also add a general 'info' or 'success' alert.
 5.  **AI Suggestions**: 3 actionable and helpful suggestions for the student.
 6.  **Quick Access Items**: Generate exactly 4 realistic, recently used items. For example, a recently opened summary, a quiz that was just taken, an uploaded file, or some notes.
 7.  **Progress Data**: Generate an array representing study time for the last 7 days. The days should be abbreviated ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'). The study time should be a number of minutes (e.g., between 0 and 180). Make the data look realistic for a student, with some days having more study time than others.
 
 Ensure all generated data is in English. All IDs should be unique strings.
-Make the data interconnected and logical. For example, a deadline for a subject should have related tasks. An alert could be about a deadline. A quick access item might relate to a recent task.
+Make the data interconnected and logical. For example, a deadline for a subject should have related tasks. An alert MUST be about a deadline. A quick access item might relate to a recent task.
 `,
 });
 
