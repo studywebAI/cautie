@@ -111,6 +111,10 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
 
   // ---- Data Creation ----
   const createClass = async (newClass: { name: string; description: string | null }) => {
+    if (!session) {
+      alert("You must be logged in to create a class.");
+      return;
+    }
     const response = await fetch('/api/classes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -121,6 +125,10 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
   };
 
   const createAssignment = async (newAssignment: { title: string; due_date: string; class_id: string }) => {
+    if (!session) {
+      alert("You must be logged in to create an assignment.");
+      return;
+    }
      const response = await fetch('/api/assignments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
