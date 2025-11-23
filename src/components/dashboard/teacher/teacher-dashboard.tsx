@@ -1,36 +1,17 @@
 'use client';
 
-import { useContext, useState, useEffect } from 'react';
-import { AppContext, AppContextType } from '@/contexts/app-context';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ClassCard } from './class-card';
 import { CreateClassDialog } from './create-class-dialog';
 import type { ClassInfo } from '@/lib/teacher-types';
 
-function TeacherDashboardSkeleton() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[...Array(4)].map((_, i) => (
-        <Skeleton key={i} className="h-64" />
-      ))}
-    </div>
-  );
-}
-
 export function TeacherDashboard() {
-  const { teacherDashboardData, isLoading } = useContext(AppContext) as AppContextType;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [classes, setClasses] = useState<ClassInfo[]>([]);
 
-  useEffect(() => {
-    if (teacherDashboardData?.classes) {
-      setClasses(teacherDashboardData.classes);
-    }
-  }, [teacherDashboardData]);
-
-  const handleClassCreated = (newClass: Omit<ClassInfo, 'id' | 'studentCount' | 'averageProgress' | 'assignmentsDue' | 'alerts'> & {description?: string}) => {
+  const handleClassCreated = (newClass: { name: string; description: string }) => {
     const newClassData: ClassInfo = {
       id: `class-${Date.now()}-${Math.random()}`, // Temporary unique ID
       name: newClass.name,
@@ -58,8 +39,21 @@ export function TeacherDashboard() {
         </Button>
       </header>
 
-      {isLoading && classes.length === 0 ? (
-        <TeacherDashboardSkeleton />
+      {classes.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <h3 className="text-2xl font-bold tracking-tight">
+              You haven't created any classes yet.
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Create a class to start adding assignments and students.
+            </p>
+            <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create New Class
+            </Button>
+          </div>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map((classInfo) => (
