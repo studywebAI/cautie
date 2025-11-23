@@ -4,10 +4,10 @@
     "subjects": "Subjects",
     "settings": "Settings",
     "tools": {
-      "title": "Tools",
+      "title": "AI Tools",
       "quizGenerator": "Quiz Generator",
       "flashcardMaker": "Flashcard Maker",
-      "summaryTool": "Summary Tool"
+      "materialProcessor": "Process Material"
     }
   },
   "header": {
@@ -51,5 +51,35 @@
       "weeklyActivity": "Weekly Activity",
       "lastSessionRecap": "Last Session Recap"
     }
+  },
+  "tools": {
+    "title": "AI-Powered Tools",
+    "description": "Your suite of intelligent tools to accelerate learning.",
+    "select": "Select Tool",
+    "quiz": {
+      "description": "Create multiple-choice quizzes from any text. Test your knowledge with various challenging modes."
+    },
+    "flashcards": {
+      "description": "Automatically generate flashcards from your study materials to reinforce key concepts."
+    },
+    "material": {
+      "description": "Get a concise summary of any uploaded document or pasted text to quickly grasp the main points."
+    }
+  },
+  "material": {
+    "title": "Process Material",
+    "description": "Upload files or paste text to generate summaries, flashcards, and more.",
+    "importTitle": "Import Content",
+    "importDescription": "Provide a file, paste text, or both. The AI will use text as context for the file.",
+    "clickToUpload": "Click to upload",
+    "dragAndDrop": "or drag and drop",
+    "remove": "Remove",
+    "pasteText": "Or paste your text here...",
+    "processing": "Processing...",
+    "processWithAi": "Process with AI",
+    "summary": "Summary",
+    "suggestedActions": "Suggested Actions",
+    "done": "Done",
+    "select": "Select"
   }
 }

@@ -30,17 +30,17 @@ import { useDictionary } from '@/contexts/dictionary-context';
 export function AppSidebar() {
   const pathname = usePathname();
   const { dictionary } = useDictionary();
-  const isToolsPath = pathname.startsWith('/tools');
+  const isToolsPath = pathname.startsWith('/tools') || pathname === '/material';
 
   const menuItems = [
     { href: '/', label: dictionary.sidebar.dashboard, icon: Home },
     { href: '/subjects', label: dictionary.sidebar.subjects, icon: BookOpen },
+    { href: '/material', label: dictionary.sidebar.tools.materialProcessor, icon: FileSignature },
   ];
 
   const toolsMenuItems = [
     { href: '/tools/quiz', label: dictionary.sidebar.tools.quizGenerator, icon: BrainCircuit },
     { href: '/tools/flashcards', label: dictionary.sidebar.tools.flashcardMaker, icon: Copy },
-    { href: '/tools/summary', label: dictionary.sidebar.tools.summaryTool, icon: FileSignature },
   ]
 
   return (
@@ -72,15 +72,15 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          <Collapsible defaultOpen={isToolsPath}>
+          <Collapsible defaultOpen={pathname.startsWith('/tools')}>
              <CollapsibleTrigger asChild>
                 <Link href="/tools" className={cn(
                   "flex items-center w-full justify-start gap-2 p-2 font-medium text-sm h-auto rounded-md transition-colors",
-                  isToolsPath ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                  pathname.startsWith('/tools') ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 )}>
                     <Folder className="h-5 w-5" />
                     <span>{dictionary.sidebar.tools.title}</span>
-                    <ChevronDown className={cn("h-4 w-4 ml-auto transition-transform", isToolsPath && 'rotate-180')} />
+                    <ChevronDown className={cn("h-4 w-4 ml-auto transition-transform", pathname.startsWith('/tools') && 'rotate-180')} />
                 </Link>
              </CollapsibleTrigger>
              <CollapsibleContent>

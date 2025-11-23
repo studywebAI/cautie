@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { processMaterial, ProcessMaterialOutput } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
 import { AppContext } from '@/contexts/app-context';
+import { useDictionary } from '@/contexts/dictionary-context';
 
 type FileType = 'text' | 'image' | 'file';
 
@@ -32,6 +33,7 @@ function MaterialPageContent() {
   const [result, setResult] = useState<ProcessMaterialOutput | null>(null);
   const { toast } = useToast();
   const appContext = useContext(AppContext);
+  const { dictionary } = useDictionary();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -102,17 +104,17 @@ function MaterialPageContent() {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">Process Material</h1>
+        <h1 className="text-3xl font-bold font-headline">{dictionary.material.title}</h1>
         <p className="text-muted-foreground">
-          Upload files or paste text to generate summaries, flashcards, and more.
+          {dictionary.material.description}
         </p>
       </header>
 
       <Card>
         <CardHeader>
-          <CardTitle>Import Content</CardTitle>
+          <CardTitle>{dictionary.material.importTitle}</CardTitle>
           <CardDescription>
-            Provide a file, paste text, or both. The AI will use text as context for the file.
+            {dictionary.material.importDescription}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -121,7 +123,7 @@ function MaterialPageContent() {
                <label htmlFor="file-upload" className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <UploadCloud className="w-10 h-10 mb-3 text-muted-foreground" />
-                  <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                  <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">{dictionary.material.clickToUpload}</span> {dictionary.material.dragAndDrop}</p>
                   <p className="text-xs text-muted-foreground">PDF, DOCX, TXT, PNG, JPG</p>
                 </div>
                 <Input id="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".pdf,.docx,.txt,.png,.jpg,.jpeg" />
@@ -131,7 +133,7 @@ function MaterialPageContent() {
                   {fileType === 'image' ? <ImageIcon className="h-5 w-5 text-primary" /> : <FileText className="h-5 w-5 text-primary" />}
                   <span className="text-sm font-medium truncate">{uploadedFile.name}</span>
                   <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={clearFile}>
-                    <span className="sr-only">Remove</span>
+                    <span className="sr-only">{dictionary.material.remove}</span>
                     &times;
                   </Button>
                 </div>
@@ -139,7 +141,7 @@ function MaterialPageContent() {
             </div>
 
             <Textarea
-              placeholder="Or paste your text here..."
+              placeholder={dictionary.material.pasteText}
               className="h-48 resize-none"
               value={inputText}
               onChange={(e) => {
@@ -152,7 +154,7 @@ function MaterialPageContent() {
           <div className="flex justify-end">
             <Button onClick={handleProcess} disabled={(!uploadedFile && !inputText) || isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isLoading ? 'Processing...' : 'Process with AI'}
+              {isLoading ? dictionary.material.processing : dictionary.material.processWithAi}
             </Button>
           </div>
         </CardContent>
@@ -166,11 +168,11 @@ function MaterialPageContent() {
             </CardHeader>
             <CardContent className="space-y-6">
                 <div>
-                    <h3 className="font-semibold mb-2">Summary</h3>
+                    <h3 className="font-semibold mb-2">{dictionary.material.summary}</h3>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{result.analysis.summary}</p>
                 </div>
                  <div>
-                    <h3 className="font-semibold mb-2">Suggested Actions</h3>
+                    <h3 className="font-semibold mb-2">{dictionary.material.suggestedActions}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {result.suggestedActions.map((action) => {
                             const Icon = iconMap[action.icon] || BrainCircuit;
@@ -192,7 +194,7 @@ function MaterialPageContent() {
                                             disabled={isDisabled}
                                             aria-disabled={isDisabled}
                                         >
-                                          {isDisabled ? 'Done' : 'Select'}
+                                          {isDisabled ? dictionary.material.done : dictionary.material.select}
                                         </Button>
                                     </CardFooter>
                                 </Card>

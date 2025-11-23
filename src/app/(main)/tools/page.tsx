@@ -4,35 +4,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { BrainCircuit, Copy, FileSignature, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-
-const tools = [
-  {
-    title: 'AI Quiz Generator',
-    description: 'Create multiple-choice quizzes from any text. Test your knowledge with various challenging modes.',
-    icon: BrainCircuit,
-    href: '/tools/quiz',
-  },
-  {
-    title: 'AI Flashcard Maker',
-    description: 'Automatically generate flashcards from your study materials to reinforce key concepts.',
-    icon: Copy,
-    href: '/tools/flashcards',
-  },
-    {
-    title: 'AI Summary Tool',
-    description: 'Get a concise summary of any uploaded document or pasted text to quickly grasp the main points.',
-    icon: FileSignature,
-    href: '/tools/summary',
-  }
-];
+import { useDictionary } from '@/contexts/dictionary-context';
 
 export default function ToolsPage() {
+  const { dictionary } = useDictionary();
+  const tools = [
+    {
+      title: dictionary.sidebar.tools.quizGenerator,
+      description: dictionary.tools.quiz.description,
+      icon: BrainCircuit,
+      href: '/tools/quiz',
+    },
+    {
+      title: dictionary.sidebar.tools.flashcardMaker,
+      description: dictionary.tools.flashcards.description,
+      icon: Copy,
+      href: '/tools/flashcards',
+    },
+      {
+      title: dictionary.sidebar.tools.materialProcessor,
+      description: dictionary.tools.material.description,
+      icon: FileSignature,
+      href: '/material',
+    }
+  ];
+
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">AI-Powered Tools</h1>
+        <h1 className="text-3xl font-bold font-headline">{dictionary.tools.title}</h1>
         <p className="text-muted-foreground">
-          Your suite of intelligent tools to accelerate learning.
+          {dictionary.tools.description}
         </p>
       </header>
 
@@ -54,7 +56,7 @@ export default function ToolsPage() {
                     <CardFooter>
                         <Button asChild className="w-full">
                             <Link href={tool.href}>
-                                Select Tool
+                                {dictionary.tools.select}
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
