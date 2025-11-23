@@ -108,12 +108,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   useEffect(() => {
-    // Clear data when role changes to force a reload with the correct data
+    // Load data based on role
     if (role === 'student') {
-        setTeacherDashboardData(null); // Clear teacher data
         loadStudentData();
     } else {
-        setStudentDashboardData(null); // Clear student data
         loadTeacherData();
     }
   }, [role, loadStudentData, loadTeacherData]);
