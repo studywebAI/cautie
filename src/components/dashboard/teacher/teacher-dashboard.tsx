@@ -1,6 +1,6 @@
 'use client';
 
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
@@ -22,14 +22,24 @@ function TeacherDashboardSkeleton() {
 export function TeacherDashboard() {
   const { teacherDashboardData, isLoading } = useContext(AppContext) as AppContextType;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [classes, setClasses] = useState(teacherDashboardData?.classes || []);
+  const [classes, setClasses] = useState<ClassInfo[]>([]);
 
-  const handleClassCreated = (newClass: Omit<ClassInfo, 'id'>) => {
-    const newClassWithId: ClassInfo = {
-      ...newClass,
-      id: `class-${Date.now()}` // Temporary ID generation
+  useEffect(() => {
+    if (teacherDashboardData?.classes) {
+      setClasses(teacherDashboardData.classes);
+    }
+  }, [teacherDashboardData]);
+
+  const handleClassCreated = (newClass: Omit<ClassInfo, 'id' | 'studentCount' | 'averageProgress' | 'assignmentsDue' | 'alerts'> & {description?: string}) => {
+    const newClassData: ClassInfo = {
+      id: `class-${Date.now()}-${Math.random()}`, // Temporary unique ID
+      name: newClass.name,
+      studentCount: 0,
+      averageProgress: 0,
+      assignmentsDue: 0,
+      alerts: ["New class created! Invite students to get started."],
     };
-    setClasses(prev => [...prev, newClassWithId]);
+    setClasses(prev => [...prev, newClassData]);
   };
 
 
@@ -48,7 +58,7 @@ export function TeacherDashboard() {
         </Button>
       </header>
 
-      {isLoading || !teacherDashboardData ? (
+      {isLoading && classes.length === 0 ? (
         <TeacherDashboardSkeleton />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

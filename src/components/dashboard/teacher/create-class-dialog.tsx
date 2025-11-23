@@ -21,7 +21,7 @@ import type { ClassIdea } from '@/lib/teacher-types';
 type CreateClassDialogProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onClassCreated: (newClass: Omit<ClassIdea, 'id'>) => void;
+  onClassCreated: (newClass: { name: string; description: string }) => void;
 };
 
 export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateClassDialogProps) {
@@ -30,6 +30,8 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
   const [ideas, setIdeas] = useState<ClassIdea[]>([]);
   const [selectedIdea, setSelectedIdea] = useState<ClassIdea | null>(null);
+  const [customClassName, setCustomClassName] = useState('');
+  const [customClassDesc, setCustomClassDesc] = useState('');
   const { toast } = useToast();
 
   const handleGenerateIdeas = async () => {
@@ -52,22 +54,26 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
 
   const handleSelectIdea = (idea: ClassIdea) => {
     setSelectedIdea(idea);
+    setCustomClassName(idea.name);
+    setCustomClassDesc(idea.description);
     setStep(3);
   };
 
   const handleCustomSetup = () => {
-    setSelectedIdea({ id: 'custom', name: '', description: '' });
+    setSelectedIdea(null); // It's a custom setup, no pre-selected idea
+    setCustomClassName('');
+    setCustomClassDesc('');
     setStep(3);
   };
   
   const handleFinalize = () => {
-    if (!selectedIdea || !selectedIdea.name.trim()) {
+    if (!customClassName.trim()) {
       toast({ title: 'Class name is required', variant: 'destructive' });
       return;
     }
     onClassCreated({
-        name: selectedIdea.name,
-        description: selectedIdea.description,
+        name: customClassName,
+        description: customClassDesc,
     });
     resetAndClose();
   };
@@ -77,6 +83,8 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
     setSubject('');
     setIdeas([]);
     setSelectedIdea(null);
+    setCustomClassName('');
+    setCustomClassDesc('');
     setIsOpen(false);
   };
 
@@ -149,8 +157,8 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
                 <Label htmlFor="class-name">Class Name</Label>
                 <Input
                   id="class-name"
-                  value={selectedIdea?.name}
-                  onChange={(e) => setSelectedIdea(prev => prev ? {...prev, name: e.target.value} : null)}
+                  value={customClassName}
+                  onChange={(e) => setCustomClassName(e.target.value)}
                   placeholder="e.g., The Age of Revolutions"
                 />
               </div>
@@ -158,8 +166,8 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
                 <Label htmlFor="class-description">Description (Optional)</Label>
                 <Textarea
                   id="class-description"
-                  value={selectedIdea?.description}
-                  onChange={(e) => setSelectedIdea(prev => prev ? {...prev, description: e.target.value} : null)}
+                  value={customClassDesc}
+                  onChange={(e) => setCustomClassDesc(e.target.value)}
                   placeholder="A brief summary of the class."
                 />
               </div>
