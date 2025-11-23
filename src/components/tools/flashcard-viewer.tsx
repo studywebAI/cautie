@@ -9,8 +9,9 @@ import { type Flashcard } from '@/ai/flows/generate-flashcards';
 import { ChevronsLeftRight, ArrowLeft, ArrowRight, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { MultipleChoiceView } from './multiple-choice-view';
 
-export type StudyMode = 'flip' | 'type';
+export type StudyMode = 'flip' | 'type' | 'multiple-choice';
 
 const cardVariants = {
   enter: (direction: number) => ({
@@ -32,7 +33,7 @@ const cardVariants = {
 // Sub-component for Classic Flip Mode
 function FlipView({ card, isFlipped, setIsFlipped }: { card: Flashcard; isFlipped: boolean; setIsFlipped: (f: boolean) => void; }) {
   return (
-    <>
+    <div className='flex flex-col items-center justify-center gap-6'>
       <div className="w-full max-w-md h-64 [perspective:1000px]">
         <div
           className="relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]"
@@ -53,7 +54,7 @@ function FlipView({ card, isFlipped, setIsFlipped }: { card: Flashcard; isFlippe
           Flip Card
         </Button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -149,12 +150,34 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
 
   const card = cards[currentIndex];
 
+  const getModeDescription = () => {
+    switch (mode) {
+        case 'flip': return 'Click the card to flip it.';
+        case 'type': return 'Type the answer and press Enter.';
+        case 'multiple-choice': return 'Select the correct answer from the options below.';
+        default: return '';
+    }
+  }
+
+  const renderCardContent = () => {
+    switch(mode) {
+        case 'flip':
+            return <FlipView card={card} isFlipped={isFlipped} setIsFlipped={setIsFlipped} />;
+        case 'type':
+            return <TypeView card={card} />;
+        case 'multiple-choice':
+            return <MultipleChoiceView card={card} onAnswered={() => { /* Can add scoring logic here later */ }} />;
+        default:
+            return null;
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="font-headline">Study Flashcards</CardTitle>
         <CardDescription>
-          Card {currentIndex + 1} of {cards.length}. {mode === 'flip' ? "Click the card to flip it." : "Type the answer below."}
+          Card {currentIndex + 1} of {cards.length}. {getModeDescription()}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-6 overflow-hidden min-h-[24rem]">
@@ -173,11 +196,7 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
             className="w-full"
           >
             <div className="flex justify-center">
-              {mode === 'flip' ? (
-                <FlipView card={card} isFlipped={isFlipped} setIsFlipped={setIsFlipped} />
-              ) : (
-                <TypeView card={card} />
-              )}
+              {renderCardContent()}
             </div>
           </motion.div>
         </AnimatePresence>

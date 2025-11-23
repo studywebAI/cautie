@@ -205,6 +205,7 @@ function FlashcardsPageContent() {
               <SelectContent>
                 <SelectItem value="flip">Classic Flip Mode</SelectItem>
                 <SelectItem value="type">Type Mode (Active Recall)</SelectItem>
+                <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
               </SelectContent>
             </Select>
           </div>

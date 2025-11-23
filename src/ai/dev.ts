@@ -13,3 +13,4 @@ import '@/ai/flows/explain-answer.ts';
 import '@/ai/flows/generate-single-question.ts';
 import '@/ai/flows/generate-teacher-dashboard-data.ts';
 import '@/ai/flows/generate-class-ideas.ts';
+import '@/ai/flows/generate-multiple-choice-from-flashcard.ts';
