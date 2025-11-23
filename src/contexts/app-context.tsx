@@ -40,9 +40,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [reducedMotion, setReducedMotionState] = useState(false);
 
   const loadStudentData = useCallback(async () => {
-    if (studentDashboardData && role === 'student') {
-      setIsLoading(false);
-      return;
+    // No need to reload if data is already present for this role
+    if (studentDashboardData) {
+        setIsLoading(false);
+        return;
     }
     setIsLoading(true);
     try {
@@ -56,12 +57,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [studentDashboardData, role]);
+  }, [studentDashboardData]);
 
   const loadTeacherData = useCallback(async () => {
-     if (teacherDashboardData && role === 'teacher') {
-      setIsLoading(false);
-      return;
+     // No need to reload if data is already present for this role
+    if (teacherDashboardData) {
+        setIsLoading(false);
+        return;
     }
     setIsLoading(true);
     try {
@@ -75,7 +77,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [teacherDashboardData, role]);
+  }, [teacherDashboardData]);
 
   useEffect(() => {
     // Load all settings from localStorage on initial mount
@@ -98,10 +100,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   useEffect(() => {
+    // Clear data when role changes to force a reload with the correct data
     if (role === 'student') {
-      loadStudentData();
+        setTeacherDashboardData(null); // Clear teacher data
+        loadStudentData();
     } else {
-      loadTeacherData();
+        setStudentDashboardData(null); // Clear student data
+        loadTeacherData();
     }
   }, [role, loadStudentData, loadTeacherData]);
   
