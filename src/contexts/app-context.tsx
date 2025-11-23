@@ -1,9 +1,9 @@
-
 'use client';
 
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import type { SessionRecapData } from '@/lib/types';
 import type { Tables } from '@/lib/supabase/database.types';
+import type { Session } from '@supabase/supabase-js';
 
 export type UserRole = 'student' | 'teacher';
 export type ClassInfo = Tables<'classes'>;
@@ -17,6 +17,7 @@ export type Student = {
 
 
 export type AppContextType = {
+  session: Session | null;
   isLoading: boolean;
   language: string;
   setLanguage: (language: string) => void;
@@ -39,7 +40,7 @@ export type AppContextType = {
 
 export const AppContext = createContext<AppContextType | null>(null);
 
-export const AppProvider = ({ children }: { children: ReactNode }) => {
+export const AppProvider = ({ children, session }: { children: ReactNode, session: Session | null }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   
@@ -54,38 +55,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [teacherDataLoaded, setTeacherDataLoaded] = useState(false);
 
   const fetchClasses = useCallback(async () => {
-    setIsLoading(true);
     try {
         const response = await fetch('/api/classes');
-        if (!response.ok) {
-            throw new Error('Failed to fetch classes');
-        }
+        if (!response.ok) throw new Error('Failed to fetch classes');
         const data = await response.json();
         setClasses(data);
     } catch (error) {
         console.error(error);
-        // Optionally set an error state to show in the UI
-    } finally {
-        setIsLoading(false);
     }
   }, []);
 
   const fetchAssignments = useCallback(async () => {
-    // In a real app, you might fetch assignments per class, but for now we fetch all
-    setIsLoading(true);
     try {
         const response = await fetch('/api/assignments');
-        if (!response.ok) {
-            throw new Error('Failed to fetch assignments');
-        }
+        if (!response.ok) throw new Error('Failed to fetch assignments');
         const data = await response.json();
         setAssignments(data);
     } catch (error) {
         console.error(error);
-    } finally {
-        setIsLoading(false);
     }
   }, []);
 
@@ -103,18 +93,33 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setReducedMotionState(savedReducedMotion);
     setIsInitialLoadComplete(true);
   }, []);
+  
+  useEffect(() => {
+    const body = document.body;
+    if (dyslexiaFont) body.classList.add('font-dyslexia');
+    else body.classList.remove('font-dyslexia');
+  }, [dyslexiaFont]);
+  
+  useEffect(() => {
+    const body = document.body;
+    if (reducedMotion) body.setAttribute('data-reduced-motion', 'true');
+    else body.removeAttribute('data-reduced-motion');
+  }, [reducedMotion]);
 
   useEffect(() => {
-    if (!isInitialLoadComplete) return;
-
-    if (role === 'teacher') {
-        fetchClasses();
-        fetchAssignments();
-    } else {
-        // Handle student data loading if necessary, for now just finish loading
-        setIsLoading(false);
+    if (!isInitialLoadComplete || !session) return;
+    
+    async function loadDataForRole() {
+      setIsLoading(true);
+      if (role === 'teacher' && !teacherDataLoaded) {
+        await Promise.all([fetchClasses(), fetchAssignments()]);
+        setTeacherDataLoaded(true);
+      }
+      // Student data would be fetched here
+      setIsLoading(false);
     }
-  }, [role, isInitialLoadComplete, fetchClasses, fetchAssignments]);
+    loadDataForRole();
+  }, [role, isInitialLoadComplete, session, fetchClasses, fetchAssignments, teacherDataLoaded]);
   
   const setLanguage = (newLanguage: string) => {
     setLanguageState(newLanguage);
@@ -130,6 +135,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const setHighContrast = (enabled: boolean) => {
     setHighContrastState(enabled);
     localStorage.setItem('studyweb-high-contrast', String(enabled));
+     const html = document.documentElement;
+    if (enabled) html.classList.add('high-contrast');
+    else html.classList.remove('high-contrast');
   };
   
   const setDyslexiaFont = (enabled: boolean) => {
@@ -142,26 +150,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('studyweb-reduced-motion', String(enabled));
   };
 
-  useEffect(() => {
-    const html = document.documentElement;
-    if (highContrast) html.classList.add('high-contrast');
-    else html.classList.remove('high-contrast');
-  }, [highContrast]);
-
-  useEffect(() => {
-    const body = document.body;
-    if (dyslexiaFont) body.classList.add('font-dyslexia');
-    else body.classList.remove('font-dyslexia');
-  }, [dyslexiaFont]);
-  
-  useEffect(() => {
-    const body = document.body;
-    if (reducedMotion) body.setAttribute('data-reduced-motion', 'true');
-    else body.removeAttribute('data-reduced-motion');
-  }, [reducedMotion]);
-
 
   const contextValue: AppContextType = {
+    session,
     isLoading,
     language,
     setLanguage,

@@ -1,16 +1,29 @@
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/sidebar";
 import { AppHeader } from "@/components/header";
 import { AppProvider } from "@/contexts/app-context";
 import { DictionaryProvider } from "@/contexts/dictionary-context";
+import type { Database } from "@/lib/supabase/database.types";
 
-export default function MainLayout({
+export const dynamic = 'force-dynamic';
+
+export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = createRouteHandlerClient<Database>({ cookies });
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    redirect('/login');
+  }
+
   return (
-    <AppProvider>
+    <AppProvider session={session}>
       <DictionaryProvider>
         <SidebarProvider>
           <div className="flex min-h-screen w-full">
