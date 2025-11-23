@@ -21,7 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import type { MaterialReference } from '@/lib/teacher-types';
-import { CalendarIcon, BookOpen, BrainCircuit, Copy } from 'lucide-react';
+import { CalendarIcon, BookOpen, BrainCircuit, Copy, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { AppContext, AppContextType } from '@/contexts/app-context';
@@ -30,7 +30,6 @@ import { AppContext, AppContextType } from '@/contexts/app-context';
 type CreateAssignmentDialogProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onAssignmentCreated: (newAssignment: Omit<ClassAssignment, 'id' | 'submissions' | 'totalStudents'>) => void;
   classId: string;
 };
 
@@ -48,16 +47,17 @@ const materialIcons: Record<string, React.ReactNode> = {
     Reading: <BookOpen className="mr-2 h-4 w-4" />,
 }
 
-export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated, classId }: CreateAssignmentDialogProps) {
+export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAssignmentDialogProps) {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date>();
   const [materialId, setMaterialId] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { assignments, setAssignments } = useContext(AppContext) as AppContextType;
+  const { refetchAssignments } = useContext(AppContext) as AppContextType;
 
-  const handleCreateAssignment = () => {
+  const handleCreateAssignment = async () => {
     if (!title || !dueDate || !materialId) {
       toast({
         title: 'Missing Information',
@@ -66,25 +66,48 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated,
       });
       return;
     }
+    
+    setIsLoading(true);
+    try {
+        const response = await fetch('/api/assignments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title,
+                due_date: format(dueDate, 'yyyy-MM-dd'),
+                class_id: classId,
+            })
+        });
 
-    onAssignmentCreated({
-        title,
-        dueDate: format(dueDate, 'yyyy-MM-dd'),
-    });
-    
-    toast({
-        title: 'Assignment Created',
-        description: `"${title}" has been assigned.`,
-    });
-    
-    resetAndClose();
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create assignment');
+        }
+        
+        await refetchAssignments();
+        
+        toast({
+            title: 'Assignment Created',
+            description: `"${title}" has been assigned.`,
+        });
+
+        resetAndClose();
+
+    } catch (error: any) {
+        toast({
+            title: 'Error creating assignment',
+            description: error.message || 'An unexpected error occurred.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const navigateToTool = (tool: 'quiz' | 'flashcards') => {
     const params = new URLSearchParams({
       context: 'assignment',
       classId: classId,
-      // We could pass more context here, like a draft assignment ID
     });
     router.push(`/tools/${tool}?${params.toString()}`);
   }
@@ -184,7 +207,10 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated,
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={resetAndClose}>Cancel</Button>
-          <Button onClick={handleCreateAssignment}>Create Assignment</Button>
+          <Button onClick={handleCreateAssignment} disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create Assignment
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

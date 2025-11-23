@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AssignmentList } from '@/components/dashboard/teacher/assignment-list';
 import { StudentList } from '@/components/dashboard/teacher/student-list';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import type { ClassAssignment, Student } from '@/lib/teacher-types';
+import type { Student } from '@/lib/teacher-types';
 
 const placeholderStudentsData: Student[] = [
   { id: 'student-1', name: 'Alice Johnson', avatarUrl: PlaceHolderImages.find(p => p.id === 'user-avatar-1')?.imageUrl, overallProgress: 88 },
@@ -21,16 +21,10 @@ const placeholderStudentsData: Student[] = [
 export default function ClassDetailsPage() {
   const params = useParams();
   const { classId } = params as { classId: string };
-  const { classes, assignments, setAssignments, isLoading } = useContext(AppContext) as AppContextType;
+  const { classes, assignments, isLoading } = useContext(AppContext) as AppContextType;
   
   const classInfo: ClassInfo | undefined = classes.find(c => c.id === classId);
   const classAssignments = assignments.filter(a => a.class_id === classId);
-
-  const handleAssignmentCreated = (newAssignment: Omit<ClassAssignment, 'id' | 'submissions' | 'totalStudents' | 'classId'>) => {
-    // This logic is now handled in AppContext to persist to the database.
-    // This function can be used for client-side updates if needed in the future.
-  };
-
 
   if (isLoading && !classInfo) {
     return (
@@ -69,7 +63,7 @@ export default function ClassDetailsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2">
-          <AssignmentList assignments={classAssignments} onAssignmentCreated={handleAssignmentCreated} classId={classId} />
+          <AssignmentList assignments={classAssignments} classId={classId} />
         </div>
         <div className="lg:col-span-1">
           <StudentList students={placeholderStudentsData} />

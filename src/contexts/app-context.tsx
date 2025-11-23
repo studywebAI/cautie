@@ -1,7 +1,7 @@
 
 'use client';
 
-import { createContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import type { SessionRecapData } from '@/lib/types';
 import type { Tables } from '@/lib/supabase/database.types';
 
@@ -31,17 +31,17 @@ export type AppContextType = {
   sessionRecap: SessionRecapData | null;
   setSessionRecap: (data: SessionRecapData | null) => void;
   classes: ClassInfo[];
-  setClasses: React.Dispatch<React.SetStateAction<ClassInfo[]>>;
-  assignments: ClassAssignment[];
-  setAssignments: React.Dispatch<React.SetStateAction<ClassAssignment[]>>;
-  students: Student[];
   refetchClasses: () => Promise<void>;
+  assignments: ClassAssignment[];
+  refetchAssignments: () => Promise<void>;
+  students: Student[];
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   
   const [language, setLanguageState] = useState('en');
   const [role, setRoleState] = useState<UserRole>('student');
@@ -55,7 +55,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
 
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
     setIsLoading(true);
     try {
         const response = await fetch('/api/classes');
@@ -70,16 +70,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } finally {
         setIsLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    if (role === 'teacher') {
-        fetchClasses();
-    } else {
-        // Handle student data loading if necessary, for now just finish loading
+  const fetchAssignments = useCallback(async () => {
+    // In a real app, you might fetch assignments per class, but for now we fetch all
+    setIsLoading(true);
+    try {
+        const response = await fetch('/api/assignments');
+        if (!response.ok) {
+            throw new Error('Failed to fetch assignments');
+        }
+        const data = await response.json();
+        setAssignments(data);
+    } catch (error) {
+        console.error(error);
+    } finally {
         setIsLoading(false);
     }
-  }, [role]);
+  }, []);
+
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('studyweb-language') || 'en';
@@ -92,7 +101,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setDyslexiaFontState(savedDyslexiaFont);
     const savedReducedMotion = localStorage.getItem('studyweb-reduced-motion') === 'true';
     setReducedMotionState(savedReducedMotion);
+    setIsInitialLoadComplete(true);
   }, []);
+
+  useEffect(() => {
+    if (!isInitialLoadComplete) return;
+
+    if (role === 'teacher') {
+        fetchClasses();
+        fetchAssignments();
+    } else {
+        // Handle student data loading if necessary, for now just finish loading
+        setIsLoading(false);
+    }
+  }, [role, isInitialLoadComplete, fetchClasses, fetchAssignments]);
   
   const setLanguage = (newLanguage: string) => {
     setLanguageState(newLanguage);
@@ -154,11 +176,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     sessionRecap,
     setSessionRecap,
     classes,
-    setClasses,
-    assignments,
-    setAssignments,
-    students,
     refetchClasses: fetchClasses,
+    assignments,
+    refetchAssignments: fetchAssignments,
+    students,
   };
 
 

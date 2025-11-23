@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -14,7 +15,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { AppContext, AppContextType } from "@/contexts/app-context";
 import { useContext } from "react";
-import { format, differenceInDays, parseISO } from "date-fns";
+import { format, differenceInDays, parseISO, isFuture, isPast } from "date-fns";
 
 const statusColors = {
   "on-track": "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700/60",
@@ -24,24 +25,31 @@ const statusColors = {
 
 export function UpcomingDeadlines() {
   const { dictionary } = useDictionary();
-  const { studentDashboardData, assignments, classes } = useContext(AppContext) as AppContextType;
+  const { assignments, classes, role } = useContext(AppContext) as AppContextType;
 
+  // This component is only for students for now.
+  if (role !== 'student') {
+    return null;
+  }
+  
   // Combine AI-generated deadlines with real assignments
   const allDeadlines: Deadline[] = [
-    ...(studentDashboardData?.deadlines || []),
-    ...assignments.map(assignment => {
-      const className = classes.find(c => c.id === assignment.classId)?.name || 'Class';
-      const daysUntilDue = differenceInDays(parseISO(assignment.dueDate), new Date());
+    ...assignments
+      .filter(a => a.due_date && isFuture(parseISO(a.due_date)))
+      .map(assignment => {
+      const className = classes.find(c => c.id === assignment.class_id)?.name || 'Class';
+      const dueDate = parseISO(assignment.due_date!);
+      const daysUntilDue = differenceInDays(dueDate, new Date());
       let status: "on-track" | "risk" | "behind" = "on-track";
-      if (daysUntilDue < 0) status = "behind";
+      if (isPast(dueDate)) status = "behind";
       else if (daysUntilDue <= 3) status = "risk";
 
       return {
         id: assignment.id,
         subject: className,
         title: assignment.title,
-        date: format(parseISO(assignment.dueDate), 'MMMM d'),
-        workload: `Due in ${daysUntilDue} days`,
+        date: format(dueDate, 'MMMM d'),
+        workload: daysUntilDue >= 0 ? `Due in ${daysUntilDue} days` : `Overdue`,
         status: status,
       } as Deadline
     })
@@ -49,8 +57,9 @@ export function UpcomingDeadlines() {
 
   // Sort deadlines by date
   const sortedDeadlines = allDeadlines.sort((a, b) => {
-    // This is a simplified sort; a real implementation would parse dates properly
-    return (a.date < b.date) ? -1 : 1;
+    const dateA = new Date(a.date + `, ${new Date().getFullYear()}`);
+    const dateB = new Date(b.date + `, ${new Date().getFullYear()}`);
+    return dateA.getTime() - dateB.getTime();
   });
 
 

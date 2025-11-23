@@ -24,21 +24,19 @@ function StudentDashboard() {
   // This dashboard will be re-implemented once student data is connected to Supabase.
   // For now, it will show a placeholder.
   return (
-    <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
-      <div className="flex flex-col items-center gap-2">
-        <h3 className="text-2xl font-bold tracking-tight">
-          Student Dashboard Coming Soon
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          This view will be enabled once student enrollment is connected to the database.
-        </p>
-      </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8">
+            <UpcomingDeadlines />
+        </div>
+        <div className="lg:col-span-1 flex flex-col gap-6 md:gap-8">
+            {/* Other student components can go here */}
+        </div>
     </div>
   );
 }
 
 function TeacherSummaryDashboard() {
-    const { classes, isLoading } = useContext(AppContext) as AppContextType;
+    const { classes, assignments, isLoading } = useContext(AppContext) as AppContextType;
 
     if (isLoading || !classes) {
         return <DashboardSkeleton />;
@@ -46,7 +44,6 @@ function TeacherSummaryDashboard() {
     
     // Mock data for now, will be replaced with real aggregations from Supabase
     const totalStudents = classes.length * 20;
-    const totalAssignments = classes.length * 2;
     const lowProgressAlerts = classes.length > 0 ? 3 : 0;
 
     return (
@@ -84,7 +81,7 @@ function TeacherSummaryDashboard() {
                          <FileText className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{totalAssignments}</div>
+                        <div className="text-2xl font-bold">{assignments.length}</div>
                         <p className="text-xs text-muted-foreground">due this week</p>
                     </CardContent>
                 </Card>
@@ -119,6 +116,9 @@ function TeacherSummaryDashboard() {
                     {classes.slice(0, 2).map(classInfo => (
                         <ClassCard key={classInfo.id} classInfo={classInfo} />
                     ))}
+                     {classes.length === 0 && (
+                        <p className="text-muted-foreground col-span-2 text-center p-8">You haven't created any classes yet. <Link href="/classes" className="text-primary hover:underline">Create one now</Link> to get started.</p>
+                    )}
                 </CardContent>
              </Card>
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -6,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { PlusCircle, MoreHorizontal } from 'lucide-react';
-import type { ClassAssignment } from '@/lib/teacher-types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,14 +14,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CreateAssignmentDialog } from './create-assignment-dialog';
+import type { ClassAssignment } from '@/contexts/app-context';
+import { format, parseISO } from 'date-fns';
 
 type AssignmentListProps = {
   assignments: ClassAssignment[];
-  onAssignmentCreated: (newAssignment: Omit<ClassAssignment, 'id' | 'submissions' | 'totalStudents'>) => void;
   classId: string;
 };
 
-export function AssignmentList({ assignments, onAssignmentCreated, classId }: AssignmentListProps) {
+export function AssignmentList({ assignments, classId }: AssignmentListProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
@@ -49,11 +50,12 @@ export function AssignmentList({ assignments, onAssignmentCreated, classId }: As
             </TableHeader>
             <TableBody>
               {assignments.map((assignment) => {
-                  const submissionRate = assignment.totalStudents > 0 ? Math.round((assignment.submissions / assignment.totalStudents) * 100) : 0;
+                  const submissionRate = 0; // Placeholder until submissions are tracked
+                  const totalStudents = 20; // Placeholder
                   return (
                       <TableRow key={assignment.id}>
                           <TableCell className="font-medium">{assignment.title}</TableCell>
-                          <TableCell>{assignment.dueDate}</TableCell>
+                          <TableCell>{assignment.due_date ? format(parseISO(assignment.due_date), 'MMM d, yyyy') : 'No due date'}</TableCell>
                           <TableCell>
                               <div className="flex items-center gap-2">
                                   <Progress value={submissionRate} className="h-2 w-24" />
@@ -78,6 +80,13 @@ export function AssignmentList({ assignments, onAssignmentCreated, classId }: As
                       </TableRow>
                   )
               })}
+               {assignments.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                        No assignments have been created yet.
+                    </TableCell>
+                </TableRow>
+               )}
             </TableBody>
           </Table>
         </CardContent>
@@ -85,7 +94,6 @@ export function AssignmentList({ assignments, onAssignmentCreated, classId }: As
       <CreateAssignmentDialog 
         isOpen={isCreateOpen}
         setIsOpen={setIsCreateOpen}
-        onAssignmentCreated={onAssignmentCreated}
         classId={classId}
       />
     </>
