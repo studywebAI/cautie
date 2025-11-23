@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, Suspense, useContext } from 'react';
@@ -10,8 +11,10 @@ import { generateFlashcards, Flashcard } from '@/ai/flows/generate-flashcards';
 import { processMaterial } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, RefreshCw, UploadCloud, FileText, ImageIcon } from 'lucide-react';
-import { FlashcardViewer } from '@/components/tools/flashcard-viewer';
+import { FlashcardViewer, StudyMode } from '@/components/tools/flashcard-viewer';
 import { AppContext } from '@/contexts/app-context';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 
 function FlashcardsPageContent() {
@@ -22,6 +25,7 @@ function FlashcardsPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [generatedCards, setGeneratedCards] = useState<Flashcard[] | null>(null);
+  const [studyMode, setStudyMode] = useState<StudyMode>('flip');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<'image' | 'file' | null>(null);
   const { toast } = useToast();
@@ -130,7 +134,7 @@ function FlashcardsPageContent() {
   }
 
   if (generatedCards) {
-    return <FlashcardViewer cards={generatedCards} onRestart={() => setGeneratedCards(null)} />;
+    return <FlashcardViewer cards={generatedCards} mode={studyMode} onRestart={() => setGeneratedCards(null)} />;
   }
 
   return (
@@ -146,7 +150,7 @@ function FlashcardsPageContent() {
         <CardHeader>
           <CardTitle>Generate Flashcards</CardTitle>
           <CardDescription>
-            Provide the source material by uploading a file or pasting text below.
+            Provide the source material, choose a study mode, and let the AI do the rest.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -191,6 +195,18 @@ function FlashcardsPageContent() {
               }}
               readOnly={isProcessingFile}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="study-mode">Study Mode</Label>
+            <Select value={studyMode} onValueChange={(value) => setStudyMode(value as StudyMode)}>
+              <SelectTrigger id="study-mode" className="w-[280px]">
+                <SelectValue placeholder="Select mode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="flip">Classic Flip Mode</SelectItem>
+                <SelectItem value="type">Type Mode (Active Recall)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
         <CardFooter>
