@@ -1,3 +1,4 @@
+'use server';
 import { config } from 'dotenv';
 config();
 
@@ -9,3 +10,4 @@ import '@/ai/flows/process-material.ts';
 import '@/ai/flows/generate-flashcards.ts';
 import '@/ai/flows/generate-quiz.ts';
 import '@/ai/flows/explain-answer.ts';
+import '@/ai/flows/generate-single-question.ts';

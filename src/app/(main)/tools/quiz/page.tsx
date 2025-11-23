@@ -29,12 +29,14 @@ function QuizPageContent() {
         title: 'Source text is empty',
         description: 'Please paste some text to generate a quiz from.',
       });
+      setIsLoading(false);
       return;
     }
     setIsLoading(true);
     setGeneratedQuiz(null);
     try {
-      const response = await generateQuiz({ sourceText: text, questionCount: quizMode === 'survival' ? 10 : 7 });
+      const questionCount = quizMode === 'survival' || quizMode === 'adaptive' ? 10 : 7;
+      const response = await generateQuiz({ sourceText: text, questionCount });
       setGeneratedQuiz(response);
     } catch (error) {
       console.error('Error generating quiz:', error);
@@ -113,6 +115,7 @@ function QuizPageContent() {
                   <SelectItem value="exam">Exam Mode</SelectItem>
                   <SelectItem value="survival">Survival Mode</SelectItem>
                   <SelectItem value="speedrun">Speedrun Mode</SelectItem>
+                  <SelectItem value="adaptive">Adaptive Mode</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -16,7 +16,7 @@ const QuizOptionSchema = z.object({
   isCorrect: z.boolean().describe('Whether this option is the correct answer.'),
 });
 
-const QuizQuestionSchema = z.object({
+export const QuizQuestionSchema = z.object({
   id: z.string().describe('Unique identifier for the question.'),
   question: z.string().describe('The text of the question.'),
   options: z.array(QuizOptionSchema).describe('An array of 3 to 4 possible answer options.'),

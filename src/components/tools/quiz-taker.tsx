@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { explainAnswer } from '@/ai/flows/explain-answer';
 import { generateQuiz } from '@/ai/flows/generate-quiz';
+import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Ghost, Trophy, Zap, Bomb } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Ghost, Trophy, Zap, Bomb, TrendingUp } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -15,9 +16,10 @@ import type { Quiz, QuizQuestion, QuizOption } from '@/ai/flows/generate-quiz';
 import { AnimatePresence, motion } from 'framer-motion';
 
 type AnswersState = { [questionId: string]: string };
-export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun";
+export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" | "adaptive";
 
 const SURVIVAL_PENALTY_COUNT = 3;
+const ADAPTIVE_QUESTION_COUNT = 10;
 
 const modeDetails: Record<QuizMode, { title: string; description: string }> = {
     normal: {
@@ -39,6 +41,10 @@ const modeDetails: Record<QuizMode, { title: string; description: string }> = {
     speedrun: {
         title: "Speedrun Mode",
         description: "Answer as fast as you can. Three strikes and you're out."
+    },
+    adaptive: {
+        title: "Adaptive Mode",
+        description: "The question difficulty adapts to your performance."
     }
 }
 
@@ -216,8 +222,17 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const [speedrunTime, setSpeedrunTime] = useState(0);
     const [strikes, setStrikes] = useState(0);
     
+    // Adaptive mode state
+    const [difficulty, setDifficulty] = useState(5); // Start at medium difficulty
+    const [isGeneratingNext, setIsGeneratingNext] = useState(false);
+
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const question = currentQuestions[currentIndex];
+
+    const handleFinishQuiz = useCallback(() => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        setIsFinished(true);
+    }, []);
 
     useEffect(() => {
         if (mode === 'exam' && !isFinished) {
@@ -239,14 +254,12 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mode, isFinished]);
-
+    }, [mode, isFinished, handleFinishQuiz]);
 
     const handleAnswerChange = (questionId: string, optionId: string) => {
         setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
 
-        if(mode === 'practice' || mode === 'survival' || mode === 'speedrun') {
+        if(mode === 'practice' || mode === 'survival' || mode === 'speedrun' || mode === 'adaptive') {
             const correctOption = question.options.find(o => o.isCorrect);
             const isAnswerCorrect = optionId === correctOption?.id;
             setIsCorrect(isAnswerCorrect);
@@ -262,14 +275,16 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                     handleFinishQuiz();
                 }
             }
+            if (mode === 'adaptive') {
+                if (isAnswerCorrect) {
+                    setDifficulty(d => Math.min(10, d + 1));
+                } else {
+                    setDifficulty(d => Math.max(1, d - 1));
+                }
+            }
         }
     };
-    
-    const handleFinishQuiz = () => {
-        if (timerRef.current) clearInterval(timerRef.current);
-        setIsFinished(true);
-    };
-    
+        
     const handleGetExplanation = async () => {
         const selectedOptionId = answers[question.id];
         const correctOption = question.options.find(o => o.isCorrect);
@@ -323,16 +338,43 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         }
     }
 
-    const handleNextQuestion = () => {
+    const handleNextQuestion = async () => {
         const nextIndex = currentIndex + 1;
-        if (nextIndex < currentQuestions.length) {
-            setCurrentIndex(nextIndex);
-            setIsAnswered(false);
-            setIsCorrect(false);
-            setExplanation(null);
+
+        if (mode === 'adaptive') {
+            if (nextIndex >= ADAPTIVE_QUESTION_COUNT) {
+                handleFinishQuiz();
+                return;
+            }
+            setIsGeneratingNext(true);
+            try {
+                const newQuestion = await generateSingleQuestion({
+                    sourceText,
+                    difficulty,
+                    existingQuestionIds: currentQuestions.map(q => q.id),
+                });
+                setCurrentQuestions(prev => [...prev, newQuestion]);
+                setCurrentIndex(nextIndex);
+            } catch(e) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Failed to generate next question',
+                    description: 'Please try again.',
+                });
+            } finally {
+                setIsGeneratingNext(false);
+            }
         } else {
-            handleFinishQuiz();
+            if (nextIndex < currentQuestions.length) {
+                setCurrentIndex(nextIndex);
+            } else {
+                handleFinishQuiz();
+            }
         }
+        
+        setIsAnswered(false);
+        setIsCorrect(false);
+        setExplanation(null);
     }
     
     if (isFinished) {
@@ -370,6 +412,14 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                 </div>
             );
         }
+         if (mode === 'adaptive') {
+            return (
+                <div className="flex items-center gap-2 text-lg font-semibold text-primary">
+                    <TrendingUp className="h-5 w-5" />
+                    <span>Difficulty: {difficulty}</span>
+                </div>
+            );
+        }
         return null;
     }
 
@@ -384,7 +434,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                    {renderHeaderInfo()}
                 </div>
                  <p className="text-sm font-medium text-muted-foreground pt-2">
-                    Question: {currentIndex + 1} / {currentQuestions.length}
+                    Question: {currentIndex + 1} / {mode === 'adaptive' ? ADAPTIVE_QUESTION_COUNT : currentQuestions.length}
                 </p>
             </CardHeader>
             <CardContent className="space-y-8 overflow-hidden min-h-[20rem]">
@@ -416,7 +466,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                             <Question
                                 question={question}
                                 onAnswer={(optionId) => handleAnswerChange(question.id, optionId)}
-                                disabled={(isAnswered && (mode === 'practice' || mode === 'survival' || mode === 'speedrun' || mode === 'exam'))}
+                                disabled={(isAnswered && (mode !== 'normal' && mode !== 'exam')) || isGeneratingNext}
                                 selectedOptionId={selectedOptionId}
                             />
                              {isAnswered && !isCorrect && (
@@ -454,12 +504,13 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             </CardContent>
             <CardFooter className="flex justify-between">
                 <div>
-                   {(mode === 'practice' || mode === 'survival' || mode === 'speedrun') && isAnswered && isCorrect && <div className="flex items-center gap-2 text-green-600"><CheckCircle className="h-5 w-5" /><span>Correct!</span></div>}
-                   {(mode === 'practice' || mode === 'survival' || mode === 'speedrun') && isAnswered && !isCorrect && <div className="flex items-center gap-2 text-red-600"><XCircle className="h-5 w-5" /><span>Incorrect</span></div>}
+                   {(mode === 'practice' || mode === 'survival' || mode === 'speedrun' || mode === 'adaptive') && isAnswered && isCorrect && <div className="flex items-center gap-2 text-green-600"><CheckCircle className="h-5 w-5" /><span>Correct!</span></div>}
+                   {(mode === 'practice' || mode === 'survival' || mode === 'speedrun' || mode === 'adaptive') && isAnswered && !isCorrect && <div className="flex items-center gap-2 text-red-600"><XCircle className="h-5 w-5" /><span>Incorrect</span></div>}
                 </div>
                 {(mode !== 'normal') ? (
-                    <Button onClick={handleNextQuestion} disabled={(mode === 'survival' && isPenaltyLoading) || (mode !== 'exam' && !isAnswered)}>
-                        {currentIndex === currentQuestions.length - 1 ? 'Finish Quiz' : 'Next Question'}
+                    <Button onClick={handleNextQuestion} disabled={isPenaltyLoading || isGeneratingNext || !isAnswered }>
+                        {(isPenaltyLoading || isGeneratingNext) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {currentIndex === (mode === 'adaptive' ? ADAPTIVE_QUESTION_COUNT : currentQuestions.length) - 1 ? 'Finish Quiz' : 'Next Question'}
                         <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                 ) : null}
