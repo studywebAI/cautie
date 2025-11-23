@@ -1,6 +1,7 @@
 "use client";
 
 import { useContext } from 'react';
+import Link from 'next/link';
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -36,39 +37,60 @@ export function AppHeader() {
         </h1>
       </div>
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-            <User className={`h-5 w-5 transition-colors ${isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
-            <Label htmlFor="role-switcher" className="sr-only">{dictionary.header.roleSwitcher}</Label>
-            <Switch
-                id="role-switcher"
-                checked={!isStudent}
-                onCheckedChange={(checked) => setRole(checked ? 'teacher' : 'student')}
-            />
-            <BookUser className={`h-5 w-5 transition-colors ${!isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
-        </div>
-        
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                        <AvatarFallback>{userInitial}</AvatarFallback>
-                    </Avatar>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className='font-normal'>
-                    <div className='flex flex-col space-y-1'>
-                        <p className='text-sm font-medium leading-none'>My Account</p>
-                        <p className='text-xs leading-none text-muted-foreground'>{userEmail}</p>
-                    </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+        {session ? (
+            <>
+                <div className="hidden md:flex items-center gap-2">
+                    <User className={`h-5 w-5 transition-colors ${isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <Label htmlFor="role-switcher" className="sr-only">{dictionary.header.roleSwitcher}</Label>
+                    <Switch
+                        id="role-switcher"
+                        checked={!isStudent}
+                        onCheckedChange={(checked) => setRole(checked ? 'teacher' : 'student')}
+                    />
+                    <BookUser className={`h-5 w-5 transition-colors ${!isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
+                </div>
+                
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                            <Avatar className="h-10 w-10">
+                                <AvatarFallback>{userInitial}</AvatarFallback>
+                            </Avatar>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel className='font-normal'>
+                            <div className='flex flex-col space-y-1'>
+                                <p className='text-sm font-medium leading-none'>My Account</p>
+                                <p className='text-xs leading-none text-muted-foreground'>{userEmail}</p>
+                            </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <div className="md:hidden p-2">
+                             <div className="flex items-center justify-center gap-2">
+                                <User className={`h-5 w-5 transition-colors ${isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
+                                <Label htmlFor="role-switcher-mobile" className="sr-only">{dictionary.header.roleSwitcher}</Label>
+                                <Switch
+                                    id="role-switcher-mobile"
+                                    checked={!isStudent}
+                                    onCheckedChange={(checked) => setRole(checked ? 'teacher' : 'student')}
+                                />
+                                <BookUser className={`h-5 w-5 transition-colors ${!isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
+                            </div>
+                        </div>
+                        <DropdownMenuSeparator className="md:hidden" />
+                        <DropdownMenuItem onClick={handleLogout}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </>
+        ) : (
+             <Button asChild>
+                <Link href="/login">Log In</Link>
+            </Button>
+        )}
 
       </div>
     </header>
