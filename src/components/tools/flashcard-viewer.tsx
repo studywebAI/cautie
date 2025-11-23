@@ -104,10 +104,9 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
             case 'ArrowLeft':
                 handlePrev();
                 break;
-_CH_
             case ' ': // Spacebar
                 e.preventDefault();
-                if(mode === 'flip') handleFlipOrCheck();
+                if(mode === 'flip' || mode === 'type') handleFlipOrCheck();
                 break;
         }
     };
