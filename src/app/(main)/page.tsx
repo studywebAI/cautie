@@ -95,7 +95,7 @@ function DashboardSkeleton() {
                  <Card>
                     <CardHeader>
                         <Skeleton className="h-8 w-1/2" />
-                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-4 w-1-3" />
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <Skeleton className="h-12 w-full" />

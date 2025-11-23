@@ -1,0 +1,54 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "subjects": "Subjects",
+    "material": "Material",
+    "settings": "Settings",
+    "tools": {
+      "title": "Tools",
+      "quizGenerator": "Quiz Generator",
+      "flashcardMaker": "Flashcard Maker",
+      "summaryTool": "Summary Tool"
+    }
+  },
+  "header": {
+    "studentDashboard": "Student Dashboard",
+    "teacherDashboard": "Teacher Dashboard",
+    "roleSwitcher": "Role Switcher"
+  },
+  "dashboard": {
+    "todayPlan": {
+      "title": "Your Study Plan for Today",
+      "description": "These tasks have been prepared for you by the AI.",
+      "completed": "Completed"
+    },
+    "alerts": {
+      "title": "Important Alerts",
+      "description": "Risks and priorities"
+    },
+    "upcomingDeadlines": {
+      "title": "Upcoming Deadlines",
+      "description": "An overview of your upcoming assignments and tests.",
+      "due": "Due",
+      "onTrack": "On Track",
+      "risk": "Risk",
+      "behind": "Behind"
+    },
+    "mySubjects": {
+      "title": "Your Subjects",
+      "description": "A quick overview of your subjects."
+    },
+    "aiSuggestions": {
+      "title": "AI Suggestions",
+      "description": "Your personal assistant"
+    },
+    "quickAccess": {
+      "title": "Quick Access",
+      "description": "Your recently used materials."
+    },
+    "statistics": {
+      "title": "Statistics",
+      "description": "Your study time this week."
+    }
+  }
+}

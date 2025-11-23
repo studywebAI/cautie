@@ -6,10 +6,12 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { BookUser, User } from 'lucide-react';
+import { useDictionary } from '@/contexts/dictionary-context';
 
 
 export function AppHeader() {
   const { role, setRole } = useContext(AppContext) as AppContextType;
+  const { dictionary } = useDictionary();
   const isStudent = role === 'student';
 
   return (
@@ -17,13 +19,13 @@ export function AppHeader() {
       <SidebarTrigger className="md:hidden" />
       <div className="flex-1">
         <h1 className="text-xl font-semibold font-headline">
-          { isStudent ? 'Anonymous' : 'Teacher Dashboard'}
+          { isStudent ? dictionary.header.studentDashboard : dictionary.header.teacherDashboard}
         </h1>
       </div>
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
             <User className={`h-5 w-5 transition-colors ${isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
-            <Label htmlFor="role-switcher" className="sr-only">Role Switcher</Label>
+            <Label htmlFor="role-switcher" className="sr-only">{dictionary.header.roleSwitcher}</Label>
             <Switch
                 id="role-switcher"
                 checked={!isStudent}

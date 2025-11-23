@@ -1,0 +1,54 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "subjects": "Vakken",
+    "material": "Materiaal",
+    "settings": "Instellingen",
+    "tools": {
+      "title": "Hulpmiddelen",
+      "quizGenerator": "Quiz Generator",
+      "flashcardMaker": "Flashcard Maker",
+      "summaryTool": "Samenvattingstool"
+    }
+  },
+  "header": {
+    "studentDashboard": "Studenten Dashboard",
+    "teacherDashboard": "Docenten Dashboard",
+    "roleSwitcher": "Rol Wisselaar"
+  },
+  "dashboard": {
+    "todayPlan": {
+      "title": "Jouw Studieplan voor Vandaag",
+      "description": "Deze taken zijn door de AI voor je voorbereid.",
+      "completed": "Voltooid"
+    },
+    "alerts": {
+      "title": "Belangrijke Meldingen",
+      "description": "Risico's en prioriteiten"
+    },
+    "upcomingDeadlines": {
+      "title": "Aankomende Deadlines",
+      "description": "Een overzicht van je aankomende opdrachten en toetsen.",
+      "due": "Nog",
+      "onTrack": "Op Schema",
+      "risk": "Risico",
+      "behind": "Achterstand"
+    },
+    "mySubjects": {
+      "title": "Jouw Vakken",
+      "description": "Een snel overzicht van je vakken."
+    },
+    "aiSuggestions": {
+      "title": "AI Suggesties",
+      "description": "Jouw persoonlijke assistent"
+    },
+    "quickAccess": {
+      "title": "Snelle Toegang",
+      "description": "Je recent gebruikte materialen."
+    },
+    "statistics": {
+      "title": "Statistieken",
+      "description": "Je studietijd van deze week."
+    }
+  }
+}

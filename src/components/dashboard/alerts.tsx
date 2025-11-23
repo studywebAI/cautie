@@ -9,6 +9,7 @@ import { Alert as AlertUI, AlertDescription, AlertTitle } from "@/components/ui/
 import type { Alert } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+import { useDictionary } from "@/contexts/dictionary-context";
 
 const variantClasses = {
   destructive: "border-red-500/50 text-red-500 dark:text-red-400 [&>svg]:text-red-500 dark:[&>svg]:text-red-400",
@@ -28,11 +29,13 @@ type AlertsProps = {
 }
 
 export function Alerts({ alerts }: AlertsProps) {
+  const { dictionary } = useDictionary();
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Important Alerts</CardTitle>
-        <CardDescription>Risks and priorities</CardDescription>
+        <CardTitle className="font-headline">{dictionary.dashboard.alerts.title}</CardTitle>
+        <CardDescription>{dictionary.dashboard.alerts.description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {alerts.map((alert) => {

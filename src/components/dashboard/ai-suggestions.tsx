@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { AiSuggestion } from "@/lib/types";
 import { BrainCircuit, FileText, Calendar } from "lucide-react";
+import { useDictionary } from "@/contexts/dictionary-context";
 
 const iconMap = {
   BrainCircuit,
@@ -20,11 +21,13 @@ type AiSuggestionsProps = {
 };
 
 export function AiSuggestions({ aiSuggestions }: AiSuggestionsProps) {
+  const { dictionary } = useDictionary();
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">AI Suggestions</CardTitle>
-        <CardDescription>Your personal assistant</CardDescription>
+        <CardTitle className="font-headline">{dictionary.dashboard.aiSuggestions.title}</CardTitle>
+        <CardDescription>{dictionary.dashboard.aiSuggestions.description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {aiSuggestions.map((suggestion) => {

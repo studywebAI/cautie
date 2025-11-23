@@ -26,22 +26,24 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
-
-const menuItems = [
-  { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/subjects', label: 'Subjects', icon: BookOpen },
-  { href: '/material', label: 'Material', icon: FileText },
-];
-
-const toolsMenuItems = [
-  { href: '/tools/quiz', label: 'Quiz Generator', icon: BrainCircuit },
-  { href: '/tools/flashcards', label: 'Flashcard Maker', icon: Copy },
-  { href: '/tools/summary', label: 'Summary Tool', icon: FileSignature },
-]
+import { useDictionary } from '@/contexts/dictionary-context';
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { dictionary } = useDictionary();
   const isToolsPath = pathname.startsWith('/tools');
+
+  const menuItems = [
+    { href: '/', label: dictionary.sidebar.dashboard, icon: Home },
+    { href: '/subjects', label: dictionary.sidebar.subjects, icon: BookOpen },
+    { href: '/material', label: dictionary.sidebar.material, icon: FileText },
+  ];
+
+  const toolsMenuItems = [
+    { href: '/tools/quiz', label: dictionary.sidebar.tools.quizGenerator, icon: BrainCircuit },
+    { href: '/tools/flashcards', label: dictionary.sidebar.tools.flashcardMaker, icon: Copy },
+    { href: '/tools/summary', label: dictionary.sidebar.tools.summaryTool, icon: FileSignature },
+  ]
 
   return (
     <Sidebar>
@@ -79,7 +81,7 @@ export function AppSidebar() {
                   isToolsPath ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 )}>
                     <Folder className="h-5 w-5" />
-                    <span>Tools</span>
+                    <span>{dictionary.sidebar.tools.title}</span>
                     <ChevronDown className={cn("h-4 w-4 ml-auto transition-transform", isToolsPath && 'rotate-180')} />
                 </Link>
              </CollapsibleTrigger>
@@ -109,13 +111,13 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              tooltip="Settings"
+              tooltip={dictionary.sidebar.settings}
               className="font-medium"
               isActive={pathname === '/settings'}
             >
               <Link href="/settings">
                 <Settings className="h-5 w-5" />
-                <span>Settings</span>
+                <span>{dictionary.sidebar.settings}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/chart";
 import type { ProgressData } from "@/lib/types";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { useDictionary } from "@/contexts/dictionary-context";
 
 const chartConfig = {
   "Study Time": {
@@ -28,11 +29,13 @@ type ProgressChartProps = {
 };
 
 export function ProgressChart({ progressData }: ProgressChartProps) {
+  const { dictionary } = useDictionary();
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Statistics</CardTitle>
-        <CardDescription>Your study time this week.</CardDescription>
+        <CardTitle className="font-headline">{dictionary.dashboard.statistics.title}</CardTitle>
+        <CardDescription>{dictionary.dashboard.statistics.description}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-64 w-full">

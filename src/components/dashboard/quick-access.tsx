@@ -8,6 +8,7 @@ import {
 import type { QuickAccessItem } from "@/lib/types";
 import Link from "next/link";
 import { Notebook, File, BrainCircuit, FileText } from "lucide-react";
+import { useDictionary } from "@/contexts/dictionary-context";
 
 const iconMap = {
   Notebook,
@@ -21,11 +22,12 @@ type QuickAccessProps = {
 };
 
 export function QuickAccess({ quickAccessItems }: QuickAccessProps) {
+  const { dictionary } = useDictionary();
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Quick Access</CardTitle>
-        <CardDescription>Your recently used materials.</CardDescription>
+        <CardTitle className="font-headline">{dictionary.dashboard.quickAccess.title}</CardTitle>
+        <CardDescription>{dictionary.dashboard.quickAccess.description}</CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-2 gap-3">
         {quickAccessItems.map((item) => {

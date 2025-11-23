@@ -16,6 +16,7 @@ import {
   PolarAngleAxis,
 } from "recharts";
 import { useState, useMemo } from "react";
+import { useDictionary } from "@/contexts/dictionary-context";
 
 type TodayPlanProps = {
   tasks: Task[];
@@ -23,6 +24,7 @@ type TodayPlanProps = {
 
 export function TodayPlan({ tasks: initialTasks }: TodayPlanProps) {
   const [currentTasks, setCurrentTasks] = useState<Task[]>(initialTasks);
+  const { dictionary } = useDictionary();
 
   const completedTasks = useMemo(
     () => currentTasks.filter((task) => task.completed).length,
@@ -47,9 +49,9 @@ export function TodayPlan({ tasks: initialTasks }: TodayPlanProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Your Study Plan for Today</CardTitle>
+        <CardTitle className="font-headline">{dictionary.dashboard.todayPlan.title}</CardTitle>
         <CardDescription>
-          These tasks have been prepared for you by the AI.
+          {dictionary.dashboard.todayPlan.description}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -110,7 +112,7 @@ export function TodayPlan({ tasks: initialTasks }: TodayPlanProps) {
                     <span className="text-3xl font-bold font-headline text-primary">
                         {completionPercentage}%
                     </span>
-                    <span className="text-sm text-muted-foreground">Completed</span>
+                    <span className="text-sm text-muted-foreground">{dictionary.dashboard.todayPlan.completed}</span>
                 </div>
             </div>
           </div>
