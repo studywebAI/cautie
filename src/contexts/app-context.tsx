@@ -3,6 +3,7 @@
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { generateDashboardData as generateStudentDashboardData, GenerateDashboardDataOutput as StudentDashboardData } from '@/ai/flows/generate-dashboard-data';
 import { generateTeacherDashboardData, GenerateTeacherDashboardDataOutput as TeacherDashboardData } from '@/ai/flows/generate-teacher-dashboard-data';
+import type { SessionRecapData } from '@/lib/types';
 
 export type UserRole = 'student' | 'teacher';
 
@@ -23,6 +24,9 @@ export type AppContextType = {
   setDyslexiaFont: (enabled: boolean) => void;
   reducedMotion: boolean;
   setReducedMotion: (enabled: boolean) => void;
+  // Session Analytics
+  sessionRecap: SessionRecapData | null;
+  setSessionRecap: (data: SessionRecapData | null) => void;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -38,6 +42,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [highContrast, setHighContrastState] = useState(false);
   const [dyslexiaFont, setDyslexiaFontState] = useState(false);
   const [reducedMotion, setReducedMotionState] = useState(false);
+
+  // Analytics State
+  const [sessionRecap, setSessionRecap] = useState<SessionRecapData | null>(null);
+
 
   const loadStudentData = useCallback(async () => {
     // No need to reload if data is already present for this role
@@ -178,6 +186,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setDyslexiaFont,
     reducedMotion,
     setReducedMotion,
+    sessionRecap,
+    setSessionRecap,
   };
 
 

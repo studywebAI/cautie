@@ -84,3 +84,10 @@ export type Quiz = {
   description: string;
   questions: QuizQuestion[];
 };
+
+export type SessionRecapData = {
+  score: number;
+  correctAnswers: number;
+  totalQuestions: number;
+  timeTaken: number;
+};

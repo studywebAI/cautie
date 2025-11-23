@@ -48,7 +48,9 @@
     },
     "statistics": {
       "title": "Statistics",
-      "description": "Your study time this week."
+      "description": "Your study time this week.",
+      "weeklyActivity": "Weekly Activity",
+      "lastSessionRecap": "Last Session Recap"
     }
   }
 }

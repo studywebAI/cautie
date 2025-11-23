@@ -1,19 +1,22 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { explainAnswer } from '@/ai/flows/explain-answer';
 import { generateQuiz } from '@/ai/flows/generate-quiz';
 import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Trophy, Zap, Bomb, TrendingUp } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Trophy, Zap, Bomb, TrendingUp, BookOpen, Clock, Target } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import type { Quiz, QuizQuestion, QuizOption } from '@/ai/flows/generate-quiz';
+import type { Quiz, QuizQuestion, QuizOption, SessionRecapData } from '@/ai/flows/generate-quiz';
 import { AnimatePresence, motion } from 'framer-motion';
+import { AppContext, AppContextType } from '@/contexts/app-context';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
+import { Pie, PieChart } from 'recharts';
 
 type AnswersState = { [questionId: string]: string };
 export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" | "adaptive";
@@ -48,7 +51,19 @@ const modeDetails: Record<QuizMode, { title: string; description: string }> = {
     }
 }
 
-function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0 }: { quiz: Quiz, answers: AnswersState, onRestart: () => void, mode: QuizMode, timeTaken?: number }) {
+const chartConfig = {
+  correct: {
+    label: "Correct",
+    color: "hsl(var(--chart-2))",
+  },
+  incorrect: {
+    label: "Incorrect",
+    color: "hsl(var(--chart-5))",
+  },
+} satisfies ChartConfig;
+
+
+function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, setSessionRecap }: { quiz: Quiz, answers: AnswersState, onRestart: () => void, mode: QuizMode, timeTaken?: number, setSessionRecap: (data: SessionRecapData | null) => void }) {
     const correctCount = quiz.questions.filter(q => {
         const selectedOptionId = answers[q.id];
         if (!selectedOptionId) return false;
@@ -57,8 +72,21 @@ function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0 }: { quiz:
     }).length;
 
     const totalQuestions = quiz.questions.length;
+    const incorrectCount = totalQuestions - correctCount;
     const scorePercentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
     
+    useEffect(() => {
+        setSessionRecap({
+            score: scorePercentage,
+            correctAnswers: correctCount,
+            totalQuestions: totalQuestions,
+            timeTaken: timeTaken,
+        });
+        // Clear recap on unmount
+        return () => setSessionRecap(null);
+    }, [setSessionRecap, scorePercentage, correctCount, totalQuestions, timeTaken]);
+
+
     if (mode === 'survival' && correctCount === totalQuestions && Object.keys(answers).length === totalQuestions) {
         return (
              <Card>
@@ -113,44 +141,91 @@ function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0 }: { quiz:
         )
     }
 
+    const chartData = [
+        { name: 'correct', value: correctCount, fill: 'var(--color-correct)' },
+        { name: 'incorrect', value: incorrectCount, fill: 'var(--color-incorrect)' },
+    ]
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline">Quiz Results</CardTitle>
-                <CardDescription>You scored {correctCount} out of {totalQuestions} ({scorePercentage}%)</CardDescription>
+                <CardDescription>Here's how you did on the "{quiz.title}" quiz.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                {quiz.questions.map((q, index) => {
-                    const selectedOptionId = answers[q.id];
-                    const correctOption = q.options.find(opt => opt.isCorrect);
-                    const isCorrect = correctOption?.id === selectedOptionId;
-
-                    return (
-                        <div key={q.id}>
-                            <h3 className="font-semibold mb-2">{index + 1}. {q.question}</h3>
-                            <div className="space-y-2">
-                                {q.options.map(opt => {
-                                    const isSelected = selectedOptionId === opt.id;
-                                    const isTheCorrectAnswer = correctOption?.id === opt.id;
-
-                                    return (
-                                        <div key={opt.id} className={cn(`flex items-center gap-3 p-3 rounded-md text-sm border`,
-                                            isTheCorrectAnswer ? 'bg-green-100 dark:bg-green-900/30 border-green-500/50' : '',
-                                            isSelected && !isTheCorrectAnswer ? 'bg-red-100 dark:bg-red-900/30 border-red-500/50' : '',
-                                            !isSelected && !isTheCorrectAnswer ? 'bg-muted/50' : ''
-                                        )}>
-                                            {isCorrect && isSelected && <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />}
-                                            {!isCorrect && isSelected && <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />}
-                                            {isTheCorrectAnswer && !isSelected && <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />}
-                                            {!isTheCorrectAnswer && !isSelected && <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/50 flex-shrink-0" />}
-                                            <span>{opt.text}</span>
-                                        </div>
-                                    )
-                                })}
-                            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                     <div className='flex justify-center'>
+                         <ChartContainer config={chartConfig} className="h-48 w-48">
+                            <PieChart>
+                                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                                <Pie 
+                                    data={chartData} 
+                                    dataKey="value" 
+                                    nameKey="name" 
+                                    innerRadius={50}
+                                    strokeWidth={2}
+                                />
+                            </PieChart>
+                        </ChartContainer>
+                     </div>
+                     <div className="grid grid-cols-2 gap-4 text-center">
+                        <div className="p-4 bg-muted/50 rounded-lg">
+                            <Target className="h-7 w-7 text-primary mx-auto mb-2" />
+                            <p className="text-2xl font-bold">{scorePercentage}%</p>
+                            <p className="text-sm text-muted-foreground">Score</p>
                         </div>
-                    )
-                })}
+                         <div className="p-4 bg-muted/50 rounded-lg">
+                            <Clock className="h-7 w-7 text-primary mx-auto mb-2" />
+                            <p className="text-2xl font-bold">{timeTaken}s</p>
+                            <p className="text-sm text-muted-foreground">Time Taken</p>
+                        </div>
+                         <div className="p-4 bg-green-500/10 rounded-lg text-green-700 dark:text-green-400">
+                            <CheckCircle className="h-7 w-7 mx-auto mb-2" />
+                            <p className="text-2xl font-bold">{correctCount}</p>
+                            <p className="text-sm ">Correct</p>
+                        </div>
+                         <div className="p-4 bg-red-500/10 rounded-lg text-red-700 dark:text-red-500">
+                            <XCircle className="h-7 w-7 mx-auto mb-2" />
+                            <p className="text-2xl font-bold">{incorrectCount}</p>
+                            <p className="text-sm">Incorrect</p>
+                        </div>
+                     </div>
+                </div>
+
+                <div className="space-y-4">
+                    <h3 className="font-semibold text-lg flex items-center gap-2"><BookOpen className="h-5 w-5" /> Review Your Answers</h3>
+                    {quiz.questions.map((q, index) => {
+                        const selectedOptionId = answers[q.id];
+                        const correctOption = q.options.find(opt => opt.isCorrect);
+                        const isCorrect = correctOption?.id === selectedOptionId;
+
+                        return (
+                            <div key={q.id} className="p-4 rounded-lg bg-muted/50">
+                                <h4 className="font-semibold mb-2">{index + 1}. {q.question}</h4>
+                                <div className="space-y-2">
+                                    {q.options.map(opt => {
+                                        const isSelected = selectedOptionId === opt.id;
+                                        const isTheCorrectAnswer = correctOption?.id === opt.id;
+
+                                        return (
+                                            <div key={opt.id} className={cn(`flex items-center gap-3 p-2 rounded-md text-sm border`,
+                                                isTheCorrectAnswer ? 'bg-green-100 dark:bg-green-900/30 border-green-500/50' : '',
+                                                isSelected && !isTheCorrectAnswer ? 'bg-red-100 dark:bg-red-900/30 border-red-500/50' : '',
+                                                !isSelected && !isTheCorrectAnswer ? 'bg-background/50' : ''
+                                            )}>
+                                                {isCorrect && isSelected && <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />}
+                                                {!isCorrect && isSelected && <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />}
+                                                {isTheCorrectAnswer && !isSelected && <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />}
+                                                {!isTheCorrectAnswer && !isSelected && <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/50 flex-shrink-0" />}
+                                                <span>{opt.text}</span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
             </CardContent>
             <CardFooter className="justify-end">
                 <Button onClick={onRestart}>
@@ -204,6 +279,8 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const [answers, setAnswers] = useState<AnswersState>({});
     const [isFinished, setIsFinished] = useState(false);
     const { toast } = useToast();
+    const { setSessionRecap } = useContext(AppContext) as AppContextType;
+
 
     // Mode-specific state
     const [currentQuestions, setCurrentQuestions] = useState<QuizQuestion[]>(quiz.questions);
@@ -244,7 +321,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                     return prevTime - 1;
                 });
             }, 1000);
-        } else if (mode === 'speedrun' && !isFinished) {
+        } else if ((mode === 'speedrun' || mode === 'normal' || mode === 'practice') && !isFinished) {
             timerRef.current = setInterval(() => {
                 setSpeedrunTime(prevTime => prevTime + 1);
             }, 1000);
@@ -377,7 +454,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     }
     
     if (isFinished) {
-        return <FinalResults quiz={{...quiz, questions: currentQuestions}} answers={answers} onRestart={onRestart} mode={mode} timeTaken={speedrunTime} />
+        return <FinalResults quiz={{...quiz, questions: currentQuestions}} answers={answers} onRestart={onRestart} mode={mode} timeTaken={speedrunTime} setSessionRecap={setSessionRecap} />
     }
     
     const formatTime = (seconds: number) => {
@@ -538,5 +615,3 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         </Card>
     )
 }
-
-    

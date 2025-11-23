@@ -20,7 +20,7 @@ This file tracks the major features that have been implemented based on the proj
 - [x] **1.27.1 – Import Sources (Partial)**: Implemented file/image upload directly within the Quiz and Flashcard tools. The AI processes the file to extract text for use in the tool.
 
 ### 1.28 – Accessibility & UX
-- [x] **Internationalization (i18n)**: Implemented a dictionary system for static UI text, with initial translations for English (en) and Dutch (nl). The UI language changes based on user settings.
+- [x] **Internationalization (i18n)**: Implemented a dictionary system for static UI text, with initial translations for English (en) and Dutch (nl).
 - [x] **UI Polish**: Replaced subject placeholder images with cleaner, more professional `lucide-react` icons. Created a central "Tools" page and organized the sidebar for better navigation.
 - [x] **Specific Accessibility Features**: Implemented toggles and logic for High-Contrast Mode, Dyslexia-Friendly Font, and Reduced Animations.
 
@@ -34,6 +34,7 @@ This file tracks the major features that have been implemented based on the proj
   - AI Suggestions
   - Quick Access
   - Progress Chart (Statistics)
+  - **Session Recap Card**: A new card to display real-time analytics from the last quiz session.
 
 ## 🏫 Teacher Dashboard
 - [x] Implemented the initial layout for the Teacher Dashboard.

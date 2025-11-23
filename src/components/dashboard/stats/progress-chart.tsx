@@ -1,13 +1,6 @@
 "use client";
 
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -32,16 +25,13 @@ export function ProgressChart({ progressData }: ProgressChartProps) {
   const { dictionary } = useDictionary();
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">{dictionary.dashboard.statistics.title}</CardTitle>
-        <CardDescription>{dictionary.dashboard.statistics.description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-64 w-full">
+    <div>
+        <h3 className="text-lg font-medium font-headline">{dictionary.dashboard.statistics.weeklyActivity}</h3>
+        <p className="text-sm text-muted-foreground mb-4">{dictionary.dashboard.statistics.description}</p>
+        <ChartContainer config={chartConfig} className="h-60 w-full">
           <BarChart
             data={progressData}
-            margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+            margin={{ top: 5, right: 5, left: -25, bottom: 5 }}
             accessibilityLayer
           >
             <CartesianGrid vertical={false} />
@@ -50,6 +40,7 @@ export function ProgressChart({ progressData }: ProgressChartProps) {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              tickFormatter={(value) => value.slice(0, 3)}
             />
              <YAxis
               tickLine={false}
@@ -61,7 +52,6 @@ export function ProgressChart({ progressData }: ProgressChartProps) {
             <Bar dataKey="Study Time" fill="var(--color-Study Time)" radius={4} />
           </BarChart>
         </ChartContainer>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

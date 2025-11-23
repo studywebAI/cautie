@@ -48,7 +48,9 @@
     },
     "statistics": {
       "title": "Statistieken",
-      "description": "Je studietijd van deze week."
+      "description": "Je studietijd van deze week.",
+      "weeklyActivity": "Wekelijkse Activiteit",
+      "lastSessionRecap": "Recap Laatste Sessie"
     }
   }
 }

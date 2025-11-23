@@ -7,15 +7,16 @@ import { AiSuggestions } from "@/components/dashboard/ai-suggestions";
 import { MySubjects } from "@/components/dashboard/my-subjects";
 import { useContext } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AppContext, AppContextType } from "@/contexts/app-context";
 import { TeacherDashboard } from "@/components/dashboard/teacher/teacher-dashboard";
 import { QuickAccess } from "@/components/dashboard/quick-access";
 import { ProgressChart } from "@/components/dashboard/stats/progress-chart";
-
+import { SessionRecap } from "@/components/dashboard/stats/session-recap";
+import { Separator } from "@/components/ui/separator";
 
 function StudentDashboard() {
-  const { studentDashboardData, isLoading } = useContext(AppContext) as AppContextType;
+  const { studentDashboardData, isLoading, sessionRecap } = useContext(AppContext) as AppContextType;
 
   if (isLoading || !studentDashboardData) {
     return <DashboardSkeleton />;
@@ -27,7 +28,17 @@ function StudentDashboard() {
         <TodayPlan tasks={studentDashboardData.tasks} />
         <UpcomingDeadlines deadlines={studentDashboardData.deadlines} />
         <MySubjects subjects={studentDashboardData.subjects.slice(0, 4)} />
-        <ProgressChart progressData={studentDashboardData.progressData} />
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Statistics</CardTitle>
+                <CardDescription>An overview of your recent activity and progress.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ProgressChart progressData={studentDashboardData.progressData} />
+                <SessionRecap sessionRecap={sessionRecap} />
+            </CardContent>
+        </Card>
+
       </div>
       <div className="flex flex-col gap-6 md:gap-8">
         <Alerts alerts={studentDashboardData.alerts} />
