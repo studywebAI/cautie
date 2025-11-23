@@ -13,12 +13,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import type { Quiz, QuizQuestion, QuizOption } from '@/lib/types';
+import type { Quiz, QuizQuestion, QuizOption, SessionRecapData } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
 import { Pie, PieChart } from 'recharts';
-import { SessionRecapData } from '@/lib/types';
 import { Progress } from '../ui/progress';
 
 type AnswersState = { [questionId: string]: string };
@@ -467,7 +466,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     }, [isAnswered, handleNextQuestion]);
 
     const handleAnswerChange = (questionId: string, optionId: string) => {
-        if (isAnswered) return; // Prevent changing answer after submission in single-question modes
+        if (isAnswered && (mode !== 'normal' && mode !== 'exam')) return; // Prevent changing answer after submission in single-question modes
 
         setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
 
