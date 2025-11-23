@@ -101,7 +101,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated 
 
           <div className="grid gap-2">
             <Label htmlFor="material">Select Material</Label>
-            <p className="text-sm text-muted-foreground">Choose from your existing materials or create something new with AI.</p>
+            <p className="text-sm text-muted-foreground">Choose from your existing materials or create something new.</p>
             <Select value={materialId} onValueChange={setMaterialId}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose a quiz, flashcards, or text..." />
@@ -119,13 +119,19 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated 
             </Select>
             <div className="flex items-center gap-2 mt-2">
                 <Separator className="flex-1" />
-                <span className="text-xs text-muted-foreground">OR</span>
+                <span className="text-xs text-muted-foreground">OR CREATE NEW</span>
                 <Separator className="flex-1" />
             </div>
-             <Button variant="secondary" className="w-full mt-2">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create New Material with AI
-             </Button>
+             <div className="grid grid-cols-2 gap-2 mt-2">
+                <Button variant="secondary">
+                  <BrainCircuit className="mr-2 h-4 w-4" />
+                  New Quiz
+                </Button>
+                <Button variant="secondary">
+                  <Copy className="mr-2 h-4 w-4" />
+                  New Flashcards
+                </Button>
+            </div>
           </div>
 
           <div className="grid gap-2">
