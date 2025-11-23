@@ -1,0 +1,159 @@
+'use client';
+
+import { useState } from 'react';
+import { format } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { useToast } from '@/hooks/use-toast';
+import type { ClassAssignment, MaterialReference } from '@/lib/teacher-types';
+import { CalendarIcon, BookOpen, BrainCircuit, Copy } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+type CreateAssignmentDialogProps = {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  onAssignmentCreated: (newAssignment: Omit<ClassAssignment, 'id' | 'submissions' | 'totalStudents'>) => void;
+};
+
+// Placeholder data for materials. This will be replaced with real data fetching.
+const availableMaterials: MaterialReference[] = [
+    { id: 'mat-1', title: 'Renaissance Art Movements Quiz', type: 'Quiz' },
+    { id: 'mat-2', title: 'Key Terms: World War I', type: 'Flashcards' },
+    { id: 'mat-3', title: 'Chapter 5: The Industrial Revolution', type: 'Reading' },
+    { id: 'mat-4', title: 'Impressionism vs. Post-Impressionism', type: 'Reading' },
+];
+
+const materialIcons = {
+    Quiz: <BrainCircuit className="mr-2 h-4 w-4" />,
+    Flashcards: <Copy className="mr-2 h-4 w-4" />,
+    Reading: <BookOpen className="mr-2 h-4 w-4" />,
+}
+
+export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated }: CreateAssignmentDialogProps) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [dueDate, setDueDate] = useState<Date>();
+  const [materialId, setMaterialId] = useState<string>('');
+  const { toast } = useToast();
+
+  const handleCreateAssignment = () => {
+    if (!title || !dueDate || !materialId) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please fill out all required fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    onAssignmentCreated({
+        title,
+        dueDate: format(dueDate, 'yyyy-MM-dd'),
+    });
+    
+    toast({
+        title: 'Assignment Created',
+        description: `"${title}" has been assigned.`,
+    });
+    
+    resetAndClose();
+  };
+  
+  const resetAndClose = () => {
+    setTitle('');
+    setDescription('');
+    setDueDate(undefined);
+    setMaterialId('');
+    setIsOpen(false);
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => {
+        if (!open) resetAndClose();
+        else setIsOpen(true);
+    }}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Create New Assignment</DialogTitle>
+          <DialogDescription>
+            Assign a quiz, flashcard set, or reading material to your class.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-6 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="title">Assignment Title</Label>
+            <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Chapter 5 Quiz" />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="material">Select Material</Label>
+            <Select value={materialId} onValueChange={setMaterialId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a quiz, flashcards, or text..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableMaterials.map(material => (
+                    <SelectItem key={material.id} value={material.id}>
+                        <div className="flex items-center">
+                            {materialIcons[material.type]}
+                            {material.title}
+                        </div>
+                    </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="due-date">Due Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !dueDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={dueDate}
+                  onSelect={setDueDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+           <div className="grid gap-2">
+            <Label htmlFor="description">Description (Optional)</Label>
+            <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Add any extra instructions or context for your students." />
+          </div>
+
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={resetAndClose}>Cancel</Button>
+          <Button onClick={handleCreateAssignment}>Create Assignment</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

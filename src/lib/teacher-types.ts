@@ -13,7 +13,6 @@ export type ClassIdea = {
   description: string;
 }
 
-// These are placeholders for now and will be expanded later.
 export type Student = {
   id: string;
   name: string;
@@ -28,3 +27,9 @@ export type ClassAssignment = {
   submissions: number;
   totalStudents: number;
 };
+
+export type MaterialReference = {
+    id: string;
+    title: string;
+    type: 'Quiz' | 'Flashcards' | 'Reading';
+}
