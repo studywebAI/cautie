@@ -6,28 +6,46 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { ClassCard } from './class-card';
 import { CreateClassDialog } from './create-class-dialog';
-import type { ClassInfo } from '@/lib/teacher-types';
-import { AppContext, AppContextType } from '@/contexts/app-context';
+import { AppContext, AppContextType, ClassInfo } from '@/contexts/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import { useToast } from '@/hooks/use-toast';
 
 export function TeacherDashboard() {
-  const { classes, setClasses, isLoading } = useContext(AppContext) as AppContextType;
+  const { classes, refetchClasses, isLoading } = useContext(AppContext) as AppContextType;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  const handleClassCreated = (newClass: { name: string; description: string }) => {
-    const newClassData: ClassInfo = {
-      id: `class-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-      name: newClass.name,
-      studentCount: 0,
-      averageProgress: 0,
-      assignmentsDue: 0,
-      alerts: ["New class created! Invite students to get started."],
-    };
-    setClasses(prev => [...prev, newClassData]);
+  const handleClassCreated = async (newClass: { name: string; description: string }) => {
+     try {
+      const response = await fetch('/api/classes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newClass),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create class');
+      }
+      
+      toast({
+        title: 'Class Created',
+        description: `"${newClass.name}" has been successfully created.`,
+      });
+
+      await refetchClasses();
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not create the class. Please try again.',
+      });
+    }
   };
   
-  if (isLoading || !classes) {
+  if (isLoading) {
       return (
         <div className="flex flex-col gap-8">
             <header className="flex justify-between items-center">

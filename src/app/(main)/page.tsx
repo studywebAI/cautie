@@ -1,3 +1,4 @@
+
 'use client';
 
 import { TodayPlan } from "@/components/dashboard/today-plan";
@@ -20,34 +21,17 @@ import { ClassCard } from "@/components/dashboard/teacher/class-card";
 
 
 function StudentDashboard() {
-  const { studentDashboardData, isLoading, sessionRecap } = useContext(AppContext) as AppContextType;
-
-  if (isLoading || !studentDashboardData) {
-    return <DashboardSkeleton />;
-  }
-  
+  // This dashboard will be re-implemented once student data is connected to Supabase.
+  // For now, it will show a placeholder.
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-      <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8">
-        <TodayPlan tasks={studentDashboardData.tasks} />
-        <UpcomingDeadlines />
-        <MySubjects subjects={studentDashboardData.subjects.slice(0, 4)} />
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline">Statistics</CardTitle>
-                <CardDescription>An overview of your recent activity and progress.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ProgressChart progressData={studentDashboardData.progressData} />
-                <SessionRecap sessionRecap={sessionRecap} />
-            </CardContent>
-        </Card>
-
-      </div>
-      <div className="flex flex-col gap-6 md:gap-8">
-        <Alerts alerts={studentDashboardData.alerts} />
-        <AiSuggestions aiSuggestions={studentDashboardData.aiSuggestions} />
-        <QuickAccess quickAccessItems={studentDashboardData.quickAccessItems} />
+    <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
+      <div className="flex flex-col items-center gap-2">
+        <h3 className="text-2xl font-bold tracking-tight">
+          Student Dashboard Coming Soon
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          This view will be enabled once student enrollment is connected to the database.
+        </p>
       </div>
     </div>
   );
@@ -59,10 +43,11 @@ function TeacherSummaryDashboard() {
     if (isLoading || !classes) {
         return <DashboardSkeleton />;
     }
-
-    const totalStudents = classes.reduce((acc, c) => acc + c.studentCount, 0);
-    const totalAssignments = classes.reduce((acc, c) => acc + c.assignmentsDue, 0);
-    const lowProgressAlerts = classes.flatMap(c => c.alerts).length;
+    
+    // Mock data for now, will be replaced with real aggregations from Supabase
+    const totalStudents = classes.length * 20;
+    const totalAssignments = classes.length * 2;
+    const lowProgressAlerts = classes.length > 0 ? 3 : 0;
 
     return (
         <div className="flex flex-col gap-8">

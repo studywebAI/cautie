@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
 import { useContext } from 'react';
-import { AppContext, AppContextType } from '@/contexts/app-context';
+import { AppContext, AppContextType, ClassInfo } from '@/contexts/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AssignmentList } from '@/components/dashboard/teacher/assignment-list';
 import { StudentList } from '@/components/dashboard/teacher/student-list';
@@ -22,18 +23,12 @@ export default function ClassDetailsPage() {
   const { classId } = params as { classId: string };
   const { classes, assignments, setAssignments, isLoading } = useContext(AppContext) as AppContextType;
   
-  const classInfo = classes.find(c => c.id === classId);
-  const classAssignments = assignments.filter(a => a.classId === classId);
+  const classInfo: ClassInfo | undefined = classes.find(c => c.id === classId);
+  const classAssignments = assignments.filter(a => a.class_id === classId);
 
   const handleAssignmentCreated = (newAssignment: Omit<ClassAssignment, 'id' | 'submissions' | 'totalStudents' | 'classId'>) => {
-    const assignmentToAdd: ClassAssignment = {
-        id: `assign-${Date.now()}`,
-        classId: classId,
-        ...newAssignment,
-        submissions: 0,
-        totalStudents: placeholderStudentsData.length,
-    }
-    setAssignments(prev => [assignmentToAdd, ...prev]);
+    // This logic is now handled in AppContext to persist to the database.
+    // This function can be used for client-side updates if needed in the future.
   };
 
 
@@ -69,7 +64,7 @@ export default function ClassDetailsPage() {
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="text-3xl font-bold font-headline">{classInfo.name}</h1>
-        <p className="text-muted-foreground">Manage assignments, students, and settings for this class.</p>
+        <p className="text-muted-foreground">{classInfo.description || 'Manage assignments, students, and settings for this class.'}</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">

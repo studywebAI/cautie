@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useContext } from 'react';
@@ -19,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import type { ClassAssignment, MaterialReference } from '@/lib/teacher-types';
+import type { MaterialReference } from '@/lib/teacher-types';
 import { CalendarIcon, BookOpen, BrainCircuit, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -29,7 +30,7 @@ import { AppContext, AppContextType } from '@/contexts/app-context';
 type CreateAssignmentDialogProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onAssignmentCreated: (newAssignment: Omit<ClassAssignment, 'id' | 'submissions' | 'totalStudents' | 'classId'>) => void;
+  onAssignmentCreated: (newAssignment: Omit<ClassAssignment, 'id' | 'submissions' | 'totalStudents'>) => void;
   classId: string;
 };
 
@@ -41,7 +42,7 @@ const availableMaterials: MaterialReference[] = [
     { id: 'mat-4', title: 'Impressionism vs. Post-Impressionism', type: 'Reading' },
 ];
 
-const materialIcons = {
+const materialIcons: Record<string, React.ReactNode> = {
     Quiz: <BrainCircuit className="mr-2 h-4 w-4" />,
     Flashcards: <Copy className="mr-2 h-4 w-4" />,
     Reading: <BookOpen className="mr-2 h-4 w-4" />,
@@ -177,7 +178,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, onAssignmentCreated,
           
            <div className="grid gap-2">
             <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea id="description" value={description} onChange={e => setDescription(e.taget.value)} placeholder="Add any extra instructions or context for your students." />
+            <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Add any extra instructions or context for your students." />
           </div>
 
         </div>
