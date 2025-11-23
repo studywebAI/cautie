@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Inter, Space_Grotesk, Atkinson_Hyperlegible } from 'next/font/google';
 import { cn } from "@/lib/utils";
 
 const fontInter = Inter({
@@ -12,6 +12,12 @@ const fontInter = Inter({
 const fontSpaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-space-grotesk',
+});
+
+const fontAtkinsonHyperlegible = Atkinson_Hyperlegible({
+  subsets: ['latin'],
+  variable: '--font-atkinson-hyperlegible',
+  weight: ['400', '700'],
 });
 
 
@@ -30,7 +36,8 @@ export default function RootLayout({
       <body className={cn(
         "font-body antialiased",
         fontInter.variable,
-        fontSpaceGrotesk.variable
+        fontSpaceGrotesk.variable,
+        fontAtkinsonHyperlegible.variable
       )}>
         {children}
         <Toaster />

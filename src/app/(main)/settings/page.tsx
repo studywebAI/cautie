@@ -6,9 +6,19 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 
 export default function SettingsPage() {
-  const { language, setLanguage } = useContext(AppContext) as AppContextType;
+  const {
+    language,
+    setLanguage,
+    highContrast,
+    setHighContrast,
+    dyslexiaFont,
+    setDyslexiaFont,
+    reducedMotion,
+    setReducedMotion
+  } = useContext(AppContext) as AppContextType;
 
   return (
     <div className="flex flex-col gap-8">
@@ -42,6 +52,40 @@ export default function SettingsPage() {
               </SelectContent>
             </Select>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+            <CardTitle>Accessibility</CardTitle>
+            <CardDescription>
+                Customize the appearance and behavior of the app to suit your needs.
+            </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+             <div className="flex items-center justify-between">
+                <div>
+                    <Label htmlFor="high-contrast">High-Contrast Mode</Label>
+                    <p className='text-sm text-muted-foreground'>Increase text and background contrast.</p>
+                </div>
+                <Switch id="high-contrast" checked={highContrast} onCheckedChange={setHighContrast} />
+            </div>
+            <Separator />
+             <div className="flex items-center justify-between">
+                <div>
+                    <Label htmlFor="dyslexia-font">Dyslexia-Friendly Font</Label>
+                    <p className='text-sm text-muted-foreground'>Use a font designed for easier reading.</p>
+                </div>
+                <Switch id="dyslexia-font" checked={dyslexiaFont} onCheckedChange={setDyslexiaFont} />
+            </div>
+            <Separator />
+             <div className="flex items-center justify-between">
+                <div>
+                    <Label htmlFor="reduced-motion">Reduce Animations</Label>
+                    <p className='text-sm text-muted-foreground'>Turn off decorative animations and transitions.</p>
+                </div>
+                <Switch id="reduced-motion" checked={reducedMotion} onCheckedChange={setReducedMotion} />
+            </div>
         </CardContent>
       </Card>
 

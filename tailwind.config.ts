@@ -14,6 +14,7 @@ export default {
       fontFamily: {
         body: ["var(--font-inter)", ...fontFamily.sans],
         headline: ["var(--font-space-grotesk)", ...fontFamily.sans],
+        dyslexia: ["var(--font-atkinson-hyperlegible)", ...fontFamily.sans],
       },
       colors: {
         background: 'hsl(var(--background))',

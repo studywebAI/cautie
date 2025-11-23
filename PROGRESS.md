@@ -22,6 +22,7 @@ This file tracks the major features that have been implemented based on the proj
 ### 1.28 – Accessibility & UX
 - [x] **Internationalization (i18n)**: Implemented a dictionary system for static UI text, with initial translations for English (en) and Dutch (nl). The UI language changes based on user settings.
 - [x] **UI Polish**: Replaced subject placeholder images with cleaner, more professional `lucide-react` icons. Created a central "Tools" page and organized the sidebar for better navigation.
+- [x] **Specific Accessibility Features**: Implemented toggles and logic for High-Contrast Mode, Dyslexia-Friendly Font, and Reduced Animations.
 
 ## 🎓 Student Dashboard
 - [x] Implemented the initial layout for the Student Dashboard, dynamically populated by an AI flow.
@@ -36,5 +37,5 @@ This file tracks the major features that have been implemented based on the proj
 
 ## 🏫 Teacher Dashboard
 - [x] Implemented the initial layout for the Teacher Dashboard.
-- [x] Created a `ClassCard` component to display summary information for each class.
+- [xx] Created a `ClassCard` component to display summary information for each class.
 - [x] Added a role switcher to toggle between Student and Teacher views.

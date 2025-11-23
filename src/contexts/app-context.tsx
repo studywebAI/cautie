@@ -10,10 +10,19 @@ export type AppContextType = {
   studentDashboardData: StudentDashboardData | null;
   teacherDashboardData: TeacherDashboardData | null;
   isLoading: boolean;
+  // Language
   language: string;
   setLanguage: (language: string) => void;
+  // Role
   role: UserRole;
   setRole: (role: UserRole) => void;
+  // Accessibility
+  highContrast: boolean;
+  setHighContrast: (enabled: boolean) => void;
+  dyslexiaFont: boolean;
+  setDyslexiaFont: (enabled: boolean) => void;
+  reducedMotion: boolean;
+  setReducedMotion: (enabled: boolean) => void;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -22,13 +31,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [studentDashboardData, setStudentDashboardData] = useState<StudentDashboardData | null>(null);
   const [teacherDashboardData, setTeacherDashboardData] = useState<TeacherDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Settings States
   const [language, setLanguageState] = useState('en');
   const [role, setRoleState] = useState<UserRole>('student');
+  const [highContrast, setHighContrastState] = useState(false);
+  const [dyslexiaFont, setDyslexiaFontState] = useState(false);
+  const [reducedMotion, setReducedMotionState] = useState(false);
 
   const loadStudentData = useCallback(async () => {
-    // This function is now memoized, but we need a way to force a refresh if needed.
-    // For now, let's keep the existing behavior of only loading once.
-    // A future improvement could be a manual refresh button.
     if (studentDashboardData && role === 'student') {
       setIsLoading(false);
       return;
@@ -67,6 +78,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [teacherDashboardData, role]);
 
   useEffect(() => {
+    // Load all settings from localStorage on initial mount
     const savedLanguage = localStorage.getItem('studyweb-language');
     if (savedLanguage) setLanguageState(savedLanguage);
 
@@ -74,7 +86,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const initialRole = savedRole === 'teacher' ? 'teacher' : 'student';
     setRoleState(initialRole);
 
-    // Initial data load is now handled by the setRole effect
+    const savedHighContrast = localStorage.getItem('studyweb-high-contrast') === 'true';
+    setHighContrastState(savedHighContrast);
+
+    const savedDyslexiaFont = localStorage.getItem('studyweb-dyslexia-font') === 'true';
+    setDyslexiaFontState(savedDyslexiaFont);
+
+    const savedReducedMotion = localStorage.getItem('studyweb-reduced-motion') === 'true';
+    setReducedMotionState(savedReducedMotion);
+
   }, []);
   
   useEffect(() => {
@@ -95,9 +115,69 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setRoleState(newRole);
     localStorage.setItem('studyweb-role', newRole);
   };
+  
+  const setHighContrast = (enabled: boolean) => {
+    setHighContrastState(enabled);
+    localStorage.setItem('studyweb-high-contrast', String(enabled));
+  };
+  
+  const setDyslexiaFont = (enabled: boolean) => {
+    setDyslexiaFontState(enabled);
+    localStorage.setItem('studyweb-dyslexia-font', String(enabled));
+  };
+
+  const setReducedMotion = (enabled: boolean) => {
+    setReducedMotionState(enabled);
+    localStorage.setItem('studyweb-reduced-motion', String(enabled));
+  };
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (highContrast) {
+      html.classList.add('high-contrast');
+    } else {
+      html.classList.remove('high-contrast');
+    }
+  }, [highContrast]);
+
+  useEffect(() => {
+    const body = document.body;
+    if (dyslexiaFont) {
+      body.classList.add('font-dyslexia');
+    } else {
+      body.classList.remove('font-dyslexia');
+    }
+  }, [dyslexiaFont]);
+  
+  useEffect(() => {
+    const body = document.body;
+    if (reducedMotion) {
+      body.setAttribute('data-reduced-motion', 'true');
+    } else {
+      body.removeAttribute('data-reduced-motion');
+    }
+  }, [reducedMotion]);
+
+
+  const contextValue = {
+    studentDashboardData,
+    teacherDashboardData,
+    isLoading,
+    language,
+    setLanguage,
+    role,
+    setRole,
+    highContrast,
+    setHighContrast,
+    dyslexiaFont,
+    setDyslexiaFont,
+    reducedMotion,
+    setReducedMotion,
+  };
+
 
   return (
-    <AppContext.Provider value={{ studentDashboardData, teacherDashboardData, isLoading, language, setLanguage, role, setRole }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );
