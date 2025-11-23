@@ -19,11 +19,13 @@ import { AppContext, AppContextType } from '@/contexts/app-context';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
 import { Pie, PieChart } from 'recharts';
 import { SessionRecapData } from '@/lib/types';
+import { Progress } from '../ui/progress';
 
 type AnswersState = { [questionId: string]: string };
 export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" | "adaptive";
 
 const SURVIVAL_PENALTY_COUNT = 3;
+const SURVIVAL_QUESTION_TIME = 20; // 20 seconds per question
 const ADAPTIVE_QUESTION_COUNT = 10;
 const MAX_STRIKES = 3;
 
@@ -321,6 +323,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const [examTimeLeft, setExamTimeLeft] = useState(quiz.questions.length * 30);
     const [speedrunTime, setSpeedrunTime] = useState(0);
     const [strikes, setStrikes] = useState(0);
+    const [questionTimeLeft, setQuestionTimeLeft] = useState(SURVIVAL_QUESTION_TIME);
     
     // Adaptive mode states
     const [difficulty, setDifficulty] = useState(5); // Start at medium difficulty
@@ -328,14 +331,35 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
 
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const questionTimerRef = useRef<NodeJS.Timeout | null>(null);
     const question = currentQuestions[currentIndex];
 
     const handleFinishQuiz = useCallback(() => {
         if (timerRef.current) clearInterval(timerRef.current);
+        if (questionTimerRef.current) clearInterval(questionTimerRef.current);
         setIsFinished(true);
     }, []);
 
+    const handleIncorrectAnswer = useCallback(() => {
+        const newStrikes = strikes + 1;
+        setStrikes(newStrikes);
+        
+        if (mode === 'survival') {
+            if (newStrikes >= MAX_STRIKES) {
+                handleFinishQuiz();
+            } else {
+                handleSurvivalPenalty();
+            }
+        }
+        if (mode === 'speedrun' && newStrikes >= MAX_STRIKES) {
+            handleFinishQuiz();
+        }
+    }, [strikes, mode, handleFinishQuiz]);
+
     const handleNextQuestion = useCallback(async () => {
+        if (questionTimerRef.current) clearInterval(questionTimerRef.current);
+        setQuestionTimeLeft(SURVIVAL_QUESTION_TIME);
+
         const nextIndex = currentIndex + 1;
 
         if (mode === 'adaptive') {
@@ -374,8 +398,11 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         setExplanation(null);
     }, [currentIndex, currentQuestions, difficulty, handleFinishQuiz, mode, sourceText, toast]);
 
+    // Overall Quiz Timer
     useEffect(() => {
-        if (mode === 'exam' && !isFinished) {
+        if (isFinished) return;
+
+        if (mode === 'exam') {
             timerRef.current = setInterval(() => {
                 setExamTimeLeft(prevTime => {
                     if (prevTime <= 1) {
@@ -386,7 +413,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                     return prevTime - 1;
                 });
             }, 1000);
-        } else if ((mode === 'speedrun' || mode === 'normal' || mode === 'practice') && !isFinished) {
+        } else if (mode === 'speedrun' || mode === 'normal' || mode === 'practice') {
             timerRef.current = setInterval(() => {
                 setSpeedrunTime(prevTime => prevTime + 1);
             }, 1000);
@@ -395,6 +422,33 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, [mode, isFinished, handleFinishQuiz]);
+
+    // Per-Question Timer for Survival Mode
+    useEffect(() => {
+        if (mode === 'survival' && !isAnswered && !isFinished) {
+            questionTimerRef.current = setInterval(() => {
+                setQuestionTimeLeft(prev => {
+                    if (prev <= 1) {
+                        clearInterval(questionTimerRef.current!);
+                        toast({
+                            title: "Time's up!",
+                            variant: 'destructive'
+                        })
+                        handleIncorrectAnswer();
+                        // Artificially mark as answered to allow moving next
+                        setIsAnswered(true);
+                        setIsCorrect(false); 
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        
+        return () => {
+            if (questionTimerRef.current) clearInterval(questionTimerRef.current);
+        }
+    }, [mode, currentIndex, isAnswered, isFinished, handleIncorrectAnswer, toast]);
     
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -413,9 +467,13 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     }, [isAnswered, handleNextQuestion]);
 
     const handleAnswerChange = (questionId: string, optionId: string) => {
+        if (isAnswered) return; // Prevent changing answer after submission in single-question modes
+
         setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
 
         if(mode === 'practice' || mode === 'survival' || mode === 'speedrun' || mode === 'adaptive') {
+            if (questionTimerRef.current) clearInterval(questionTimerRef.current);
+
             const currentQuestion = currentQuestions.find(q => q.id === questionId) || question;
             const correctOption = currentQuestion.options.find(o => o.isCorrect);
             const isAnswerCorrect = optionId === correctOption?.id;
@@ -423,18 +481,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             setIsAnswered(true);
 
             if (!isAnswerCorrect) {
-                 const newStrikes = strikes + 1;
-                 setStrikes(newStrikes);
-                if (mode === 'survival') {
-                    if (newStrikes >= MAX_STRIKES) {
-                        handleFinishQuiz();
-                    } else {
-                        handleSurvivalPenalty();
-                    }
-                }
-                if (mode === 'speedrun' && newStrikes >= MAX_STRIkes) {
-                    handleFinishQuiz();
-                }
+                 handleIncorrectAnswer();
             }
 
             if (mode === 'adaptive') {
@@ -567,9 +614,12 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                     </div>
                    {renderHeaderInfo()}
                 </div>
-                 <p className="text-sm font-medium text-muted-foreground pt-2">
-                    Question: {questionCounter()}
-                </p>
+                 <div className="pt-2 space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">
+                        Question: {questionCounter()}
+                    </p>
+                    {mode === 'survival' && <Progress value={(questionTimeLeft / SURVIVAL_QUESTION_TIME) * 100} className="h-1.5" />}
+                 </div>
             </CardHeader>
             <CardContent className="space-y-8 overflow-hidden min-h-[20rem]">
                 {mode === 'normal' || mode === 'exam' ? (
