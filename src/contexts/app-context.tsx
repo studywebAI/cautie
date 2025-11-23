@@ -26,7 +26,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRoleState] = useState<UserRole>('student');
 
   const loadStudentData = useCallback(async () => {
-    if (studentDashboardData) {
+    // This function is now memoized, but we need a way to force a refresh if needed.
+    // For now, let's keep the existing behavior of only loading once.
+    // A future improvement could be a manual refresh button.
+    if (studentDashboardData && role === 'student') {
       setIsLoading(false);
       return;
     }
@@ -42,10 +45,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [studentDashboardData]);
+  }, [studentDashboardData, role]);
 
   const loadTeacherData = useCallback(async () => {
-    if (teacherDashboardData) {
+     if (teacherDashboardData && role === 'teacher') {
       setIsLoading(false);
       return;
     }
@@ -61,7 +64,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [teacherDashboardData]);
+  }, [teacherDashboardData, role]);
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('studyweb-language');
@@ -71,12 +74,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const initialRole = savedRole === 'teacher' ? 'teacher' : 'student';
     setRoleState(initialRole);
 
-    if (initialRole === 'student') {
+    // Initial data load is now handled by the setRole effect
+  }, []);
+  
+  useEffect(() => {
+    if (role === 'student') {
       loadStudentData();
     } else {
       loadTeacherData();
     }
-  }, [loadStudentData, loadTeacherData]);
+  }, [role, loadStudentData, loadTeacherData]);
   
   const setLanguage = (newLanguage: string) => {
     setLanguageState(newLanguage);
@@ -85,22 +92,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
   const setRole = (newRole: UserRole) => {
     if (newRole === role) return;
-    
     setRoleState(newRole);
     localStorage.setItem('studyweb-role', newRole);
-
-    if (newRole === 'student') {
-      loadStudentData();
-    } else {
-      loadTeacherData();
-    }
   };
 
-  const dashboardData = role === 'student' ? studentDashboardData : null;
-  const currentTeacherData = role === 'teacher' ? teacherDashboardData : null;
-
   return (
-    <AppContext.Provider value={{ studentDashboardData: dashboardData, teacherDashboardData: currentTeacherData, isLoading, language, setLanguage, role, setRole }}>
+    <AppContext.Provider value={{ studentDashboardData, teacherDashboardData, isLoading, language, setLanguage, role, setRole }}>
       {children}
     </AppContext.Provider>
   );

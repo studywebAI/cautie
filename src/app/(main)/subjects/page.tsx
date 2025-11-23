@@ -6,9 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AppContext, AppContextType } from "@/contexts/app-context";
 
 function SubjectsPageContent() {
-  const { dashboardData, isLoading } = useContext(AppContext) as AppContextType;
+  const { studentDashboardData, isLoading } = useContext(AppContext) as AppContextType;
 
-  if (isLoading || !dashboardData) {
+  if (isLoading || !studentDashboardData) {
     return (
        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-56" />)}
@@ -16,7 +16,7 @@ function SubjectsPageContent() {
     );
   }
 
-  return <MySubjectsGrid subjects={dashboardData.subjects} />;
+  return <MySubjectsGrid subjects={studentDashboardData.subjects} />;
 }
 
 export default function SubjectsPage() {
