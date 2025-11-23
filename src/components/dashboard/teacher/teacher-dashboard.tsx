@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useContext } from 'react';
@@ -26,7 +27,7 @@ export function TeacherDashboard() {
     setClasses(prev => [...prev, newClassData]);
   };
   
-  if (isLoading) {
+  if (isLoading || !classes) {
       return (
         <div className="flex flex-col gap-8">
             <header className="flex justify-between items-center">
