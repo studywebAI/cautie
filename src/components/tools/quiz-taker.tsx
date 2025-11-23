@@ -297,7 +297,8 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
 
         if(mode === 'practice' || mode === 'survival' || mode === 'speedrun' || mode === 'adaptive' || mode === 'endless') {
-            const correctOption = question.options.find(o => o.isCorrect);
+            const currentQuestion = currentQuestions.find(q => q.id === questionId) || question;
+            const correctOption = currentQuestion.options.find(o => o.isCorrect);
             const isAnswerCorrect = optionId === correctOption?.id;
             setIsCorrect(isAnswerCorrect);
             setIsAnswered(true);
@@ -434,7 +435,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-    const selectedOptionId = answers[question.id] || null;
+    const selectedOptionId = question ? answers[question.id] || null : null;
 
     const renderHeaderInfo = () => {
         if (mode === 'exam') {
@@ -481,6 +482,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const questionCounter = () => {
         if (mode === 'adaptive') return `${currentIndex + 1} / ${ADAPTIVE_QUESTION_COUNT}`;
         if (mode === 'endless') return `${currentIndex + 1}`;
+        if (mode === 'exam' || mode === 'normal') return `${Object.keys(answers).length} / ${currentQuestions.length}`;
         return `${currentIndex + 1} / ${currentQuestions.length}`;
     }
 
@@ -499,7 +501,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                 </p>
             </CardHeader>
             <CardContent className="space-y-8 overflow-hidden min-h-[20rem]">
-                {mode === 'normal' ? (
+                {mode === 'normal' || mode === 'exam' ? (
                      currentQuestions.map((q, index) => (
                         <div key={q.id}>
                            <p className="font-semibold mb-4">{index + 1}. {q.question}</p>
@@ -577,7 +579,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                    {(mode !== 'normal' && mode !== 'exam' && mode !== 'endless') && isAnswered && isCorrect && <div className="flex items-center gap-2 text-green-600"><CheckCircle className="h-5 w-5" /><span>Correct!</span></div>}
                    {(mode !== 'normal' && mode !== 'exam' && mode !== 'endless') && isAnswered && !isCorrect && <div className="flex items-center gap-2 text-red-600"><XCircle className="h-5 w-5" /><span>Incorrect</span></div>}
                 </div>
-                {(mode !== 'normal') ? (
+                {(mode !== 'normal' && mode !== 'exam') ? (
                     <div className="flex gap-2">
                         {mode === 'endless' && (
                              <Button variant="ghost" onClick={handleFinishQuiz} disabled={isGeneratingNext}>
@@ -593,7 +595,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                     </div>
                 ) : null}
 
-                {mode === 'normal' && (
+                {(mode === 'normal' || mode === 'exam') && (
                     <Button onClick={handleFinishQuiz} disabled={Object.keys(answers).length !== currentQuestions.length}>
                         Submit Quiz
                     </Button>
