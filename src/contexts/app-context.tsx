@@ -46,47 +46,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Analytics State
   const [sessionRecap, setSessionRecap] = useState<SessionRecapData | null>(null);
 
-
-  const loadStudentData = useCallback(async () => {
-    // No need to reload if data is already present for this role
-    if (studentDashboardData) {
-        setIsLoading(false);
-        return;
-    }
-    setIsLoading(true);
-    try {
-      const data = await generateStudentDashboardData({
-        studentName: "Alex Jansen",
-        subjects: ["History", "Math", "Science", "Literature", "Art", "Geography", "Dutch"],
-      });
-      setStudentDashboardData(data);
-    } catch (error) {
-      console.error("Failed to load student dashboard data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [studentDashboardData]);
-
-  const loadTeacherData = useCallback(async () => {
-     // No need to reload if data is already present for this role
-    if (teacherDashboardData) {
-        setIsLoading(false);
-        return;
-    }
-    setIsLoading(true);
-    try {
-      const data = await generateTeacherDashboardData({
-        teacherName: 'Mr. Davison',
-        classNames: ['History - Grade 10', 'Modern Art History', 'Geography - Grade 11', 'World History - AP'],
-      });
-      setTeacherDashboardData(data);
-    } catch (error) {
-      console.error("Failed to load teacher dashboard data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [teacherDashboardData]);
-
   // Effect for INITIAL settings load from localStorage
   useEffect(() => {
     const savedLanguage = localStorage.getItem('studyweb-language') || 'en';
@@ -107,12 +66,38 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
   // Effect for DATA loading based on ROLE
   useEffect(() => {
-    if (role === 'student') {
-        loadStudentData();
-    } else {
-        loadTeacherData();
-    }
-  }, [role, loadStudentData, loadTeacherData]);
+    const loadDataForRole = async () => {
+        setIsLoading(true);
+        if (role === 'student') {
+            if (!studentDashboardData) { // Only fetch if data doesn't exist
+                try {
+                    const data = await generateStudentDashboardData({
+                        studentName: "Alex Jansen",
+                        subjects: ["History", "Math", "Science", "Literature", "Art", "Geography", "Dutch"],
+                    });
+                    setStudentDashboardData(data);
+                } catch (error) {
+                    console.error("Failed to load student dashboard data:", error);
+                }
+            }
+        } else { // role is 'teacher'
+            if (!teacherDashboardData) { // Only fetch if data doesn't exist
+                try {
+                    const data = await generateTeacherDashboardData({
+                        teacherName: 'Mr. Davison',
+                        classNames: ['History - Grade 10', 'Modern Art History', 'Geography - Grade 11', 'World History - AP'],
+                    });
+                    setTeacherDashboardData(data);
+                } catch (error) {
+                    console.error("Failed to load teacher dashboard data:", error);
+                }
+            }
+        }
+        setIsLoading(false);
+    };
+    
+    loadDataForRole();
+  }, [role, studentDashboardData, teacherDashboardData]);
   
   // Handlers to update state and localStorage
   const setLanguage = (newLanguage: string) => {
