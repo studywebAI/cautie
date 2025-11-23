@@ -87,14 +87,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [teacherDashboardData]);
 
+  // Effect for INITIAL settings load from localStorage
   useEffect(() => {
-    // Load all settings from localStorage on initial mount
-    const savedLanguage = localStorage.getItem('studyweb-language');
-    if (savedLanguage) setLanguageState(savedLanguage);
+    const savedLanguage = localStorage.getItem('studyweb-language') || 'en';
+    setLanguageState(savedLanguage);
 
-    const savedRole = localStorage.getItem('studyweb-role');
-    const initialRole = savedRole === 'teacher' ? 'teacher' : 'student';
-    setRoleState(initialRole);
+    const savedRole = localStorage.getItem('studyweb-role') as UserRole || 'student';
+    setRoleState(savedRole);
 
     const savedHighContrast = localStorage.getItem('studyweb-high-contrast') === 'true';
     setHighContrastState(savedHighContrast);
@@ -104,11 +103,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const savedReducedMotion = localStorage.getItem('studyweb-reduced-motion') === 'true';
     setReducedMotionState(savedReducedMotion);
-
   }, []);
   
+  // Effect for DATA loading based on ROLE
   useEffect(() => {
-    // Load data based on role
     if (role === 'student') {
         loadStudentData();
     } else {
@@ -116,6 +114,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [role, loadStudentData, loadTeacherData]);
   
+  // Handlers to update state and localStorage
   const setLanguage = (newLanguage: string) => {
     setLanguageState(newLanguage);
     localStorage.setItem('studyweb-language', newLanguage);
@@ -142,6 +141,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('studyweb-reduced-motion', String(enabled));
   };
 
+  // Effects to apply styles to the document
   useEffect(() => {
     const html = document.documentElement;
     if (highContrast) {
