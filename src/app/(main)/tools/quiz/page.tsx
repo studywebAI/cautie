@@ -161,9 +161,26 @@ function QuizPageContent() {
   }
 
   const totalLoading = isLoading || isProcessingFile;
-  const mainButtonAction = isAssignmentContext ? () => {} : handleFormSubmit;
-  const mainButtonIcon = isAssignmentContext ? <BookCheck className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />;
-  const mainButtonText = isAssignmentContext ? 'Create for Assignment' : 'Generate with AI';
+  const mainButtonAction = isAssignmentContext ? () => {
+    if (isEditMode) {
+      handleGenerate(sourceText);
+    } else {
+      // In a real app, this would trigger a final save. For now, we simulate.
+      handleGenerate(sourceText);
+    }
+   } : handleFormSubmit;
+  
+  const mainButtonText = isAssignmentContext
+    ? (isEditMode ? 'Proceed to Edit' : 'Generate & Create Assignment')
+    : 'Generate with AI';
+
+  const mainButtonIcon = quizMode === 'duel' 
+    ? <Swords className="mr-2 h-4 w-4" /> 
+    : (isAssignmentContext ? <BookCheck className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />);
+  
+  const finalButtonText = quizMode === 'duel'
+    ? 'Start Duel'
+    : mainButtonText;
 
 
   if (isLoading) {
@@ -303,9 +320,9 @@ function QuizPageContent() {
            </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={handleFormSubmit} disabled={totalLoading || !sourceText}>
-            {quizMode === 'duel' ? <Swords className="mr-2 h-4 w-4" /> : mainButtonIcon}
-            {isLoading ? 'Generating...' : (quizMode === 'duel' ? 'Start Duel' : mainButtonText)}
+          <Button onClick={mainButtonAction} disabled={totalLoading || !sourceText}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : mainButtonIcon}
+            {isLoading ? 'Generating...' : finalButtonText}
           </Button>
         </CardFooter>
       </Card>
