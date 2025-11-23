@@ -7,7 +7,7 @@ import { explainAnswer } from '@/ai/flows/explain-answer';
 import { generateQuiz } from '@/ai/flows/generate-quiz';
 import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Ghost, Trophy, Zap, Bomb, TrendingUp, CircleSlash } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Ghost, Trophy, Zap, Bomb, TrendingUp } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -16,7 +16,7 @@ import type { Quiz, QuizQuestion, QuizOption } from '@/ai/flows/generate-quiz';
 import { AnimatePresence, motion } from 'framer-motion';
 
 type AnswersState = { [questionId: string]: string };
-export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" | "adaptive" | "endless";
+export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" | "adaptive";
 
 const SURVIVAL_PENALTY_COUNT = 3;
 const ADAPTIVE_QUESTION_COUNT = 10;
@@ -45,25 +45,17 @@ const modeDetails: Record<QuizMode, { title: string; description: string }> = {
     adaptive: {
         title: "Adaptive Mode",
         description: "The question difficulty adapts to your performance."
-    },
-    endless: {
-        title: "Endless Mode",
-        description: "Keep practicing as long as you want. The AI will keep generating questions."
     }
 }
 
-function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, correctCountOverride }: { quiz: Quiz, answers: AnswersState, onRestart: () => void, mode: QuizMode, timeTaken?: number, correctCountOverride?: number }) {
-    const getCorrectCount = () => {
-        if (correctCountOverride !== undefined) return correctCountOverride;
-        return quiz.questions.filter(q => {
-            const selectedOptionId = answers[q.id];
-            if (!selectedOptionId) return false;
-            const correctOption = q.options.find(opt => opt.isCorrect);
-            return correctOption?.id === selectedOptionId;
-        }).length;
-    }
+function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0 }: { quiz: Quiz, answers: AnswersState, onRestart: () => void, mode: QuizMode, timeTaken?: number }) {
+    const correctCount = quiz.questions.filter(q => {
+        const selectedOptionId = answers[q.id];
+        if (!selectedOptionId) return false;
+        const correctOption = q.options.find(opt => opt.isCorrect);
+        return correctOption?.id === selectedOptionId;
+    }).length;
 
-    const correctCount = getCorrectCount();
     const totalQuestions = quiz.questions.length;
     const scorePercentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
     
@@ -115,36 +107,6 @@ function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, correctCo
                     <Button onClick={onRestart}>
                         <RefreshCw className="mr-2 h-4 w-4" />
                         Try Again
-                    </Button>
-                </CardFooter>
-            </Card>
-        )
-    }
-
-    if (mode === 'endless') {
-        return (
-             <Card>
-                <CardHeader className="items-center text-center">
-                    <CircleSlash className="h-16 w-16 text-primary" />
-                    <CardTitle className="font-headline text-3xl mt-4">Session Ended</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center space-y-4">
-                    <p className="text-muted-foreground">You finished your endless practice session.</p>
-                    <div className="grid grid-cols-2 divide-x rounded-lg border bg-muted/50 p-3">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Answered</p>
-                            <p className="text-xl font-semibold">{totalQuestions}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground">Correct</p>
-                            <p className="text-xl font-semibold">{correctCount} ({scorePercentage}%)</p>
-                        </div>
-                    </div>
-                </CardContent>
-                <CardFooter className="justify-center">
-                    <Button onClick={onRestart}>
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Start Another Session
                     </Button>
                 </CardFooter>
             </Card>
@@ -257,10 +219,9 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const [speedrunTime, setSpeedrunTime] = useState(0);
     const [strikes, setStrikes] = useState(0);
     
-    // Adaptive & Endless mode states
+    // Adaptive mode states
     const [difficulty, setDifficulty] = useState(5); // Start at medium difficulty
     const [isGeneratingNext, setIsGeneratingNext] = useState(false);
-    const [correctCount, setCorrectCount] = useState(0);
 
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -296,15 +257,12 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const handleAnswerChange = (questionId: string, optionId: string) => {
         setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
 
-        if(mode === 'practice' || mode === 'survival' || mode === 'speedrun' || mode === 'adaptive' || mode === 'endless') {
+        if(mode === 'practice' || mode === 'survival' || mode === 'speedrun' || mode === 'adaptive') {
             const currentQuestion = currentQuestions.find(q => q.id === questionId) || question;
             const correctOption = currentQuestion.options.find(o => o.isCorrect);
             const isAnswerCorrect = optionId === correctOption?.id;
             setIsCorrect(isAnswerCorrect);
             setIsAnswered(true);
-            if (isAnswerCorrect) {
-                setCorrectCount(c => c + 1);
-            }
 
             if (mode === 'survival' && !isAnswerCorrect) {
                 handleSurvivalPenalty();
@@ -382,8 +340,8 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const handleNextQuestion = async () => {
         const nextIndex = currentIndex + 1;
 
-        if (mode === 'adaptive' || mode === 'endless') {
-            if (mode === 'adaptive' && nextIndex >= ADAPTIVE_QUESTION_COUNT) {
+        if (mode === 'adaptive') {
+            if (nextIndex >= ADAPTIVE_QUESTION_COUNT) {
                 handleFinishQuiz();
                 return;
             }
@@ -419,14 +377,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     }
     
     if (isFinished) {
-        return <FinalResults 
-            quiz={{...quiz, questions: currentQuestions}} 
-            answers={answers} 
-            onRestart={onRestart} 
-            mode={mode} 
-            timeTaken={speedrunTime} 
-            correctCountOverride={correctCount}
-        />
+        return <FinalResults quiz={{...quiz, questions: currentQuestions}} answers={answers} onRestart={onRestart} mode={mode} timeTaken={speedrunTime} />
     }
     
     const formatTime = (seconds: number) => {
@@ -468,20 +419,11 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                 </div>
             );
         }
-        if (mode === 'endless') {
-             return (
-                <div className="flex items-center gap-2 text-lg font-semibold text-primary">
-                    <CheckCircle className="h-5 w-5" />
-                    <span>{correctCount} Correct</span>
-                </div>
-            )
-        }
         return null;
     }
 
     const questionCounter = () => {
         if (mode === 'adaptive') return `${currentIndex + 1} / ${ADAPTIVE_QUESTION_COUNT}`;
-        if (mode === 'endless') return `${currentIndex + 1}`;
         if (mode === 'exam' || mode === 'normal') return `${Object.keys(answers).length} / ${currentQuestions.length}`;
         return `${currentIndex + 1} / ${currentQuestions.length}`;
     }
@@ -576,23 +518,16 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             </CardContent>
             <CardFooter className="flex justify-between">
                 <div>
-                   {(mode !== 'normal' && mode !== 'exam' && mode !== 'endless') && isAnswered && isCorrect && <div className="flex items-center gap-2 text-green-600"><CheckCircle className="h-5 w-5" /><span>Correct!</span></div>}
-                   {(mode !== 'normal' && mode !== 'exam' && mode !== 'endless') && isAnswered && !isCorrect && <div className="flex items-center gap-2 text-red-600"><XCircle className="h-5 w-5" /><span>Incorrect</span></div>}
+                   {(mode !== 'normal' && mode !== 'exam') && isAnswered && isCorrect && <div className="flex items-center gap-2 text-green-600"><CheckCircle className="h-5 w-5" /><span>Correct!</span></div>}
+                   {(mode !== 'normal' && mode !== 'exam') && isAnswered && !isCorrect && <div className="flex items-center gap-2 text-red-600"><XCircle className="h-5 w-5" /><span>Incorrect</span></div>}
                 </div>
                 {(mode !== 'normal' && mode !== 'exam') ? (
-                    <div className="flex gap-2">
-                        {mode === 'endless' && (
-                             <Button variant="ghost" onClick={handleFinishQuiz} disabled={isGeneratingNext}>
-                                Finish Session
-                            </Button>
-                        )}
-                        <Button onClick={handleNextQuestion} disabled={isPenaltyLoading || isGeneratingNext || !isAnswered }>
-                            {(isPenaltyLoading || isGeneratingNext) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {mode === 'adaptive' && currentIndex === ADAPTIVE_QUESTION_COUNT - 1 ? 'Finish Quiz' : 'Next Question'}
-                            {mode !== 'adaptive' && 'Next Question'}
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    </div>
+                    <Button onClick={handleNextQuestion} disabled={isPenaltyLoading || isGeneratingNext || !isAnswered }>
+                        {(isPenaltyLoading || isGeneratingNext) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {mode === 'adaptive' && currentIndex === ADAPTIVE_QUESTION_COUNT - 1 ? 'Finish Quiz' : 'Next Question'}
+                        {mode !== 'adaptive' && 'Next Question'}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                 ) : null}
 
                 {(mode === 'normal' || mode === 'exam') && (
