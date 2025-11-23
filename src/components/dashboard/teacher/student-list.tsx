@@ -6,6 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { PlusCircle, MoreVertical } from 'lucide-react';
 import type { Student } from '@/lib/teacher-types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 type StudentListProps = {
   students: Student[];
@@ -30,7 +36,7 @@ export function StudentList({ students }: StudentListProps) {
             <div className="flex items-center gap-3">
               <Avatar>
                 <AvatarImage src={student.avatarUrl} alt={student.name} />
-                <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{student.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
               </Avatar>
               <div>
                 <p className="font-medium">{student.name}</p>
@@ -40,10 +46,19 @@ export function StudentList({ students }: StudentListProps) {
                 </div>
               </div>
             </div>
-             <Button variant="ghost" size="icon">
-                <MoreVertical className="h-4 w-4" />
-                <span className="sr-only">Student options</span>
-            </Button>
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                        <span className="sr-only">Student options</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem>View Progress</DropdownMenuItem>
+                    <DropdownMenuItem>Send Message</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Remove from Class</DropdownMenuItem>
+                </DropdownMenuContent>
+             </DropdownMenu>
           </div>
         ))}
       </CardContent>

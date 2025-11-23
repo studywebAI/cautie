@@ -6,6 +6,7 @@ import { AppContext, AppContextType } from '@/contexts/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AssignmentList } from '@/components/dashboard/teacher/assignment-list';
 import { StudentList } from '@/components/dashboard/teacher/student-list';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 // This is temporary placeholder data. It will be replaced with real data fetching later.
 const placeholderAssignments = [
@@ -15,9 +16,9 @@ const placeholderAssignments = [
 ];
 
 const placeholderStudents = [
-  { id: 'student-1', name: 'Alice Johnson', avatarUrl: 'https://i.pravatar.cc/150?u=a042581f4e29026704d', overallProgress: 88 },
-  { id: 'student-2', name: 'Bob Williams', avatarUrl: 'https://i.pravatar.cc/150?u=a042581f4e29026705d', overallProgress: 72 },
-  { id: 'student-3', name: 'Charlie Brown', avatarUrl: 'https://i.pravatar.cc/150?u=a042581f4e29026706d', overallProgress: 95 },
+  { id: 'student-1', name: 'Alice Johnson', avatarUrl: PlaceHolderImages.find(p => p.id === 'user-avatar-1')?.imageUrl, overallProgress: 88 },
+  { id: 'student-2', name: 'Bob Williams', avatarUrl: PlaceHolderImages.find(p => p.id === 'user-avatar-2')?.imageUrl, overallProgress: 72 },
+  { id: 'student-3', name: 'Charlie Brown', overallProgress: 95 },
   { id: 'student-4', name: 'Diana Miller', avatarUrl: 'https://i.pravatar.cc/150?u=a042581f4e29026707d', overallProgress: 65 },
 ];
 
