@@ -601,11 +601,9 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                 </div>
                 {(mode !== 'normal' && mode !== 'exam') ? (
                      <Button onClick={handleNextQuestion} disabled={isPenaltyLoading || isGeneratingNext || !isAnswered }>
-                        {currentIndex === currentQuestions.length -1 && mode !== 'adaptive' ? null : <ArrowRight className="mr-2 h-4 w-4" />}
-                        {(isPenaltyLoading || isGeneratingNext) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        {currentIndex === currentQuestions.length - 1 && mode !== 'adaptive' ? 'Finish Quiz' : 'Next Question'}
-                        {mode === 'adaptive' && currentIndex === ADAPTIVE_QUESTION_COUNT - 1 ? 'Finish Quiz' : ''}
-                        {mode === 'adaptive' && currentIndex !== ADAPTIVE_QUESTION_COUNT - 1 ? 'Next Question' : ''}
+                        {currentIndex === currentQuestions.length -1 && mode !== 'adaptive' ? 'Finish Quiz' : 'Next Question' }
+                        {(isPenaltyLoading || isGeneratingNext) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                 ) : null}
 

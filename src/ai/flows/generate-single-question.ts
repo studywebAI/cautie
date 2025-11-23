@@ -9,9 +9,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { QuizQuestionSchema, QuizQuestion } from './generate-quiz';
+import { QuizQuestionSchema, type QuizQuestion } from '@/lib/types';
 
-export const GenerateSingleQuestionInputSchema = z.object({
+const GenerateSingleQuestionInputSchema = z.object({
   sourceText: z.string().describe('The source text from which to generate the question.'),
   difficulty: z.number().min(1).max(10).describe('The desired difficulty of the question, from 1 (easiest) to 10 (hardest).'),
   existingQuestionIds: z.array(z.string()).optional().describe('An array of question IDs that should not be regenerated to avoid duplicates.'),

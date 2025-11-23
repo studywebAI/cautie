@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export type Task = {
   id: string;
   title: string;
@@ -67,23 +69,28 @@ export type ProcessMaterialResult = {
 }
 
 // Types for generate-quiz flow
-export type QuizOption = {
-  id: string;
-  text: string;
-  isCorrect: boolean;
-};
+export const QuizOptionSchema = z.object({
+  id: z.string().describe('Unique identifier for the option (e.g., "a", "b", "c").'),
+  text: z.string().describe('The text of the answer option.'),
+  isCorrect: z.boolean().describe('Whether this option is the correct answer.'),
+});
 
-export type QuizQuestion = {
-  id: string;
-  question: string;
-  options: QuizOption[];
-};
+export const QuizQuestionSchema = z.object({
+  id: z.string().describe('Unique identifier for the question.'),
+  question: z.string().describe('The text of the question.'),
+  options: z.array(QuizOptionSchema).describe('An array of 3 to 4 possible answer options.'),
+});
 
-export type Quiz = {
-  title: string;
-  description: string;
-  questions: QuizQuestion[];
-};
+export const QuizSchema = z.object({
+  title: z.string().describe('A suitable title for the quiz, based on the source text.'),
+  description: z.string().describe('A brief description of the quiz content.'),
+  questions: z.array(QuizQuestionSchema).describe('An array of questions.'),
+});
+
+export type QuizOption = z.infer<typeof QuizOptionSchema>;
+export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
+export type Quiz = z.infer<typeof QuizSchema>;
+
 
 export type SessionRecapData = {
   score: number;
