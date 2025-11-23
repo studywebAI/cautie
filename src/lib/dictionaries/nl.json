@@ -3,6 +3,7 @@
     "dashboard": "Dashboard",
     "subjects": "Vakken",
     "classes": "Klassen",
+    "agenda": "Agenda",
     "settings": "Instellingen",
     "tools": {
       "title": "AI Hulpmiddelen",
@@ -32,7 +33,8 @@
       "due": "Nog",
       "onTrack": "Op Schema",
       "risk": "Risico",
-      "behind": "Achterstand"
+      "behind": "Achterstand",
+      "viewAgenda": "Volledige Agenda Zien"
     },
     "mySubjects": {
       "title": "Jouw Vakken",
@@ -82,5 +84,11 @@
     "suggestedActions": "Voorgestelde Acties",
     "done": "Klaar",
     "select": "Selecteer"
+  },
+  "agenda": {
+    "title": "Agenda",
+    "description": "Jouw geconsolideerde kalender van deadlines, taken en persoonlijke afspraken.",
+    "eventsOn": "Gebeurtenissen op",
+    "noEvents": "Geen gebeurtenissen gepland voor deze dag."
   }
 }

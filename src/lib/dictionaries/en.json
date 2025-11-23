@@ -3,6 +3,7 @@
     "dashboard": "Dashboard",
     "subjects": "Subjects",
     "classes": "Classes",
+    "agenda": "Agenda",
     "settings": "Settings",
     "tools": {
       "title": "AI Tools",
@@ -32,7 +33,8 @@
       "due": "Due",
       "onTrack": "On Track",
       "risk": "Risk",
-      "behind": "Behind"
+      "behind": "Behind",
+      "viewAgenda": "View Full Agenda"
     },
     "mySubjects": {
       "title": "Your Subjects",
@@ -82,5 +84,11 @@
     "suggestedActions": "Suggested Actions",
     "done": "Done",
     "select": "Select"
+  },
+  "agenda": {
+    "title": "Agenda",
+    "description": "Your consolidated calendar of deadlines, tasks, and personal appointments.",
+    "eventsOn": "Events on",
+    "noEvents": "No events scheduled for this day."
   }
 }

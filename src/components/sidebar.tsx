@@ -22,6 +22,7 @@ import {
   ChevronDown,
   Wrench,
   School,
+  Calendar,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Button } from './ui/button';
@@ -37,6 +38,7 @@ export function AppSidebar() {
     { href: '/', label: dictionary.sidebar.dashboard, icon: Home },
     { href: '/subjects', label: dictionary.sidebar.subjects, icon: BookOpen },
     { href: '/classes', label: dictionary.sidebar.classes, icon: School },
+    { href: '/agenda', label: dictionary.sidebar.agenda, icon: Calendar },
     { href: '/material', label: dictionary.sidebar.tools.materialProcessor, icon: FileSignature },
   ];
 

@@ -4,10 +4,14 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Deadline } from "@/lib/types";
 import { useDictionary } from "@/contexts/dictionary-context";
+import { Button } from "../ui/button";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 const statusColors = {
   "on-track": "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700/60",
@@ -31,7 +35,7 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {deadlines.map((deadline) => (
+        {deadlines.slice(0,3).map((deadline) => (
            <div key={deadline.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
              <div className="flex flex-col gap-0.5">
                 <p className="font-semibold">{deadline.title}</p>
@@ -46,6 +50,14 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
            </div>
         ))}
       </CardContent>
+       <CardFooter>
+        <Button asChild variant="outline" className="w-full">
+          <Link href="/agenda">
+            {dictionary.dashboard.upcomingDeadlines.viewAgenda}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
