@@ -91,6 +91,16 @@ export type QuizOption = z.infer<typeof QuizOptionSchema>;
 export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
 export type Quiz = z.infer<typeof QuizSchema>;
 
+// Types for Flashcards
+export const FlashcardSchema = z.object({
+  id: z.string().describe('A unique, short, kebab-case identifier for the flashcard.'),
+  front: z.string().describe('The front side of the flashcard, containing a key term or a question.'),
+  back: z.string().describe('The back side of the flashcard, containing the definition or answer.'),
+  cloze: z.string().describe('A fill-in-the-blank sentence where the "back" of the card is the missing word. The blank should be represented by "____".'),
+});
+export type Flashcard = z.infer<typeof FlashcardSchema>;
+
+
 // Types for MCQ from flashcard
 const McqOptionSchema = z.object({
   id: z.string().describe('Unique identifier for the option (e.g., "a", "b", "c").'),

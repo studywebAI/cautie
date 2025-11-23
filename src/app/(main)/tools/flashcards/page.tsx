@@ -1,20 +1,23 @@
 
 'use client';
 
-import React, { useState, useEffect, Suspense, useContext } from 'react';
+import React, { useState, useEffect, Suspense, useContext, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { generateFlashcards, Flashcard } from '@/ai/flows/generate-flashcards';
+import { generateFlashcards } from '@/ai/flows/generate-flashcards';
 import { processMaterial } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, RefreshCw, UploadCloud, FileText, ImageIcon } from 'lucide-react';
+import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon } from 'lucide-react';
 import { FlashcardViewer, StudyMode } from '@/components/tools/flashcard-viewer';
 import { AppContext } from '@/contexts/app-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { FlashcardEditor } from '@/components/tools/flashcard-editor';
+import type { Flashcard } from '@/lib/types';
 
 
 function FlashcardsPageContent() {
@@ -26,17 +29,53 @@ function FlashcardsPageContent() {
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [generatedCards, setGeneratedCards] = useState<Flashcard[] | null>(null);
   const [studyMode, setStudyMode] = useState<StudyMode>('flip');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentView, setCurrentView] = useState<'setup' | 'edit' | 'study'>('setup');
+  
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<'image' | 'file' | null>(null);
   const { toast } = useToast();
   const appContext = useContext(AppContext);
+
+  const handleGenerate = useCallback(async (text: string) => {
+    if (!text.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Source text is empty',
+        description: 'Please paste some text or upload a file to generate flashcards from.',
+      });
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    setGeneratedCards(null);
+    try {
+      const response = await generateFlashcards({ sourceText: text });
+      setGeneratedCards(response.flashcards);
+      if (isEditMode) {
+        setCurrentView('edit');
+      } else {
+        setCurrentView('study');
+      }
+    } catch (error) {
+      console.error('Error generating flashcards:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Something went wrong',
+        description: 'The AI could not generate flashcards. Please try again.',
+      });
+      setCurrentView('setup');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast, isEditMode]);
 
   useEffect(() => {
     if (sourceTextFromParams) {
       handleGenerate(sourceTextFromParams);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceTextFromParams]);
+  }, [sourceTextFromParams, handleGenerate]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -85,35 +124,19 @@ function FlashcardsPageContent() {
       setFileType(null);
   }
 
-  const handleGenerate = async (text: string) => {
-    if (!text.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Source text is empty',
-        description: 'Please paste some text or upload a file to generate flashcards from.',
-      });
-      return;
-    }
-    setIsLoading(true);
-    setGeneratedCards(null);
-    try {
-      const response = await generateFlashcards({ sourceText: text });
-      setGeneratedCards(response.flashcards);
-    } catch (error) {
-      console.error('Error generating flashcards:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Something went wrong',
-        description: 'The AI could not generate flashcards. Please try again.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleFormSubmit = () => {
       handleGenerate(sourceText);
   }
+
+  const handleStartStudy = (finalCards: Flashcard[]) => {
+    setGeneratedCards(finalCards);
+    setCurrentView('study');
+  };
+
+  const handleRestart = () => {
+    setGeneratedCards(null);
+    setCurrentView('setup');
+  };
 
   const totalLoading = isLoading || isProcessingFile;
 
@@ -133,8 +156,12 @@ function FlashcardsPageContent() {
     )
   }
 
-  if (generatedCards) {
-    return <FlashcardViewer cards={generatedCards} mode={studyMode} onRestart={() => setGeneratedCards(null)} />;
+  if (generatedCards && currentView === 'edit') {
+    return <FlashcardEditor cards={generatedCards} sourceText={sourceText} onStartStudy={handleStartStudy} onBack={handleRestart} />;
+  }
+
+  if (generatedCards && currentView === 'study') {
+    return <FlashcardViewer cards={generatedCards} mode={studyMode} onRestart={handleRestart} />;
   }
 
   return (
@@ -150,10 +177,10 @@ function FlashcardsPageContent() {
         <CardHeader>
           <CardTitle>Generate Flashcards</CardTitle>
           <CardDescription>
-            Provide the source material, choose a study mode, and let the AI do the rest.
+            Provide the source material, choose your settings, and let the AI do the rest.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <div className="flex flex-col gap-4">
                <label htmlFor="file-upload" className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted">
@@ -196,18 +223,28 @@ function FlashcardsPageContent() {
               readOnly={isProcessingFile}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="study-mode">Study Mode</Label>
-            <Select value={studyMode} onValueChange={(value) => setStudyMode(value as StudyMode)}>
-              <SelectTrigger id="study-mode" className="w-[280px]">
-                <SelectValue placeholder="Select mode" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="flip">Classic Flip Mode</SelectItem>
-                <SelectItem value="type">Type Mode (Active Recall)</SelectItem>
-                <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <div className="space-y-2">
+                <Label htmlFor="study-mode">Study Mode</Label>
+                <Select value={studyMode} onValueChange={(value) => setStudyMode(value as StudyMode)}>
+                <SelectTrigger id="study-mode" className="w-[280px]">
+                    <SelectValue placeholder="Select mode" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="flip">Classic Flip Mode</SelectItem>
+                    <SelectItem value="type">Type Mode (Active Recall)</SelectItem>
+                    <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                </SelectContent>
+                </Select>
+            </div>
+            <div className="flex items-center space-x-2 pt-8">
+                <Switch 
+                    id="edit-mode" 
+                    checked={isEditMode}
+                    onCheckedChange={setIsEditMode}
+                />
+                <Label htmlFor="edit-mode">Review & Edit Before Starting</Label>
+           </div>
           </div>
         </CardContent>
         <CardFooter>

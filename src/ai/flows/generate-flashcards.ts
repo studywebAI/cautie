@@ -9,16 +9,12 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-
-const FlashcardSchema = z.object({
-  front: z.string().describe('The front side of the flashcard, containing a key term or a question.'),
-  back: z.string().describe('The back side of the flashcard, containing the definition or answer.'),
-  cloze: z.string().describe('A fill-in-the-blank sentence where the "back" of the card is the missing word. The blank should be represented by "____".'),
-});
-export type Flashcard = z.infer<typeof FlashcardSchema>;
+import { FlashcardSchema, type Flashcard } from '@/lib/types';
 
 const GenerateFlashcardsInputSchema = z.object({
   sourceText: z.string().describe('The source text from which to generate flashcards.'),
+  count: z.number().optional().default(10).describe('The number of flashcards to generate.'),
+  existingFlashcardIds: z.array(z.string()).optional().describe('An array of flashcard front texts that should not be regenerated.'),
 });
 export type GenerateFlashcardsInput = z.infer<typeof GenerateFlashcardsInputSchema>;
 
@@ -37,14 +33,20 @@ const prompt = ai.definePrompt({
   name: 'generateFlashcardsPrompt',
   input: { schema: GenerateFlashcardsInputSchema },
   output: { schema: GenerateFlashcardsOutputSchema },
-  prompt: `You are an expert in creating effective learning materials. Your task is to generate a set of flashcards based on the provided source text. Create between 5 and 10 flashcards.
+  prompt: `You are an expert in creating effective learning materials. Your task is to generate a set of flashcards based on the provided source text. Create exactly {{{count}}} flashcards.
 
-For each flashcard, you must provide three things:
-1.  **front**: A key term or a question.
-2.  **back**: The corresponding definition or answer.
-3.  **cloze**: A "fill-in-the-blank" sentence based on the definition where the word(s) from the 'back' are replaced with "____". This sentence should provide enough context to guess the missing word.
+For each flashcard, you must provide:
+1.  **id**: a unique, short, kebab-case string based on the front of the card.
+2.  **front**: A key term or a question.
+3.  **back**: The corresponding definition or answer.
+4.  **cloze**: A "fill-in-the-blank" sentence based on the definition where the word(s) from the 'back' are replaced with "____". This sentence should provide enough context to guess the missing word.
+
+{{#if existingFlashcardIds}}
+Do not generate flashcards with front text that is identical or very similar to the text from this list: {{{existingFlashcardIds}}}.
+{{/if}}
 
 Example:
+- id: "mitochondria"
 - front: "Mitochondria"
 - back: "powerhouse of the cell"
 - cloze: "The mitochondria is often called the ____."
