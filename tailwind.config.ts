@@ -90,10 +90,16 @@ export default {
             height: '0',
           },
         },
+        'scan': {
+          '0%': { transform: 'translateY(-10%)' },
+          '50%': { transform: 'translateY(calc(100% + 10%))' },
+          '100%': { transform: 'translateY(-10%)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'scan': 'scan 3s ease-in-out infinite',
       },
     },
   },

@@ -110,3 +110,17 @@
     @apply transition-none animate-none !important;
   }
 }
+
+@layer utilities {
+  @keyframes scan {
+    0% {
+      transform: translateY(-10%);
+    }
+    50% {
+      transform: translateY(calc(100% + 10%));
+    }
+    100% {
+      transform: translateY(-10%);
+    }
+  }
+}

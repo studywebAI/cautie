@@ -178,7 +178,7 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
                         {isScanning && hasCameraPermission && (
                             <>
                                 <ScanLine className="absolute h-48 w-48 text-primary/30" />
-                                <div className="absolute top-0 h-1 w-full bg-primary/70 animate-[scan_3s_ease-in-out_infinite]" />
+                                <div className="absolute top-0 h-1 w-full bg-primary/70 animate-scan" />
                                 <p className="absolute bottom-4 text-sm text-white/80 bg-black/50 px-2 py-1 rounded">Position QR code within the frame</p>
                             </>
                         )}
@@ -203,16 +203,4 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
       </DialogContent>
     </Dialog>
   );
-}
-
-@keyframes scan {
-  0% {
-    transform: translateY(-20%);
-  }
-  50% {
-    transform: translateY(calc(100% + 20px));
-  }
-  100% {
-    transform: translateY(-20%);
-  }
 }
