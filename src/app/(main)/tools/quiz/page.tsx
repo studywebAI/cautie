@@ -35,7 +35,7 @@ function QuizPageContent() {
     setIsLoading(true);
     setGeneratedQuiz(null);
     try {
-      const questionCount = quizMode === 'survival' || quizMode === 'adaptive' ? 10 : 7;
+      const questionCount = quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'endless' ? 1 : 7;
       const response = await generateQuiz({ sourceText: text, questionCount });
       setGeneratedQuiz(response);
     } catch (error) {
@@ -116,6 +116,7 @@ function QuizPageContent() {
                   <SelectItem value="survival">Survival Mode</SelectItem>
                   <SelectItem value="speedrun">Speedrun Mode</SelectItem>
                   <SelectItem value="adaptive">Adaptive Mode</SelectItem>
+                  <SelectItem value="endless">Endless Mode</SelectItem>
                 </SelectContent>
               </Select>
             </div>
