@@ -36,7 +36,6 @@ export function AppSidebar() {
   const menuItems = [
     { href: '/', label: dictionary.sidebar.dashboard, icon: Home },
     { href: '/subjects', label: dictionary.sidebar.subjects, icon: BookOpen },
-    { href: '/material', label: dictionary.sidebar.material, icon: FileText },
   ];
 
   const toolsMenuItems = [
