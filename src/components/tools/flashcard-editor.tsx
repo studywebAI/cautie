@@ -4,11 +4,14 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, PlusCircle, ArrowLeft, Play, Undo2, BookCheck } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, ArrowLeft, Play, Undo2, BookCheck, Wand2, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatePresence, motion } from 'framer-motion';
 import { generateSingleFlashcard } from '@/ai/flows/generate-single-flashcard';
 import type { Flashcard } from '@/lib/types';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
+import { Separator } from '../ui/separator';
 
 type FlashcardEditorProps = {
   cards: Flashcard[];
@@ -25,7 +28,10 @@ export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack, isAss
   const [lastDeleted, setLastDeleted] = useState<{ card: Flashcard; index: number } | null>(null);
   const { toast } = useToast();
 
-  const handleAddCard = async () => {
+  const [manualFront, setManualFront] = useState('');
+  const [manualBack, setManualBack] = useState('');
+
+  const handleAddCardWithAI = async () => {
     setIsAddingCard(true);
     try {
       const newCard = await generateSingleFlashcard({
@@ -44,6 +50,26 @@ export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack, isAss
       setIsAddingCard(false);
     }
   };
+
+  const handleAddManualCard = () => {
+    if (!manualFront.trim() || !manualBack.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing content',
+        description: 'Please fill in both the front and back of the card.',
+      });
+      return;
+    }
+    const newCard: Flashcard = {
+      id: `manual-${Date.now()}`,
+      front: manualFront.trim(),
+      back: manualBack.trim(),
+      cloze: `____ is ${manualBack.trim()}.` // Simple default cloze
+    };
+    setCurrentCards(prev => [...prev, newCard]);
+    setManualFront('');
+    setManualBack('');
+  }
 
   const handleDeleteCard = (cardId: string) => {
     const cardIndex = currentCards.findIndex(c => c.id === cardId);
@@ -96,15 +122,11 @@ export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack, isAss
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="font-headline text-2xl">Review & Edit Flashcards</CardTitle>
-            <CardDescription>Add or remove cards before you start studying.</CardDescription>
+            <CardDescription>Add, remove, or edit cards before you start studying.</CardDescription>
           </div>
-           <Button onClick={handleAddCard} disabled={isAddingCard}>
-            {isAddingCard ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-            Add Card
-          </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 max-h-[60vh] overflow-y-auto pr-3">
+      <CardContent className="space-y-3 max-h-[50vh] overflow-y-auto pr-3">
         {currentCards.length === 0 ? (
           <Alert>
             <AlertTitle>Empty Set</AlertTitle>
@@ -145,7 +167,33 @@ export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack, isAss
           </AnimatePresence>
         )}
       </CardContent>
-      <CardFooter className="flex justify-between">
+        <div className="p-6 pt-2">
+            <Separator className="my-4" />
+            <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Add New Card</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="manual-front">Front</Label>
+                        <Textarea id="manual-front" placeholder="Term or question" value={manualFront} onChange={e => setManualFront(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="manual-back">Back</Label>
+                        <Textarea id="manual-back" placeholder="Definition or answer" value={manualBack} onChange={e => setManualBack(e.target.value)} />
+                    </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                     <Button onClick={handleAddCardWithAI} variant="outline" disabled={isAddingCard}>
+                        {isAddingCard ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                        Add with AI
+                    </Button>
+                    <Button onClick={handleAddManualCard} disabled={!manualFront || !manualBack}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Manual Card
+                    </Button>
+                </div>
+            </div>
+        </div>
+      <CardFooter className="flex justify-between bg-muted/50 py-4 border-t">
         <Button variant="outline" onClick={onBack}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Setup
