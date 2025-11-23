@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { redirect } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/sidebar";
 import { AppHeader } from "@/components/header";
@@ -30,8 +31,8 @@ export default async function MainLayout({
   
   const { data: { session } } = await supabase.auth.getSession();
 
-  // We no longer redirect, allowing guest access.
-  // The AppProvider will handle the null session.
+  // The AppProvider will handle the null session for guest users.
+  // No redirect is performed here.
 
   return (
     <AppProvider session={session}>
