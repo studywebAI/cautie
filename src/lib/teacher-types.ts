@@ -7,6 +7,12 @@ export type ClassInfo = {
   alerts: string[];
 };
 
+export type ClassIdea = {
+  id: string;
+  name: string;
+  description: string;
+}
+
 // These are placeholders for now and will be expanded later.
 export type Student = {
   id: string;

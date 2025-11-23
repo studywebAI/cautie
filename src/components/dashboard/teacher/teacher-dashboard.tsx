@@ -1,11 +1,13 @@
 'use client';
 
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ClassCard } from './class-card';
+import { CreateClassDialog } from './create-class-dialog';
+import type { ClassInfo } from '@/lib/teacher-types';
 
 function TeacherDashboardSkeleton() {
   return (
@@ -19,6 +21,17 @@ function TeacherDashboardSkeleton() {
 
 export function TeacherDashboard() {
   const { teacherDashboardData, isLoading } = useContext(AppContext) as AppContextType;
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [classes, setClasses] = useState(teacherDashboardData?.classes || []);
+
+  const handleClassCreated = (newClass: Omit<ClassInfo, 'id'>) => {
+    const newClassWithId: ClassInfo = {
+      ...newClass,
+      id: `class-${Date.now()}` // Temporary ID generation
+    };
+    setClasses(prev => [...prev, newClassWithId]);
+  };
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -29,7 +42,7 @@ export function TeacherDashboard() {
             An overview of all your classes, assignments, and student progress.
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Create New Class
         </Button>
@@ -39,11 +52,17 @@ export function TeacherDashboard() {
         <TeacherDashboardSkeleton />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {teacherDashboardData.classes.map((classInfo) => (
+          {classes.map((classInfo) => (
             <ClassCard key={classInfo.id} classInfo={classInfo} />
           ))}
         </div>
       )}
+
+      <CreateClassDialog
+        isOpen={isCreateDialogOpen}
+        setIsOpen={setIsCreateDialogOpen}
+        onClassCreated={handleClassCreated}
+      />
     </div>
   );
 }

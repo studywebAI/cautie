@@ -14,7 +14,9 @@ This file tracks the major features that have been implemented based on the proj
 
 ### 1.22 & 1.26 – Teacher & AI Features
 - [x] **1.22.1 – Teacher Dashboard Foundation**: Implemented the basic UI for the teacher dashboard, showing an overview of classes.
+- [x] **1.22.1 – Create Class (UI & Frontend Logic)**: Implemented a multi-step, AI-assisted dialog for creating new classes.
 - [x] **1.26.4 – Teacher Helper Agent (Data Generation)**: Created an AI flow to generate realistic data for the teacher dashboard.
+- [x] **1.26.4 – Class Idea Agent**: Created an AI flow to help teachers brainstorm class names and descriptions.
 
 ### 1.27 – Import & Export System
 - [x] **1.27.1 – Import Sources (Partial)**: Implemented file/image upload directly within the Quiz and Flashcard tools. The AI processes the file to extract text for use in the tool.
