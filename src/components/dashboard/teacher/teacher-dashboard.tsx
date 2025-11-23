@@ -1,19 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { ClassCard } from './class-card';
 import { CreateClassDialog } from './create-class-dialog';
 import type { ClassInfo } from '@/lib/teacher-types';
+import { AppContext, AppContextType } from '@/contexts/app-context';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 export function TeacherDashboard() {
+  const { teacherDashboardData, isLoading } = useContext(AppContext) as AppContextType;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [classes, setClasses] = useState<ClassInfo[]>([]);
+  const [classes, setClasses] = useState<ClassInfo[]>(teacherDashboardData?.classes || []);
 
   const handleClassCreated = (newClass: { name: string; description: string }) => {
     const newClassData: ClassInfo = {
-      id: `class-${Date.now()}-${Math.random()}`, // Temporary unique ID
+      id: `class-${Date.now()}-${Math.random().toString(36).substring(7)}`,
       name: newClass.name,
       studentCount: 0,
       averageProgress: 0,
@@ -22,6 +26,25 @@ export function TeacherDashboard() {
     };
     setClasses(prev => [...prev, newClassData]);
   };
+  
+  if (isLoading) {
+      return (
+        <div className="flex flex-col gap-8">
+            <header className="flex justify-between items-center">
+                 <div>
+                    <Skeleton className="h-10 w-64" />
+                    <Skeleton className="h-4 w-96 mt-2" />
+                </div>
+                <Skeleton className="h-10 w-36" />
+            </header>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64" />)}
+            </div>
+        </div>
+      )
+  }
+
+  const currentClasses = [...(teacherDashboardData?.classes || []), ...classes.filter(c => !teacherDashboardData?.classes.some(tdc => tdc.id === c.id))];
 
 
   return (
@@ -39,7 +62,7 @@ export function TeacherDashboard() {
         </Button>
       </header>
 
-      {classes.length === 0 ? (
+      {currentClasses.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
           <div className="flex flex-col items-center gap-2">
             <h3 className="text-2xl font-bold tracking-tight">
@@ -56,7 +79,7 @@ export function TeacherDashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classes.map((classInfo) => (
+          {currentClasses.map((classInfo) => (
             <ClassCard key={classInfo.id} classInfo={classInfo} />
           ))}
         </div>

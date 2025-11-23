@@ -45,7 +45,7 @@ export default function ClassDetailsPage() {
   };
 
 
-  if (isLoading) {
+  if (isLoading && !teacherDashboardData) {
     return (
       <div className="flex flex-col gap-8">
         <header>
