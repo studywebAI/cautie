@@ -11,3 +11,4 @@ import '@/ai/flows/generate-flashcards.ts';
 import '@/ai/flows/generate-quiz.ts';
 import '@/ai/flows/explain-answer.ts';
 import '@/ai/flows/generate-single-question.ts';
+import '@/ai/flows/generate-teacher-dashboard-data.ts';
