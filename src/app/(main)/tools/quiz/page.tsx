@@ -12,10 +12,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon, Swords } from 'lucide-react';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, SelectLabel } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { QuizTaker, QuizMode } from '@/components/tools/quiz-taker';
 import { AppContext } from '@/contexts/app-context';
 import type { Quiz } from '@/lib/types';
 import { QuizDuel } from '@/components/tools/quiz-duel';
+import { QuizEditor } from '@/components/tools/quiz-editor';
 
 
 function QuizPageContent() {
@@ -28,6 +30,9 @@ function QuizPageContent() {
   const [generatedQuiz, setGeneratedQuiz] = useState<Quiz | null>(null);
   const [quizMode, setQuizMode] = useState<QuizMode>('practice');
   const [questionCount, setQuestionCount] = useState(7);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentView, setCurrentView] = useState<'setup' | 'edit' | 'take' | 'duel'>('setup');
+
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<'image' | 'file' | null>(null);
   const { toast } = useToast();
@@ -47,13 +52,16 @@ function QuizPageContent() {
     setGeneratedQuiz(null);
     try {
       if (quizMode === 'duel') {
-        // The duel component will handle its own data generation.
-        // We just need to trigger the loading state and set the quiz to a placeholder.
-        setGeneratedQuiz({title: "Duel Mode", description: "Preparing duel...", questions: []});
+        setCurrentView('duel');
       } else {
         const count = (quizMode === 'survival' || quizMode === 'adaptive') ? 1 : questionCount;
         const response = await generateQuiz({ sourceText: text, questionCount: count });
         setGeneratedQuiz(response);
+        if (isEditMode) {
+          setCurrentView('edit');
+        } else {
+          setCurrentView('take');
+        }
       }
     } catch (error) {
       console.error('Error generating quiz:', error);
@@ -62,18 +70,17 @@ function QuizPageContent() {
         title: 'Something went wrong',
         description: 'The AI could not generate a quiz. Please try again.',
       });
-      setGeneratedQuiz(null); // Clear on error
+      setCurrentView('setup');
     } finally {
       setIsLoading(false);
     }
-  }, [toast, quizMode, questionCount]);
+  }, [toast, quizMode, questionCount, isEditMode]);
 
   useEffect(() => {
-    if (sourceTextFromParams && quizMode !== 'duel') {
-      // Don't auto-generate for duel mode
+    if (sourceTextFromParams) {
       handleGenerate(sourceTextFromParams);
     }
-  }, [sourceTextFromParams, handleGenerate, quizMode]);
+  }, [sourceTextFromParams, handleGenerate]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -126,6 +133,16 @@ function QuizPageContent() {
     handleGenerate(sourceText);
   }
   
+  const handleStartQuiz = (finalQuiz: Quiz) => {
+    setGeneratedQuiz(finalQuiz);
+    setCurrentView('take');
+  }
+
+  const handleRestart = () => {
+    setGeneratedQuiz(null);
+    setCurrentView('setup');
+  }
+
   const totalLoading = isLoading || isProcessingFile;
 
   if (isLoading) {
@@ -144,11 +161,14 @@ function QuizPageContent() {
     )
   }
 
-  if (generatedQuiz) {
-    if (quizMode === 'duel') {
-      return <QuizDuel sourceText={sourceText} onRestart={() => setGeneratedQuiz(null)} />
-    }
-    return <QuizTaker quiz={generatedQuiz} mode={quizMode} sourceText={sourceText} onRestart={() => setGeneratedQuiz(null)} />;
+  if (generatedQuiz && currentView === 'edit') {
+    return <QuizEditor quiz={generatedQuiz} sourceText={sourceText} onStartQuiz={handleStartQuiz} onBack={() => setCurrentView('setup')} />;
+  }
+  if (generatedQuiz && currentView === 'take') {
+    return <QuizTaker quiz={generatedQuiz} mode={quizMode} sourceText={sourceText} onRestart={handleRestart} />;
+  }
+  if (currentView === 'duel') {
+    return <QuizDuel sourceText={sourceText} onRestart={handleRestart} />
   }
 
   return (
@@ -211,7 +231,7 @@ function QuizPageContent() {
             />
           </div>
 
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
               <div className="space-y-2">
                 <Label htmlFor="quiz-mode">Quiz Mode</Label>
                 <Select value={quizMode} onValueChange={(value) => setQuizMode(value as QuizMode)}>
@@ -250,6 +270,15 @@ function QuizPageContent() {
                 </Select>
                  {(quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel') && <p className="text-xs text-muted-foreground">Number of questions is managed by the AI in this mode.</p>}
               </div>
+           </div>
+           <div className="flex items-center space-x-2">
+                <Switch 
+                    id="edit-mode" 
+                    checked={isEditMode}
+                    onCheckedChange={setIsEditMode}
+                    disabled={quizMode === 'adaptive' || quizMode === 'duel'}
+                />
+                <Label htmlFor="edit-mode">Review & Edit Before Starting</Label>
            </div>
         </CardContent>
         <CardFooter>
