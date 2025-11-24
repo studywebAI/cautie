@@ -61,7 +61,12 @@ const getFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
     if (typeof window === 'undefined') return defaultValue;
     try {
         const item = window.localStorage.getItem(key);
-        return item ? JSON.parse(item) : defaultValue;
+        if (item === null) return defaultValue;
+        // For non-string types, parse JSON. For strings, just return the item.
+        if (typeof defaultValue === 'string') {
+            return item as unknown as T;
+        }
+        return JSON.parse(item);
     } catch (error) {
         console.error(`Error reading from localStorage key “${key}”:`, error);
         return defaultValue;
@@ -71,7 +76,8 @@ const getFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
 const saveToLocalStorage = <T,>(key: string, value: T) => {
     if (typeof window === 'undefined') return;
     try {
-        window.localStorage.setItem(key, JSON.stringify(value));
+        const itemToSave = typeof value === 'string' ? value : JSON.stringify(value);
+        window.localStorage.setItem(key, itemToSave);
     } catch (error) {
         console.error(`Error saving to localStorage key “${key}”:`, error);
     }
