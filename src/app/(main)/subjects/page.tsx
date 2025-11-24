@@ -1,14 +1,26 @@
 'use client';
 
 import { MySubjectsGrid } from "@/components/dashboard/my-subjects-grid";
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppContext, AppContextType } from "@/contexts/app-context";
+import type { Subject } from "@/lib/types";
 
 function SubjectsPageContent() {
-  const { studentDashboardData, isLoading } = useContext(AppContext) as AppContextType;
+  const { classes, isLoading, session } = useContext(AppContext) as AppContextType;
 
-  if (isLoading || !studentDashboardData) {
+  const subjects: Subject[] = useMemo(() => {
+    if (!classes || !session) return [];
+    // Subjects are the classes a student is enrolled in.
+    const enrolledClasses = classes.filter(c => c.owner_id !== session.user.id);
+    return enrolledClasses.map(c => ({
+      id: c.id,
+      name: c.name,
+      progress: 0, // Placeholder until progress is tracked
+    }));
+  }, [classes, session]);
+
+  if (isLoading) {
     return (
        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-56" />)}
@@ -16,7 +28,7 @@ function SubjectsPageContent() {
     );
   }
 
-  return <MySubjectsGrid subjects={studentDashboardData.subjects} />;
+  return <MySubjectsGrid subjects={subjects} />;
 }
 
 export default function SubjectsPage() {

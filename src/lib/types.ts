@@ -8,14 +8,6 @@ export type Task = {
   completed: boolean;
 };
 
-export type PersonalTask = {
-  id: string;
-  title: string;
-  description?: string;
-  date: Date;
-  subject?: string;
-}
-
 export type Alert = {
   id: string;
   title: string;

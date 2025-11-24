@@ -13,18 +13,6 @@ export type ClassInfo = Tables<'classes'>;
 export type ClassAssignment = Tables<'assignments'>;
 export type PersonalTask = Tables<'personal_tasks'>;
 
-
-type StudentDashboardData = {
-    tasks: Task[];
-    alerts: Alert[];
-    deadlines: Deadline[];
-    subjects: Subject[];
-    aiSuggestions: AiSuggestion[];
-    quickAccessItems: QuickAccessItem[];
-    progressData: ProgressData[];
-}
-
-
 export type AppContextType = {
   session: Session | null;
   isLoading: boolean;

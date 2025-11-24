@@ -59,8 +59,8 @@ export function StudentList({ students, isLoading }: StudentListProps) {
                 <div>
                   <p className="font-medium">{student.name || student.email}</p>
                   <div className="flex items-center gap-2">
-                      <Progress value={student.overallProgress || 0} className="h-1.5 w-24" />
-                      <span className="text-xs text-muted-foreground">{student.overallProgress || 0}%</span>
+                      <Progress value={0} className="h-1.5 w-24" />
+                      <span className="text-xs text-muted-foreground">0%</span>
                   </div>
                 </div>
               </div>
