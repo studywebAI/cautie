@@ -30,7 +30,7 @@ export function QuickAccess({ quickAccessItems }: QuickAccessProps) {
         <CardDescription>{dictionary.dashboard.quickAccess.description}</CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-2 gap-3">
-        {quickAccessItems.map((item) => {
+        {quickAccessItems.length > 0 ? quickAccessItems.map((item) => {
           const Icon = iconMap[item.icon] || File;
           return (
             <Link key={item.id} href="#">
@@ -42,7 +42,9 @@ export function QuickAccess({ quickAccessItems }: QuickAccessProps) {
               </div>
             </Link>
           );
-        })}
+        }) : (
+          <p className="text-sm text-muted-foreground text-center col-span-2 py-8">No recent items.</p>
+        )}
       </CardContent>
     </Card>
   );

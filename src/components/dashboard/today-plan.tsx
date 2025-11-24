@@ -57,7 +57,7 @@ export function TodayPlan({ tasks: initialTasks }: TodayPlanProps) {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-4">
-            {currentTasks.map((task) => (
+            {currentTasks.length > 0 ? currentTasks.map((task) => (
               <div
                 key={task.id}
                 className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
@@ -82,7 +82,9 @@ export function TodayPlan({ tasks: initialTasks }: TodayPlanProps) {
                   {task.duration} min
                 </span>
               </div>
-            ))}
+            )) : (
+              <p className="text-center text-sm text-muted-foreground py-8">No tasks planned by the AI for today.</p>
+            )}
           </div>
           <div className="flex flex-col items-center justify-center">
             <div className="relative h-40 w-40">

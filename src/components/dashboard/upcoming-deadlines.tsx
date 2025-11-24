@@ -33,8 +33,7 @@ export function UpcomingDeadlines() {
   }
   
   // Combine AI-generated deadlines with real assignments
-  const allDeadlines: Deadline[] = [
-    ...assignments
+  const allDeadlines: Deadline[] = (assignments || [])
       .filter(a => a.due_date && isFuture(parseISO(a.due_date)))
       .map(assignment => {
       const className = classes.find(c => c.id === assignment.class_id)?.name || 'Class';
@@ -54,8 +53,7 @@ export function UpcomingDeadlines() {
         material_id: assignment.material_id,
         class_id: assignment.class_id,
       } as Deadline
-    })
-  ];
+    });
 
   // Sort deadlines by date
   const sortedDeadlines = allDeadlines.sort((a, b) => {
