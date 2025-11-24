@@ -2,29 +2,48 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { AppContext, AppContextType, ClassInfo } from '@/contexts/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AssignmentList } from '@/components/dashboard/teacher/assignment-list';
 import { StudentList } from '@/components/dashboard/teacher/student-list';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { Student } from '@/lib/teacher-types';
-
-const placeholderStudentsData: Student[] = [
-  { id: 'student-1', name: 'Alice Johnson', avatarUrl: PlaceHolderImages.find(p => p.id === 'user-avatar-1')?.imageUrl, overallProgress: 88 },
-  { id: 'student-2', name: 'Bob Williams', avatarUrl: PlaceHolderImages.find(p => p.id === 'user-avatar-2')?.imageUrl, overallProgress: 72 },
-  { id: 'student-3', name: 'Charlie Brown', overallProgress: 95 },
-  { id: 'student-4', name: 'Diana Miller', avatarUrl: PlaceHolderImages.find(p => p.id === 'user-avatar-1')?.imageUrl, overallProgress: 65 },
-];
-
 
 export default function ClassDetailsPage() {
   const params = useParams();
   const { classId } = params as { classId: string };
-  const { classes, assignments, isLoading } = useContext(AppContext) as AppContextType;
+  const { classes, assignments, isLoading: isAppLoading } = useContext(AppContext) as AppContextType;
   
+  const [students, setStudents] = useState<Student[]>([]);
+  const [isStudentsLoading, setIsStudentsLoading] = useState(true);
+
   const classInfo: ClassInfo | undefined = classes.find(c => c.id === classId);
   const classAssignments = assignments.filter(a => a.class_id === classId);
+
+  useEffect(() => {
+    if (!classId) return;
+
+    const fetchStudents = async () => {
+      setIsStudentsLoading(true);
+      try {
+        const response = await fetch(`/api/classes/${classId}/members`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch students');
+        }
+        const data = await response.json();
+        setStudents(data);
+      } catch (error) {
+        console.error(error);
+        // Handle error state if needed
+      } finally {
+        setIsStudentsLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, [classId]);
+
+  const isLoading = isAppLoading || isStudentsLoading;
 
   if (isLoading && !classInfo) {
     return (
@@ -66,7 +85,7 @@ export default function ClassDetailsPage() {
           <AssignmentList assignments={classAssignments} classId={classId} />
         </div>
         <div className="lg:col-span-1">
-          <StudentList students={placeholderStudentsData} />
+          <StudentList students={students} isLoading={isStudentsLoading} />
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+
 export type ClassInfo = {
   id: string;
   name: string;
@@ -15,8 +16,9 @@ export type ClassIdea = {
 
 export type Student = {
   id: string;
-  name: string;
-  avatarUrl?: string;
+  name: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
   overallProgress: number;
 };
 
