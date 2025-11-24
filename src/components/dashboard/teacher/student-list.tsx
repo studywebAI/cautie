@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
-import { PlusCircle, MoreVertical, User, Copy } from 'lucide-react';
+import { MoreVertical, User, Copy } from 'lucide-react';
 import type { Student } from '@/lib/teacher-types';
 import {
   DropdownMenu,

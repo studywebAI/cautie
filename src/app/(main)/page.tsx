@@ -172,15 +172,9 @@ function TeacherSummaryDashboard() {
                     </div>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {classes.slice(0, 2).map(classInfo => {
-                        const classAssignments = assignments.filter(a => a.class_id === classInfo.id);
-                        const classStudents = students.filter(s => {
-                            // This is a placeholder logic. Real implementation needs class membership data.
-                            // For now, we assume all students are in all classes for the preview.
-                            return true; 
-                        });
-                        return <ClassCard key={classInfo.id} classInfo={classInfo} assignments={classAssignments} students={classStudents} />;
-                    })}
+                    {classes.slice(0, 2).map(classInfo => (
+                         <ClassCard key={classInfo.id} classInfo={classInfo} />
+                    ))}
                      {classes.length === 0 && (
                         <p className="text-muted-foreground col-span-2 text-center p-8">You haven't created any classes yet. <Link href="/classes" className="text-primary hover:underline">Create one now</Link> to get started.</p>
                     )}

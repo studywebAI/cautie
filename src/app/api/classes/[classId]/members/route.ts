@@ -94,7 +94,7 @@ export async function GET(
             name: profile?.full_name,
             email: user.email,
             avatarUrl: profile?.avatar_url,
-            overallProgress: Math.floor(Math.random() * 60) + 40, // Placeholder progress
+            overallProgress: 0, // Placeholder progress
         };
     });
 

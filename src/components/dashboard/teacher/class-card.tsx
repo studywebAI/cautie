@@ -7,16 +7,48 @@ import { Users, BookCheck, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import type { ClassInfo, ClassAssignment } from '@/contexts/app-context';
-import type { Student } from '@/lib/teacher-types';
 import { differenceInDays, parseISO, isFuture } from 'date-fns';
+import { useState, useEffect } from 'react';
+import type { Student } from '@/lib/teacher-types';
 
 type ClassCardProps = {
   classInfo: ClassInfo;
-  assignments: ClassAssignment[];
-  students: Student[];
 };
 
-export function ClassCard({ classInfo, assignments, students }: ClassCardProps) {
+export function ClassCard({ classInfo }: ClassCardProps) {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+        if (!classInfo.id || classInfo.id.startsWith('local-')) {
+            setIsLoading(false);
+            return;
+        }
+        setIsLoading(true);
+        try {
+            const [studentsRes, assignmentsRes] = await Promise.all([
+                fetch(`/api/classes/${classInfo.id}/members`),
+                fetch(`/api/assignments`) 
+            ]);
+
+            const studentsData = await studentsRes.json();
+            const allAssignments = await assignmentsRes.json();
+
+            setStudents(studentsData);
+            setAssignments(allAssignments.filter((a: ClassAssignment) => a.class_id === classInfo.id));
+
+        } catch (error) {
+            console.error(`Failed to fetch data for class ${classInfo.id}`, error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchData();
+  }, [classInfo.id]);
+
+
   const studentCount = students.length;
 
   const assignmentsDue = assignments.filter(a => {

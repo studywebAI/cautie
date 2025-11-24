@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
 export function TeacherDashboard() {
-  const { classes, createClass, isLoading, assignments, students } = useContext(AppContext) as AppContextType;
+  const { classes, createClass, isLoading } = useContext(AppContext) as AppContextType;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -81,12 +81,9 @@ export function TeacherDashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classes.map((classInfo) => {
-            const classAssignments = assignments.filter(a => a.class_id === classInfo.id);
-            // This is a simplification. In a real app, students would be fetched per class.
-            // For now, we pass all students and the card can filter or we can adjust later.
-            return <ClassCard key={classInfo.id} classInfo={classInfo} assignments={classAssignments} students={students} />;
-          })}
+          {classes.map((classInfo) => (
+            <ClassCard key={classInfo.id} classInfo={classInfo} />
+          ))}
         </div>
       )}
 
