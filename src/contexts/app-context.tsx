@@ -79,40 +79,115 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  
+  // Track previous session state to detect login
+  const [prevSession, setPrevSession] = useState<Session | null>(session);
 
-  // ---- Data Fetching & Management ----
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    if (session) {
-      // User is logged in, fetch from Supabase
-      try {
-        const [classesRes, assignmentsRes] = await Promise.all([
-          fetch('/api/classes'),
-          fetch('/api/assignments')
-        ]);
-        const classesData = await classesRes.json();
-        const assignmentsData = await assignmentsRes.json();
-        setClasses(classesData || []);
-        setAssignments(assignmentsData || []);
-        // Once synced, we can clear local data to prevent duplicates on next login
-        saveToLocalStorage('studyweb-local-classes', []);
-        saveToLocalStorage('studyweb-local-assignments', []);
-      } catch (error) {
-        console.error("Failed to fetch Supabase data:", error);
-        setClasses([]);
-        setAssignments([]);
-      }
-    } else {
-      // User is a guest, fetch from localStorage
-      setClasses(getFromLocalStorage('studyweb-local-classes', []));
-      setAssignments(getFromLocalStorage('studyweb-local-assignments', []));
+  const syncLocalDataToSupabase = useCallback(async () => {
+    console.log("Starting data sync to Supabase...");
+    const localClasses = getFromLocalStorage<ClassInfo[]>('studyweb-local-classes', []);
+    const localAssignments = getFromLocalStorage<ClassAssignment[]>('studyweb-local-assignments', []);
+
+    if (localClasses.length === 0 && localAssignments.length === 0) {
+      console.log("No local data to sync.");
+      return; // Nothing to sync
     }
-    setIsLoading(false);
-  }, [session]);
 
+    try {
+      // Sync classes
+      const syncedClasses = await Promise.all(localClasses.map(async (cls) => {
+        const response = await fetch('/api/classes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: cls.name, description: cls.description }),
+        });
+        if (!response.ok) throw new Error(`Failed to sync class: ${cls.name}`);
+        const savedClass = await response.json();
+        // Return a map from old local ID to new remote ID
+        return { localId: cls.id, remoteId: savedClass.id };
+      }));
+      console.log("Synced classes:", syncedClasses);
+
+      // Create a mapping from old local class IDs to new Supabase class IDs
+      const classIdMap = new Map(syncedClasses.map(c => [c.localId, c.remoteId]));
+
+      // Sync assignments, using the new class IDs
+      await Promise.all(localAssignments.map(async (asn) => {
+        const remoteClassId = classIdMap.get(asn.class_id);
+        if (!remoteClassId) {
+          console.warn(`Skipping assignment "${asn.title}" because its class was not synced.`);
+          return;
+        }
+        const response = await fetch('/api/assignments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+              title: asn.title, 
+              due_date: asn.due_date,
+              class_id: remoteClassId, // Use the new ID
+          }),
+        });
+        if (!response.ok) throw new Error(`Failed to sync assignment: ${asn.title}`);
+      }));
+      console.log("Synced assignments.");
+
+      // Clear local storage after successful sync
+      saveToLocalStorage('studyweb-local-classes', []);
+      saveToLocalStorage('studyweb-local-assignments', []);
+      console.log("Local storage cleared.");
+    } catch (error) {
+      console.error("Data synchronization failed:", error);
+      // Optionally, notify the user that sync failed
+    }
+  }, []);
+  
+  const fetchData = useCallback(async () => {
+      setIsLoading(true);
+      if (session) {
+          // User is logged in
+          try {
+              const [classesRes, assignmentsRes] = await Promise.all([
+                  fetch('/api/classes'),
+                  fetch('/api/assignments')
+              ]);
+              if (!classesRes.ok || !assignmentsRes.ok) {
+                throw new Error('Failed to fetch data from API');
+              }
+              const classesData = await classesRes.json();
+              const assignmentsData = await assignmentsRes.json();
+              setClasses(classesData || []);
+              setAssignments(assignmentsData || []);
+          } catch (error) {
+              console.error("Failed to fetch Supabase data:", error);
+              setClasses([]);
+              setAssignments([]);
+          }
+      } else {
+          // User is a guest, fetch from localStorage
+          setClasses(getFromLocalStorage('studyweb-local-classes', []));
+          setAssignments(getFromLocalStorage('studyweb-local-assignments', []));
+      }
+      setIsLoading(false);
+  }, [session]);
+  
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    const wasGuest = !prevSession;
+    const isLoggedInNow = !!session;
+
+    if (wasGuest && isLoggedInNow) {
+      // User has just logged in, start sync
+      syncLocalDataToSupabase().then(() => {
+        // After sync, fetch the authoritative data from Supabase
+        fetchData();
+      });
+    } else {
+      // Regular data fetch on load or session change (e.g., logout)
+      fetchData();
+    }
+    
+    // Update previous session state for next render
+    setPrevSession(session);
+  }, [session, prevSession, fetchData, syncLocalDataToSupabase]);
 
 
   // ---- Data Creation ----
@@ -156,7 +231,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     } else {
         // Guest user: save to localStorage
         const newAssignment: ClassAssignment = {
-            id: `local-${Date.now()}`,
+            id: `local-assign-${Date.now()}`,
             title: newAssignmentData.title,
             due_date: newAssignmentData.due_date,
             class_id: newAssignmentData.class_id,

@@ -7,11 +7,37 @@ import type { Database } from '@/lib/supabase/database.types'
 
 export const dynamic = 'force-dynamic'
 
-// GET all assignments (in a real app, you'd likely filter by user/class)
+// GET all assignments for the classes owned by the logged-in user
 export async function GET(request: Request) {
   const cookieStore = cookies();
-  const supabase = createServerClient({ cookies: () => cookieStore });
-  const { data, error } = await supabase.from('assignments').select()
+  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // 1. Get the IDs of the classes owned by the user
+  const { data: ownedClasses, error: classesError } = await supabase
+    .from('classes')
+    .select('id')
+    .eq('owner_id', session.user.id);
+  
+  if (classesError) {
+    return NextResponse.json({ error: classesError.message }, { status: 500 });
+  }
+
+  const classIds = ownedClasses.map(c => c.id);
+
+  if (classIds.length === 0) {
+    return NextResponse.json([]);
+  }
+
+  // 2. Get assignments that belong to those classes
+  const { data, error } = await supabase
+    .from('assignments')
+    .select()
+    .in('class_id', classIds);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

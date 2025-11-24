@@ -10,7 +10,13 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: Request) {
   const cookieStore = cookies();
   const supabase = createServerClient<Database>({ cookies: () => cookieStore });
-  const { data, error } = await supabase.from('classes').select()
+  
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  const { data, error } = await supabase.from('classes').select().eq('owner_id', session.user.id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
