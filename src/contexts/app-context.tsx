@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
@@ -79,71 +80,100 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
 
-  // ---- Data Fetching ----
-  const fetchAllData = useCallback(async () => {
-    if (!session) {
-      setIsLoading(false);
-      return;
-    }
+  // ---- Data Fetching & Management ----
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
-    try {
-      const [classesRes, assignmentsRes] = await Promise.all([
-        fetch('/api/classes'),
-        fetch('/api/assignments')
-      ]);
-      const classesData = await classesRes.json();
-      const assignmentsData = await assignmentsRes.json();
-      setClasses(classesData || []);
-      setAssignments(assignmentsData || []);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-      setClasses([]);
-      setAssignments([]);
-    } finally {
-      setIsLoading(false);
+    if (session) {
+      // User is logged in, fetch from Supabase
+      try {
+        const [classesRes, assignmentsRes] = await Promise.all([
+          fetch('/api/classes'),
+          fetch('/api/assignments')
+        ]);
+        const classesData = await classesRes.json();
+        const assignmentsData = await assignmentsRes.json();
+        setClasses(classesData || []);
+        setAssignments(assignmentsData || []);
+        // Once synced, we can clear local data to prevent duplicates on next login
+        saveToLocalStorage('studyweb-local-classes', []);
+        saveToLocalStorage('studyweb-local-assignments', []);
+      } catch (error) {
+        console.error("Failed to fetch Supabase data:", error);
+        setClasses([]);
+        setAssignments([]);
+      }
+    } else {
+      // User is a guest, fetch from localStorage
+      setClasses(getFromLocalStorage('studyweb-local-classes', []));
+      setAssignments(getFromLocalStorage('studyweb-local-assignments', []));
     }
+    setIsLoading(false);
   }, [session]);
 
   useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+    fetchData();
+  }, [fetchData]);
 
 
   // ---- Data Creation ----
-  const createClass = async (newClass: { name: string; description: string | null }) => {
-    if (!session) {
-      alert("You must be logged in to create a class.");
-      return;
+  const createClass = async (newClassData: { name: string; description: string | null }) => {
+    if (session) {
+      // Logged-in user: save to Supabase
+      const response = await fetch('/api/classes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newClassData),
+      });
+      if (!response.ok) throw new Error('Failed to create class in Supabase');
+      const savedClass = await response.json();
+      setClasses(prev => [...prev, savedClass]);
+    } else {
+      // Guest user: save to localStorage
+      const newClass: ClassInfo = {
+        id: `local-${Date.now()}`,
+        name: newClassData.name,
+        description: newClassData.description,
+        created_at: new Date().toISOString(),
+        owner_id: 'local-user',
+      };
+      const updatedClasses = [...classes, newClass];
+      setClasses(updatedClasses);
+      saveToLocalStorage('studyweb-local-classes', updatedClasses);
     }
-    const response = await fetch('/api/classes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newClass),
-    });
-    if (!response.ok) throw new Error('Failed to create class');
-    await fetchAllData();
   };
 
-  const createAssignment = async (newAssignment: { title: string; due_date: string; class_id: string }) => {
-    if (!session) {
-      alert("You must be logged in to create an assignment.");
-      return;
+  const createAssignment = async (newAssignmentData: { title: string; due_date: string; class_id: string }) => {
+     if (session) {
+        // Logged-in user: save to Supabase
+        const response = await fetch('/api/assignments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newAssignmentData),
+        });
+        if (!response.ok) throw new Error('Failed to create assignment in Supabase');
+        const savedAssignment = await response.json();
+        setAssignments(prev => [...prev, savedAssignment]);
+    } else {
+        // Guest user: save to localStorage
+        const newAssignment: ClassAssignment = {
+            id: `local-${Date.now()}`,
+            title: newAssignmentData.title,
+            due_date: newAssignmentData.due_date,
+            class_id: newAssignmentData.class_id,
+            created_at: new Date().toISOString(),
+        };
+        const updatedAssignments = [...assignments, newAssignment];
+        setAssignments(updatedAssignments);
+        saveToLocalStorage('studyweb-local-assignments', updatedAssignments);
     }
-     const response = await fetch('/api/assignments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newAssignment),
-    });
-    if (!response.ok) throw new Error('Failed to create assignment');
-    await fetchAllData();
   };
   
   const refetchClasses = async () => {
-    await fetchAllData();
+    await fetchData();
   }
 
   const refetchAssignments = async () => {
-    await fetchAllData();
+     await fetchData();
   }
 
   // ---- Settings and Preferences ----
