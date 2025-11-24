@@ -14,42 +14,73 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Link as LinkIcon, Camera } from 'lucide-react';
+import { Loader2, Link as LinkIcon, Camera, UserPlus } from 'lucide-react';
 import jsQR from 'jsqr';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import type { ClassInfo } from '@/contexts/app-context';
 
 
 type JoinClassDialogProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onClassJoined: (classCode: string) => Promise<boolean>;
+  initialCode?: string;
 };
 
-export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassDialogProps) {
-  const [classCode, setClassCode] = useState('');
+export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined, initialCode }: JoinClassDialogProps) {
+  const [classCode, setClassCode] = useState(initialCode || '');
   const [isJoining, setIsJoining] = useState(false);
+  const [isCheckingCode, setIsCheckingCode] = useState(false);
   const [scanMode, setScanMode] = useState(false);
+  const [classToJoin, setClassToJoin] = useState<ClassInfo | null>(null);
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  const handleJoin = async (codeToJoin?: string) => {
-    const finalCode = (codeToJoin || classCode).trim();
-    if (!finalCode) {
-      toast({
-        title: 'Class code is required',
-        variant: 'destructive',
-      });
-      return;
+  useEffect(() => {
+    if (initialCode) {
+        setClassCode(initialCode);
+        checkCode(initialCode);
     }
+  }, [initialCode])
 
+  const checkCode = async (codeToCheck: string) => {
+    if (!codeToCheck.trim()) return;
+
+    setIsCheckingCode(true);
+    setClassToJoin(null);
+    try {
+        const response = await fetch(`/api/classes/${codeToCheck}`);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to find class.');
+        }
+        const data: ClassInfo = await response.json();
+        setClassToJoin(data);
+    } catch(error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Invalid Code',
+            description: error.message,
+        });
+    } finally {
+        setIsCheckingCode(false);
+    }
+  }
+
+
+  const handleJoin = async () => {
+    if (!classCode) return;
+    
     setIsJoining(true);
-    const success = await onClassJoined(finalCode);
+    const success = await onClassJoined(classCode);
     setIsJoining(false);
 
     if (success) {
       toast({
         title: 'Successfully joined class!',
+        description: `You are now enrolled in "${classToJoin?.name}".`
       });
       resetAndClose();
     }
@@ -75,8 +106,8 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
                     const joinCode = url.searchParams.get('join_code');
                     if (joinCode) {
                         setClassCode(joinCode);
-                        handleJoin(joinCode);
                         stopScan();
+                        checkCode(joinCode);
                         return; // Stop the loop
                     } else {
                         toast({ variant: 'destructive', title: 'Invalid QR Code', description: 'This QR code does not contain a valid StudyWeb join link.' });
@@ -133,6 +164,7 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
   const resetAndClose = () => {
     stopScan();
     setClassCode('');
+    setClassToJoin(null);
     setIsOpen(false);
   };
   
@@ -153,6 +185,83 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
     };
   }, []);
 
+  const renderContent = () => {
+    if (classToJoin) {
+        return (
+            <div className="py-4 space-y-4">
+                <Card className="bg-muted/50">
+                    <CardHeader>
+                        <CardTitle>{classToJoin.name}</CardTitle>
+                        <CardDescription>{classToJoin.description || 'No description provided.'}</CardDescription>
+                    </CardHeader>
+                </Card>
+            </div>
+        )
+    }
+
+    if (scanMode) {
+        return (
+             <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden flex items-center justify-center my-4">
+                <video ref={videoRef} playsInline className="w-full h-full object-cover" />
+                <canvas ref={canvasRef} className="hidden" />
+                <div className="absolute inset-0 border-[20px] border-black/30" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-[90%] border-t-4 border-b-4 border-white/50 animate-scan" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="py-4 space-y-2">
+            <Label htmlFor="class-code">Class Code</Label>
+            <div className="flex items-center space-x-2">
+            <Input
+                id="class-code"
+                placeholder="e.g., a1b2c3d4-e5f6-..."
+                value={classCode}
+                onChange={(e) => setClassCode(e.target.value)}
+            />
+            <Button onClick={() => checkCode(classCode)} disabled={isCheckingCode || !classCode}>
+                 {isCheckingCode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                 Check Code
+            </Button>
+            </div>
+        </div>
+    )
+  }
+  
+  const renderFooter = () => {
+    if (classToJoin) {
+        return (
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setClassToJoin(null)}>Back</Button>
+                <Button onClick={handleJoin} disabled={isJoining}>
+                    {isJoining && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Confirm & Join Class
+                </Button>
+            </DialogFooter>
+        )
+    }
+
+    if (scanMode) {
+        return (
+            <DialogFooter>
+                <Button variant="outline" className="w-full" onClick={stopScan}>Cancel Scan</Button>
+            </DialogFooter>
+        )
+    }
+    
+    return (
+        <DialogFooter className="sm:flex-col sm:space-y-2">
+            <Button variant="secondary" className="w-full" onClick={startScan}>
+                <Camera className="mr-2 h-4 w-4" />
+                Scan QR Code
+            </Button>
+            <Button variant="outline" className="w-full" onClick={resetAndClose}>Cancel</Button>
+        </DialogFooter>
+    )
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -163,47 +272,9 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4 space-y-4">
-            {scanMode ? (
-                <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden flex items-center justify-center">
-                    <video ref={videoRef} playsInline className="w-full h-full object-cover" />
-                    <canvas ref={canvasRef} className="hidden" />
-                    <div className="absolute inset-0 border-[20px] border-black/30" />
-                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-[90%] border-t-4 border-b-4 border-white/50 animate-scan" />
-                </div>
-            ) : (
-                <div className="space-y-2">
-                    <Label htmlFor="class-code">Class Code</Label>
-                    <Input
-                      id="class-code"
-                      placeholder="e.g., a1b2c3d4-e5f6-..."
-                      value={classCode}
-                      onChange={(e) => setClassCode(e.target.value)}
-                    />
-                </div>
-            )}
-        </div>
-        
-        <DialogFooter className="sm:flex-col sm:space-y-2">
-            {scanMode ? (
-                 <Button onClick={stopScan}>Cancel Scan</Button>
-            ) : (
-                <>
-                    <div className="grid grid-cols-2 gap-2">
-                        <Button variant="secondary" onClick={startScan}>
-                            <Camera className="mr-2 h-4 w-4" />
-                            Scan QR Code
-                        </Button>
-                         <Button onClick={() => handleJoin()} disabled={isJoining || !classCode}>
-                          {isJoining && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          <LinkIcon className="mr-2 h-4 w-4" />
-                          Join with Code
-                        </Button>
-                    </div>
-                    <Button variant="outline" onClick={resetAndClose} className="w-full">Cancel</Button>
-                </>
-            )}
-        </DialogFooter>
+        {renderContent()}
+        {renderFooter()}
+
       </DialogContent>
     </Dialog>
   );

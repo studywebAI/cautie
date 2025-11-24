@@ -29,7 +29,7 @@ export type AppContextType = {
   sessionRecap: SessionRecapData | null;
   setSessionRecap: (data: SessionRecapData | null) => void;
   classes: ClassInfo[];
-  createClass: (newClass: { name: string; description: string | null }) => Promise<void>;
+  createClass: (newClass: { name: string; description: string | null }) => Promise<ClassInfo | null>;
   refetchClasses: () => Promise<void>;
   assignments: ClassAssignment[];
   createAssignment: (newAssignment: Omit<ClassAssignment, 'id' | 'created_at'>) => Promise<void>;
@@ -252,7 +252,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
 
 
   // ---- Data Creation ----
-  const createClass = async (newClassData: { name: string; description: string | null }) => {
+  const createClass = async (newClassData: { name: string; description: string | null }): Promise<ClassInfo | null> => {
     if (session) {
       // Logged-in user: save to Supabase
       const response = await fetch('/api/classes', {
@@ -260,8 +260,11 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newClassData),
       });
-      if (!response.ok) throw new Error('Failed to create class in Supabase');
-      await refetchClasses();
+      if (!response.ok) {
+        throw new Error('Failed to create class in Supabase');
+      }
+      const savedClass = await response.json();
+      return savedClass;
     } else {
       // Guest user: save to localStorage
       const newClass: ClassInfo = {
@@ -274,6 +277,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
       const updatedClasses = [...classes, newClass];
       setClasses(updatedClasses);
       saveToLocalStorage('studyweb-local-classes', updatedClasses);
+      return newClass;
     }
   };
 

@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { JoinClassDialog } from './join-class-dialog';
 import { PlusCircle } from 'lucide-react';
@@ -13,8 +14,34 @@ import { useToast } from '@/hooks/use-toast';
 
 export function StudentClasses() {
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
+  const [initialCode, setInitialCode] = useState<string | undefined>(undefined);
   const { classes, isLoading, refetchClasses, session } = useContext(AppContext) as AppContextType;
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const joinCode = searchParams.get('join_code');
+    if (joinCode) {
+      if (!session) {
+        toast({
+          variant: 'destructive',
+          title: 'You must be logged in',
+          description: 'Please log in to join a class.',
+        });
+        // Redirect to login but keep the join_code in the URL
+        router.push(`/login?redirect=/classes?join_code=${joinCode}`);
+        return;
+      }
+      setInitialCode(joinCode);
+      setIsJoinDialogOpen(true);
+      // Clean the URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('join_code');
+      router.replace(newUrl.toString(), { scroll: false });
+    }
+  }, [searchParams, router, toast, session]);
+
 
   const handleClassJoined = async (classCode: string): Promise<boolean> => {
     if (!session) {
@@ -38,7 +65,6 @@ export function StudentClasses() {
         throw new Error(errorData.error || 'Failed to join class.');
       }
 
-      // Refetch the list of classes to include the newly joined one
       await refetchClasses();
       return true;
     } catch (error: any) {
@@ -79,7 +105,10 @@ export function StudentClasses() {
             All the classes you are enrolled in.
           </p>
         </div>
-        <Button onClick={() => setIsJoinDialogOpen(true)}>
+        <Button onClick={() => {
+            setInitialCode(undefined);
+            setIsJoinDialogOpen(true);
+        }}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Join a Class
         </Button>
@@ -94,7 +123,10 @@ export function StudentClasses() {
             <p className="text-sm text-muted-foreground">
               Join a class using a code from your teacher to get started.
             </p>
-            <Button className="mt-4" onClick={() => setIsJoinDialogOpen(true)}>
+            <Button className="mt-4" onClick={() => {
+                 setInitialCode(undefined);
+                 setIsJoinDialogOpen(true);
+            }}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Join a Class
             </Button>
@@ -112,6 +144,7 @@ export function StudentClasses() {
         isOpen={isJoinDialogOpen}
         setIsOpen={setIsJoinDialogOpen}
         onClassJoined={handleClassJoined}
+        initialCode={initialCode}
       />
     </div>
   );
