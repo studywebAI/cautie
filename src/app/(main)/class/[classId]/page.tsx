@@ -21,7 +21,12 @@ export default function ClassDetailsPage() {
   const classAssignments = assignments.filter(a => a.class_id === classId);
 
   useEffect(() => {
-    if (!classId) return;
+    if (!classId || classId.startsWith('local-')) {
+        // Don't fetch members for a local class that doesn't exist in the DB
+        setIsStudentsLoading(false);
+        setStudents([]);
+        return;
+    }
 
     const fetchStudents = async () => {
       setIsStudentsLoading(true);
