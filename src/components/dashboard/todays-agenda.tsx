@@ -25,6 +25,8 @@ export function TodaysAgenda({ assignments, personalTasks, classes }: TodaysAgen
           title: a.title,
           subject: className,
           type: 'assignment' as const,
+          material_id: a.material_id,
+          class_id: a.class_id,
         };
       });
 
@@ -35,6 +37,8 @@ export function TodaysAgenda({ assignments, personalTasks, classes }: TodaysAgen
         title: t.title,
         subject: t.subject || 'Personal',
         type: 'personal' as const,
+        material_id: null,
+        class_id: null,
       }));
 
     return [...assignmentEvents, ...personalEvents];
@@ -51,10 +55,9 @@ export function TodaysAgenda({ assignments, personalTasks, classes }: TodaysAgen
     );
   }
 
-  return (
-    <div className="space-y-3">
-      {todaysEvents.map(event => (
-        <div key={event.id} className="p-3 bg-muted/50 rounded-lg border-l-4"
+  const renderEvent = (event: typeof todaysEvents[0]) => {
+    const content = (
+        <div className="p-3 bg-muted/50 rounded-lg border-l-4 w-full"
              style={{ borderColor: `hsl(var(--${event.type === 'assignment' ? 'destructive' : 'primary'}))` }}>
           <div className='flex justify-between items-start'>
             <div>
@@ -66,7 +69,24 @@ export function TodaysAgenda({ assignments, personalTasks, classes }: TodaysAgen
               : <BrainCircuit className="h-4 w-4 text-primary flex-shrink-0" />}
           </div>
         </div>
-      ))}
+    );
+
+    if (event.type === 'assignment') {
+        const href = event.material_id ? `/material/${event.material_id}` : `/class/${event.class_id}`;
+        return (
+            <Link key={event.id} href={href} className="block hover:bg-muted/80 rounded-lg transition-colors">
+                {content}
+            </Link>
+        )
+    }
+
+    // Personal tasks are not clickable for now
+    return <div key={event.id}>{content}</div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {todaysEvents.map(renderEvent)}
     </div>
   );
 }

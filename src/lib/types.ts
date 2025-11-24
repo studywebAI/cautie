@@ -23,6 +23,8 @@ export type Deadline = {
   date: string;
   workload: string;
   status: "on-track" | "risk" | "behind";
+  material_id: string | null;
+  class_id: string;
 };
 
 export type Subject = {

@@ -3,7 +3,7 @@
 
 import { useState, useContext, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
-import { AppContext, AppContextType, PersonalTask } from '@/contexts/app-context';
+import { AppContext, AppContextType, PersonalTask, ClassAssignment } from '@/contexts/app-context';
 import { useDictionary } from '@/contexts/dictionary-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
@@ -13,6 +13,7 @@ import { CreateTaskDialog } from '@/components/agenda/create-task-dialog';
 import { TodayPanel } from '@/components/agenda/today-panel';
 import { PlusCircle } from 'lucide-react';
 import type { AiSuggestion } from '@/lib/types';
+import Link from 'next/link';
 
 
 export type CalendarEvent = {
@@ -21,6 +22,7 @@ export type CalendarEvent = {
   subject: string;
   date: Date;
   type: 'assignment' | 'study_plan' | 'personal';
+  href: string;
 };
 
 export default function AgendaPage() {
@@ -35,24 +37,27 @@ export default function AgendaPage() {
     if (!isStudent) return [];
     
     const assignmentEvents = (assignments || [])
-        .filter(a => a.due_date)
-        .map(a => {
+        .filter((a: ClassAssignment) => a.due_date)
+        .map((a: ClassAssignment) => {
             const className = classes.find(c => c.id === a.class_id)?.name || 'Class';
+            const href = a.material_id ? `/material/${a.material_id}` : `/class/${a.class_id}`;
             return {
                 id: a.id,
                 title: a.title,
                 subject: className,
                 date: parseISO(a.due_date!),
                 type: 'assignment' as const,
+                href: href,
             }
         });
 
-    const personalEvents = personalTasks.map(t => ({
+    const personalEvents = personalTasks.map((t: PersonalTask) => ({
         id: t.id,
         title: t.title,
         subject: t.subject || 'Personal',
         date: parseISO(t.date),
-        type: 'personal' as const
+        type: 'personal' as const,
+        href: `/agenda#${t.id}` // Not a real page, but a unique link
     }));
     
     return [...assignmentEvents, ...personalEvents];
@@ -119,7 +124,7 @@ export default function AgendaPage() {
         </div>
         <Button onClick={() => setIsCreateTaskOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            Add Task
+            {dictionary.agenda.addTask}
         </Button>
       </header>
 

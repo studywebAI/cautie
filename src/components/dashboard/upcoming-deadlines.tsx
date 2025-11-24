@@ -51,6 +51,8 @@ export function UpcomingDeadlines() {
         date: format(dueDate, 'MMMM d'),
         workload: daysUntilDue >= 0 ? `Due in ${daysUntilDue} days` : `Overdue`,
         status: status,
+        material_id: assignment.material_id,
+        class_id: assignment.class_id,
       } as Deadline
     })
   ];
@@ -75,20 +77,24 @@ export function UpcomingDeadlines() {
         {sortedDeadlines.length === 0 ? (
            <p className="text-sm text-muted-foreground text-center py-4">No upcoming deadlines.</p>
         ) : (
-          sortedDeadlines.slice(0,3).map((deadline) => (
-           <div key={deadline.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-             <div className="flex flex-col gap-0.5">
-                <p className="font-semibold">{deadline.title}</p>
-                <p className="text-sm text-muted-foreground">{deadline.subject} - {dictionary.dashboard.upcomingDeadlines.due} {deadline.date}</p>
-                <p className="text-xs text-muted-foreground">{deadline.workload}</p>
-             </div>
-             <Badge variant="outline" className={`${statusColors[deadline.status]}`}>
-                {deadline.status === "on-track" && dictionary.dashboard.upcomingDeadlines.onTrack}
-                {deadline.status === "risk" && dictionary.dashboard.upcomingDeadlines.risk}
-                {deadline.status === "behind" && dictionary.dashboard.upcomingDeadlines.behind}
-             </Badge>
-           </div>
-          ))
+          sortedDeadlines.slice(0,3).map((deadline) => {
+            const href = deadline.material_id ? `/material/${deadline.material_id}` : `/class/${deadline.class_id}`;
+            return (
+              <Link key={deadline.id} href={href} className="block group">
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg group-hover:bg-muted transition-colors">
+                  <div className="flex flex-col gap-0.5">
+                      <p className="font-semibold">{deadline.title}</p>
+                      <p className="text-sm text-muted-foreground">{deadline.subject} - {dictionary.dashboard.upcomingDeadlines.due} {deadline.date}</p>
+                      <p className="text-xs text-muted-foreground">{deadline.workload}</p>
+                  </div>
+                  <Badge variant="outline" className={`${statusColors[deadline.status]}`}>
+                      {deadline.status === "on-track" && dictionary.dashboard.upcomingDeadlines.onTrack}
+                      {deadline.status === "risk" && dictionary.dashboard.upcomingDeadlines.risk}
+                      {deadline.status === "behind" && dictionary.dashboard.upcomingDeadlines.behind}
+                  </Badge>
+                </div>
+              </Link>
+           )})
         )}
       </CardContent>
        <CardFooter>
