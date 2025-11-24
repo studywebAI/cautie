@@ -1,12 +1,28 @@
-# 🚀 **MASTER DEVELOPMENT PLAN (Focused)**
 
-This is a focused checklist for the next set of features. I will remove items from this list as they are completed.
+# 🚀 **MASTER DEVELOPMENT PLAN (Focused on Agenda & Classes)**
 
-## **PHASE 1: QUIZ SYSTEM**
+This is a focused checklist for the next set of features, prioritizing the core Agenda and Class systems.
 
-*   **1. Quiz Modes (Gameplay Styles)**
-    *   [ ] **1.4 “Short Exam” / “Long Exam” generator**: Je kiest: 10 vragen, 50 vragen, 100 vragen, “alles uit hoofdstuk X”.
-    *   [ ] **1.6 Mastery Mode**: Je moet elke categorie 100% “groen” krijgen. Elke fout zet die categorie terug naar 0%.
-    *   [ ] **1.7 Hyperfocus Mode**: kies 1 subonderwerp → 20 vragen alleen daarover; AI maakt automatisch subonderwerpen.
-    *   [ ] **1.8 Exam Simulation**: hele proefwerken nabootsen met: tijdslimiet (bijv 50 min); geen terugknop; docent kan echte examens importeren.
-    *   [ ] **1.10 Team Battle**: teams → binnen een klas; elke vraag geeft team-score; leaderboard per dag/week.
+## **PHASE 1: AGENDA & CLASS FOUNDATION**
+
+*   [ ] **3. Student Functionaliteit (Alles wat student kan)**
+    *   [ ] **3.1 Student kan eigen taken toevoegen**: Formulier voor Titel, Omschrijving, Deadline, etc.
+    *   [ ] **3.5 Student kan agenda’s importeren**: Google Calendar, Apple Calendar, Microsoft Outlook.
+*   [ ] **4. Docent Functionaliteit (Alles wat docent kan)**
+    *   [ ] **4.1 Docent kan huiswerk en toetsen inplannen**: Formulier voor Titel, Deadline, Koppelen aan klas & materiaal.
+*   **5. Koppeling tussen Classes tab & Agenda tab**
+    *   [ ] **5.1 Docent maakt taak in Classes → automatisch in Agenda**: Realtime sync naar studenten.
+*   **7. Agenda Filter System**
+    *   [ ] Filters voor 'Mijn taken', 'Docent taken', 'Deadlines', 'Toetsen'.
+
+## **PHASE 2: AI INTEGRATION FOR AGENDA**
+
+*   [ ] **3.1 AI-helper optie**: "Genereer automatische studieplan voor dit item".
+*   [ ] **3.4 Student krijgt AI-notificaties**: "Je hebt morgen een wiskunde repetitie, wil je nu 15 min oefenen?".
+*   [ ] **6. Study Plan Engine inside the Agenda**: AI berekent schema op basis van deadlines, materiaal, en vrije tijd.
+
+## **PHASE 3: UI & UX POLISH**
+
+*   [ ] **2.2 Kalender UI**: Kleurcodes voor item types (blauw, rood, geel, groen, paars).
+*   [ ] **2.3 Sidebar rechts (Vandaag Paneel)**: "Wat moet je vandaag doen", "Achterstallig", "AI Smart Suggestion".
+

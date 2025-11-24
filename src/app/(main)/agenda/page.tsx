@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useContext, useMemo } from 'react';
-import { format, parseISO, isSameDay } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { useDictionary } from '@/contexts/dictionary-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
