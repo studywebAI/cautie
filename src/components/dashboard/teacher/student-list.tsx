@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
-import { PlusCircle, MoreVertical, User } from 'lucide-react';
+import { PlusCircle, MoreVertical, User, Copy } from 'lucide-react';
 import type { Student } from '@/lib/teacher-types';
 import {
   DropdownMenu,
@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { useParams } from 'next/navigation';
 
 type StudentListProps = {
   students: Student[];
@@ -21,6 +23,19 @@ type StudentListProps = {
 };
 
 export function StudentList({ students, isLoading }: StudentListProps) {
+    const { toast } = useToast();
+    const params = useParams();
+    const { classId } = params as { classId: string };
+
+    const copyInviteLink = () => {
+        const inviteLink = `${window.location.origin}/classes?join_code=${classId}`;
+        navigator.clipboard.writeText(classId);
+        toast({
+            title: "Copied to Clipboard!",
+            description: "The class join code has been copied.",
+        });
+    }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -28,9 +43,9 @@ export function StudentList({ students, isLoading }: StudentListProps) {
           <CardTitle className="font-headline">Students</CardTitle>
           <CardDescription>All students enrolled in this class.</CardDescription>
         </div>
-         <Button variant="outline">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Invite
+         <Button variant="outline" onClick={copyInviteLink}>
+          <Copy className="mr-2 h-4 w-4" />
+          Copy Code
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -47,7 +62,7 @@ export function StudentList({ students, isLoading }: StudentListProps) {
             ))}
           </div>
         ) : students.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No students have joined this class yet.</p>
+          <p className="text-sm text-muted-foreground text-center py-8">No students have joined this class yet. Share the class code to invite them.</p>
         ) : (
           students.map((student) => (
             <div key={student.id} className="flex items-center justify-between">

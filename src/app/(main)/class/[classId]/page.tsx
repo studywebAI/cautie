@@ -8,11 +8,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AssignmentList } from '@/components/dashboard/teacher/assignment-list';
 import { StudentList } from '@/components/dashboard/teacher/student-list';
 import type { Student } from '@/lib/teacher-types';
+import { MaterialList } from '@/components/dashboard/teacher/material-list';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BookOpen, Users, FileText } from 'lucide-react';
+
 
 export default function ClassDetailsPage() {
   const params = useParams();
   const { classId } = params as { classId: string };
-  const { classes, assignments, isLoading: isAppLoading } = useContext(AppContext) as AppContextType;
+  const { classes, assignments, isLoading: isAppLoading, materials, refetchMaterials } = useContext(AppContext) as AppContextType;
   
   const [students, setStudents] = useState<Student[]>([]);
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
@@ -23,7 +27,6 @@ export default function ClassDetailsPage() {
 
   useEffect(() => {
     if (!classId || classId.startsWith('local-')) {
-        // Don't fetch members for a local class that doesn't exist in the DB
         setIsStudentsLoading(false);
         setStudents([]);
         return;
@@ -40,16 +43,16 @@ export default function ClassDetailsPage() {
         setStudents(data);
       } catch (error) {
         console.error(error);
-        // Handle error state if needed
       } finally {
         setIsStudentsLoading(false);
       }
     };
-
+    
     if(classId) {
         fetchStudents();
+        refetchMaterials(classId);
     }
-  }, [classId]);
+  }, [classId, refetchMaterials]);
 
   const isLoading = isAppLoading || (isStudentsLoading && classId && !classId.startsWith('local-'));
 
@@ -88,14 +91,22 @@ export default function ClassDetailsPage() {
         <p className="text-muted-foreground">{classInfo.description || 'Manage assignments, students, and settings for this class.'}</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-2">
+      <Tabs defaultValue="assignments" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="assignments"><FileText className="mr-2 h-4 w-4" /> Assignments</TabsTrigger>
+          <TabsTrigger value="materials"><BookOpen className="mr-2 h-4 w-4" /> Materials</TabsTrigger>
+          <TabsTrigger value="students"><Users className="mr-2 h-4 w-4" /> Students</TabsTrigger>
+        </TabsList>
+        <TabsContent value="assignments">
           <AssignmentList assignments={classAssignments} classId={classId} />
-        </div>
-        <div className="lg:col-span-1">
-          <StudentList students={students} isLoading={isLoading} />
-        </div>
-      </div>
+        </TabsContent>
+         <TabsContent value="materials">
+          <MaterialList materials={materials} classId={classId} isLoading={isLoading} />
+        </TabsContent>
+        <TabsContent value="students">
+           <StudentList students={students} isLoading={isLoading} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

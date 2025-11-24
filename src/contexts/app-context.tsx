@@ -2,10 +2,10 @@
 'use client';
 
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import type { SessionRecapData, Task, Alert, Deadline, Subject, AiSuggestion, QuickAccessItem, ProgressData } from '@/lib/types';
+import type { SessionRecapData } from '@/lib/types';
 import type { Tables } from '@/lib/supabase/database.types';
 import type { Session } from '@supabase/supabase-js';
-import type { Student } from '@/lib/teacher-types';
+import type { Student, MaterialReference } from '@/lib/teacher-types';
 
 
 export type UserRole = 'student' | 'teacher';
@@ -37,6 +37,8 @@ export type AppContextType = {
   students: Student[];
   personalTasks: PersonalTask[];
   createPersonalTask: (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => Promise<void>;
+  materials: MaterialReference[];
+  refetchMaterials: (classId: string) => Promise<void>;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -90,6 +92,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([]);
+  const [materials, setMaterials] = useState<MaterialReference[]>([]);
   
   // Track previous session state to detect login
   const [prevSession, setPrevSession] = useState<Session | null>(session);
@@ -340,6 +343,16 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
         }
     }
   }, [session]);
+  
+  const refetchMaterials = useCallback(async (classId: string) => {
+    if (session) {
+        const res = await fetch(`/api/materials?classId=${classId}`);
+        if (res.ok) {
+            const data = await res.json();
+            setMaterials(data || []);
+        }
+    }
+  }, [session]);
 
   // ---- Settings and Preferences ----
   useEffect(() => {
@@ -418,6 +431,8 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     students,
     personalTasks,
     createPersonalTask,
+    materials,
+    refetchMaterials,
   };
 
 

@@ -113,6 +113,65 @@ export type Database = {
           },
         ]
       }
+      materials: {
+        Row: {
+          class_id: string
+          concepts: Json | null
+          content_id: string
+          created_at: string
+          id: string
+          title: string
+          type: Database["public"]["Enums"]["material_type"]
+        }
+        Insert: {
+          class_id: string
+          concepts?: Json | null
+          content_id: string
+          created_at?: string
+          id?: string
+          title: string
+          type: Database["public"]["Enums"]["material_type"]
+        }
+        Update: {
+          class_id?: string
+          concepts?: Json | null
+          content_id?: string
+          created_at?: string
+          id?: string
+          title?: string
+          type?: Database["public"]["Enums"]["material_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materials_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          title: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          id?: string
+          title: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       personal_tasks: {
         Row: {
           created_at: string
@@ -200,7 +259,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      material_type: "NOTE" | "QUIZ" | "FLASHCARDS" | "FILE"
     }
     CompositeTypes: {
       [_ in never]: never

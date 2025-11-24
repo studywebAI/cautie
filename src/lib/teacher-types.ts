@@ -34,5 +34,6 @@ export type ClassAssignment = {
 export type MaterialReference = {
     id: string;
     title: string;
-    type: 'Quiz' | 'Flashcards' | 'Reading';
+    type: 'NOTE' | 'QUIZ' | 'FLASHCARDS' | 'FILE';
+    concepts: { id: string; name: string; }[];
 }

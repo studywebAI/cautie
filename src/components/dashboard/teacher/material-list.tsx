@@ -1,0 +1,256 @@
+
+'use client';
+
+import { useState, useContext } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { PlusCircle, FileSignature, BrainCircuit, Copy, File, MoreHorizontal, Trash2, Wand2, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { AppContext, AppContextType } from '@/contexts/app-context';
+import type { MaterialReference } from '@/lib/teacher-types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { generateNotes } from '@/ai/flows/generate-notes';
+
+const iconMap = {
+  NOTE: FileSignature,
+  QUIZ: BrainCircuit,
+  FLASHCARDS: Copy,
+  FILE: File,
+};
+
+type CreateNoteDialogProps = {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  classId: string;
+};
+
+function CreateNoteDialog({ isOpen, setIsOpen, classId }: CreateNoteDialogProps) {
+  const [sourceText, setSourceText] = useState('');
+  const [title, setTitle] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const { refetchMaterials } = useContext(AppContext) as AppContextType;
+  const { toast } = useToast();
+
+  const handleCreateNote = async () => {
+    if (!title.trim() || !sourceText.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing content',
+        description: 'Please provide a title and some source text to create a note.',
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const aiNotes = await generateNotes({ sourceText });
+      
+      const response = await fetch('/api/materials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          class_id: classId,
+          title,
+          type: 'NOTE',
+          notes_content: aiNotes.notes,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create note material.');
+      }
+      
+      toast({
+        title: 'Note Created',
+        description: `"${title}" has been added to your materials.`,
+      });
+
+      await refetchMaterials(classId);
+      resetAndClose();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error Creating Note',
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const resetAndClose = () => {
+    setTitle('');
+    setSourceText('');
+    setIsOpen(false);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Create AI-Generated Notes</DialogTitle>
+          <DialogDescription>
+            Provide some source text, and the AI will generate structured notes from it.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+            <div className="space-y-2">
+                <Label htmlFor="note-title">Note Title</Label>
+                <Input id="note-title" placeholder="e.g., Chapter 1: The Renaissance" value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="source-text">Source Text</Label>
+                <Textarea 
+                    id="source-text"
+                    placeholder="Paste the text from your textbook, article, or other source material here..."
+                    value={sourceText}
+                    onChange={(e) => setSourceText(e.target.value)}
+                    className="min-h-[200px]"
+                />
+            </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={resetAndClose}>Cancel</Button>
+          <Button onClick={handleCreateNote} disabled={isLoading || !title || !sourceText}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create Note with AI
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+type MaterialListProps = {
+  materials: MaterialReference[];
+  classId: string;
+  isLoading: boolean;
+};
+
+export function MaterialList({ materials, classId, isLoading }: MaterialListProps) {
+  const [isCreateNoteOpen, setIsCreateNoteOpen] = useState(false);
+  const { refetchMaterials } = useContext(AppContext) as AppContextType;
+  const { toast } = useToast();
+
+  const handleDelete = async (materialId: string) => {
+    try {
+      const response = await fetch(`/api/materials/${materialId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete material.');
+      }
+      toast({
+        title: 'Material Deleted',
+      });
+      await refetchMaterials(classId);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error Deleting Material',
+        description: error.message,
+      });
+    }
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="font-headline">Materials</CardTitle>
+            <CardDescription>All learning resources available for this class.</CardDescription>
+          </div>
+           <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create Material
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsCreateNoteOpen(true)}>
+                  <FileSignature className="mr-2 h-4 w-4" />
+                  <span>Create AI Notes</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled>
+                  <BrainCircuit className="mr-2 h-4 w-4" />
+                  <span>Create Quiz (soon)</span>
+                </DropdownMenuItem>
+                 <DropdownMenuItem disabled>
+                  <Copy className="mr-2 h-4 w-4" />
+                  <span>Create Flashcards (soon)</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {materials.map((material) => {
+            const Icon = iconMap[material.type] || File;
+            return (
+              <div key={material.id} className="flex items-start justify-between p-4 rounded-lg bg-muted/50 border">
+                <div className="flex items-start gap-4">
+                  <Icon className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+                  <div className="space-y-2">
+                    <p className="font-semibold">{material.title}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                       {material.concepts?.slice(0, 5).map(concept => (
+                         <Badge key={concept.id} variant="secondary">{concept.name}</Badge>
+                       ))}
+                    </div>
+                  </div>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">More actions</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>View Material</DropdownMenuItem>
+                    <DropdownMenuItem>Attach to Assignment</DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="text-destructive"
+                      onClick={() => handleDelete(material.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            );
+          })}
+          {materials.length === 0 && !isLoading && (
+            <div className="text-center h-24 flex flex-col justify-center items-center text-muted-foreground">
+              <p>No materials have been created for this class yet.</p>
+              <Button variant="link" onClick={() => setIsCreateNoteOpen(true)}>Create one now</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      <CreateNoteDialog isOpen={isCreateNoteOpen} setIsOpen={setIsCreateNoteOpen} classId={classId} />
+    </>
+  );
+}
