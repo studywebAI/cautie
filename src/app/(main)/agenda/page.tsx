@@ -2,14 +2,12 @@
 'use client';
 
 import { useState, useContext, useMemo } from 'react';
-import { format, addDays, parse, parseISO, isSameDay } from 'date-fns';
+import { format, parseISO, isSameDay } from 'date-fns';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { useDictionary } from '@/contexts/dictionary-context';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
-import type { Deadline } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { BookCheck, BrainCircuit } from 'lucide-react';
 
 type CalendarEvent = {
@@ -20,36 +18,28 @@ type CalendarEvent = {
   type: 'assignment' | 'study_plan' | 'personal';
 };
 
-const typeColors = {
-  assignment: "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400",
-  study_plan: "border-blue-500/50 bg-blue-500/10 text-blue-700 dark:text-blue-400",
-  personal: "border-gray-500/50 bg-gray-500/10 text-gray-700 dark:text-gray-400",
-};
-
 export default function AgendaPage() {
   const { assignments, classes, isLoading, role } = useContext(AppContext) as AppContextType;
   const { dictionary } = useDictionary();
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
   
-  // This component is student-focused for now
   const isStudent = role === 'student';
 
   const events: CalendarEvent[] = useMemo(() => {
-    if (!isStudent) return [];
+    if (!isStudent || !assignments || !classes) return [];
     
-    const allItems: CalendarEvent[] = [
-      ...assignments.map(a => {
+    return assignments
+        .filter(a => a.due_date)
+        .map(a => {
             const className = classes.find(c => c.id === a.class_id)?.name || 'Class';
             return {
                 id: a.id,
                 title: a.title,
                 subject: className,
-                date: a.due_date ? parseISO(a.due_date) : new Date(),
+                date: parseISO(a.due_date!),
                 type: 'assignment' as const,
             }
-        })
-    ];
-    return allItems;
+        });
   }, [assignments, classes, isStudent]);
 
   const eventsByDate = useMemo(() => {
@@ -129,7 +119,7 @@ export default function AgendaPage() {
                         {dictionary.agenda.eventsOn} {selectedDay ? format(selectedDay, 'MMMM d') : ''}
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 min-h-[200px]">
                     {eventsForSelectedDay.length > 0 ? (
                         eventsForSelectedDay.map(event => (
                             <div key={event.id} className="p-3 bg-muted/50 rounded-lg border-l-4" style={{borderColor: `hsl(var(--${event.type === 'assignment' ? 'destructive' : 'primary'}))`}}>
