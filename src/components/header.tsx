@@ -40,6 +40,21 @@ export function AppHeader() {
       <div className="flex items-center gap-4">
         {session ? (
             <>
+                <div className="hidden sm:flex items-center justify-between p-2 rounded-md">
+                    <Label htmlFor="role-switcher-desktop" className="flex items-center gap-2 cursor-pointer pr-3">
+                      <User className={`h-5 w-5 transition-colors ${isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
+                    </Label>
+                    <Switch
+                        id="role-switcher-desktop"
+                        checked={!isStudent}
+                        onCheckedChange={(checked) => setRole(checked ? 'teacher' : 'student')}
+                        aria-label="Toggle between student and teacher view"
+                    />
+                    <Label htmlFor="role-switcher-desktop" className="flex items-center gap-2 cursor-pointer pl-3">
+                      <BookUser className={`h-5 w-5 transition-colors ${!isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
+                    </Label>
+                </div>
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -56,7 +71,7 @@ export function AppHeader() {
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                         <div className="p-2">
+                         <div className="p-2 sm:hidden">
                              <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
                                 <Label htmlFor="role-switcher-mobile" className="flex items-center gap-2 cursor-pointer">
                                   <User className={`h-5 w-5 transition-colors ${isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
@@ -73,7 +88,7 @@ export function AppHeader() {
                                 </Label>
                             </div>
                         </div>
-                        <DropdownMenuSeparator />
+                        <DropdownMenuSeparator className="sm:hidden" />
                         <DropdownMenuItem onClick={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
