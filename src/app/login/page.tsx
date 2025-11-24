@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Wrench } from 'lucide-react';
 
-export default async function LoginPage({ searchParams }: { searchParams: { message: string } }) {
+export default async function LoginPage({ searchParams }: { searchParams: { message: string, redirect: string } }) {
   const cookieStore = cookies()
   const supabase = createClient(cookieStore)
 
@@ -17,8 +17,10 @@ export default async function LoginPage({ searchParams }: { searchParams: { mess
     data: { session },
   } = await supabase.auth.getSession()
 
+  const redirectTo = searchParams.redirect || '/';
+
   if (session) {
-    return redirect('/')
+    return redirect(redirectTo)
   }
   
   const signIn = async (formData: FormData) => {
@@ -38,7 +40,7 @@ export default async function LoginPage({ searchParams }: { searchParams: { mess
       return redirect('/login?message=Could not authenticate user')
     }
 
-    return redirect('/')
+    return redirect(redirectTo)
   }
 
   const signUp = async (formData: FormData) => {

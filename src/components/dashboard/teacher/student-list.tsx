@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
-import { MoreVertical, User, Copy } from 'lucide-react';
+import { MoreVertical, User, Copy, QrCode, Link as LinkIcon } from 'lucide-react';
 import type { Student } from '@/lib/teacher-types';
 import {
   DropdownMenu,
@@ -16,6 +16,73 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import Image from 'next/image';
+import { Input } from '@/components/ui/input';
+
+type InviteDialogProps = {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  classId: string;
+};
+
+function InviteDialog({ isOpen, setIsOpen, classId }: InviteDialogProps) {
+    const { toast } = useToast();
+    const [inviteLink, setInviteLink] = useState('');
+
+    useState(() => {
+        // This ensures window is defined
+        setInviteLink(`${window.location.origin}/classes?join_code=${classId}`);
+    });
+
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(inviteLink)}`;
+
+    const copyToClipboard = (text: string, type: 'link' | 'code') => {
+        navigator.clipboard.writeText(text);
+        toast({
+            title: "Copied to Clipboard!",
+            description: `The class join ${type} has been copied.`,
+        });
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Invite Students to Your Class</DialogTitle>
+                    <DialogDescription>
+                        Students can join by scanning the QR code, using the invite link, or entering the join code.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col items-center gap-6 py-4">
+                    {inviteLink && <div className="p-4 bg-white rounded-lg border">
+                        <Image src={qrCodeUrl} alt="Class Invite QR Code" width={250} height={250} />
+                    </div>}
+                    <div className='w-full space-y-2'>
+                        <p className='text-sm font-medium text-muted-foreground'>Join Code</p>
+                        <div className="flex w-full items-center space-x-2">
+                           <Input type="text" value={classId} readOnly />
+                           <Button type="submit" size="icon" onClick={() => copyToClipboard(classId, 'code')}>
+                             <Copy className="h-4 w-4" />
+                           </Button>
+                        </div>
+                    </div>
+                     {inviteLink && <div className='w-full space-y-2'>
+                        <p className='text-sm font-medium text-muted-foreground'>Invite Link</p>
+                        <div className="flex w-full items-center space-x-2">
+                           <Input type="text" value={inviteLink} readOnly />
+                           <Button type="submit" size="icon" onClick={() => copyToClipboard(inviteLink, 'link')}>
+                             <LinkIcon className="h-4 w-4" />
+                           </Button>
+                        </div>
+                    </div>}
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 
 type StudentListProps = {
   students: Student[];
@@ -23,29 +90,21 @@ type StudentListProps = {
 };
 
 export function StudentList({ students, isLoading }: StudentListProps) {
-    const { toast } = useToast();
+    const [isInviteOpen, setIsInviteOpen] = useState(false);
     const params = useParams();
     const { classId } = params as { classId: string };
 
-    const copyInviteLink = () => {
-        const inviteLink = `${window.location.origin}/classes?join_code=${classId}`;
-        navigator.clipboard.writeText(classId);
-        toast({
-            title: "Copied to Clipboard!",
-            description: "The class join code has been copied.",
-        });
-    }
-
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle className="font-headline">Students</CardTitle>
           <CardDescription>All students enrolled in this class.</CardDescription>
         </div>
-         <Button variant="outline" onClick={copyInviteLink}>
-          <Copy className="mr-2 h-4 w-4" />
-          Copy Code
+         <Button variant="outline" onClick={() => setIsInviteOpen(true)}>
+          <QrCode className="mr-2 h-4 w-4" />
+          Invite Students
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -97,5 +156,7 @@ export function StudentList({ students, isLoading }: StudentListProps) {
         )}
       </CardContent>
     </Card>
+    <InviteDialog isOpen={isInviteOpen} setIsOpen={setIsInviteOpen} classId={classId} />
+    </>
   );
 }

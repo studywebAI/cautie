@@ -43,10 +43,6 @@ const provideAiPoweredAnalyticsTeacherPrompt = ai.definePrompt({
 
   Consider factors such as student scores, common mistakes, engagement metrics, and any other relevant information.
   Provide your suggestions and explain the rationale behind them. Be concise and actionable.
-
-  {{#each (jsonParse classProgressData) as |item|}}
-  Student id: {{item.studentId}}
-  {{/each}}
   `,
 });
 
