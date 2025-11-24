@@ -1,4 +1,5 @@
 
+
 export type ClassInfo = {
   id: string;
   name: string;
@@ -33,7 +34,10 @@ export type ClassAssignment = {
 
 export type MaterialReference = {
     id: string;
+    class_id: string;
     title: string;
     type: 'NOTE' | 'QUIZ' | 'FLASHCARDS' | 'FILE';
-    concepts: { id: string; name: string; }[];
+    concepts: { id: string; name: string; }[] | null;
+    content: any | null; // For quiz/flashcard data
+    created_at: string;
 }

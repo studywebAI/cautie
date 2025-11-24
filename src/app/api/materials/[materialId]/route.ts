@@ -31,23 +31,48 @@ export async function GET(
   }
 
   // Security Check: User must be member or owner of the class
-  // ... this should be implemented with RLS ...
+  const { data: classData, error: classError } = await supabase
+    .from('classes')
+    .select('owner_id')
+    .eq('id', material.class_id)
+    .single();
+    
+  if (classError || !classData) {
+      return NextResponse.json({ error: 'Class not found for material' }, { status: 404 });
+  }
 
-  let content = null;
+  let isMemberOrOwner = classData.owner_id === session.user.id;
 
-  if (material.type === 'NOTE') {
+  if (!isMemberOrOwner) {
+      const { count } = await supabase
+        .from('class_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('class_id', material.class_id)
+        .eq('user_id', session.user.id);
+      
+      if (count && count > 0) {
+        isMemberOrOwner = true;
+      }
+  }
+
+  if (!isMemberOrOwner) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  let content = material.content;
+
+  if (material.type === 'NOTE' && material.content_id) {
     const { data: noteContent, error: contentError } = await supabase
       .from('notes')
-      .select('*')
+      .select('content')
       .eq('id', material.content_id)
       .single();
     if (contentError) {
       return NextResponse.json({ error: 'Failed to fetch note content' }, { status: 500 });
     }
-    content = noteContent;
+    content = noteContent.content;
   }
-  // TODO: Add logic for 'QUIZ' and 'FLASHCARDS' types
-
+  
   return NextResponse.json({ ...material, content });
 }
 
@@ -86,6 +111,11 @@ export async function DELETE(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+   // Also delete the associated content (e.g., the note) before deleting the material
+   if (material.type === 'NOTE' && material.content_id) {
+    await supabase.from('notes').delete().eq('id', material.content_id);
+   }
+
    // Delete the material entry
    const { error: deleteMaterialError } = await supabase
     .from('materials')
@@ -94,11 +124,6 @@ export async function DELETE(
     
    if (deleteMaterialError) {
     return NextResponse.json({ error: deleteMaterialError.message }, { status: 500 });
-   }
-
-   // Also delete the associated content (e.g., the note)
-   if (material.type === 'NOTE' && material.content_id) {
-    await supabase.from('notes').delete().eq('id', material.content_id);
    }
 
    return NextResponse.json({ message: 'Material deleted successfully' });

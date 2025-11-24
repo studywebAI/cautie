@@ -27,6 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { generateNotes } from '@/ai/flows/generate-notes';
+import Link from 'next/link';
 
 const iconMap = {
   NOTE: FileSignature,
@@ -70,6 +71,7 @@ function CreateNoteDialog({ isOpen, setIsOpen, classId }: CreateNoteDialogProps)
           title,
           type: 'NOTE',
           notes_content: aiNotes.notes,
+          source_text_for_concepts: sourceText,
         }),
       });
 
@@ -208,17 +210,17 @@ export function MaterialList({ materials, classId, isLoading }: MaterialListProp
             const Icon = iconMap[material.type] || File;
             return (
               <div key={material.id} className="flex items-start justify-between p-4 rounded-lg bg-muted/50 border">
-                <div className="flex items-start gap-4">
+                <Link href={`/material/${material.id}`} className="flex items-start gap-4 flex-1 group">
                   <Icon className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
                   <div className="space-y-2">
-                    <p className="font-semibold">{material.title}</p>
+                    <p className="font-semibold group-hover:underline">{material.title}</p>
                     <div className="flex flex-wrap gap-1.5">
                        {material.concepts?.slice(0, 5).map(concept => (
                          <Badge key={concept.id} variant="secondary">{concept.name}</Badge>
                        ))}
                     </div>
                   </div>
-                </div>
+                </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -227,7 +229,7 @@ export function MaterialList({ materials, classId, isLoading }: MaterialListProp
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>View Material</DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href={`/material/${material.id}`}>View Material</Link></DropdownMenuItem>
                     <DropdownMenuItem>Attach to Assignment</DropdownMenuItem>
                     <DropdownMenuItem 
                       className="text-destructive"
@@ -245,6 +247,11 @@ export function MaterialList({ materials, classId, isLoading }: MaterialListProp
             <div className="text-center h-24 flex flex-col justify-center items-center text-muted-foreground">
               <p>No materials have been created for this class yet.</p>
               <Button variant="link" onClick={() => setIsCreateNoteOpen(true)}>Create one now</Button>
+            </div>
+          )}
+           {isLoading && (
+            <div className="text-center h-24 flex justify-center items-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           )}
         </CardContent>
