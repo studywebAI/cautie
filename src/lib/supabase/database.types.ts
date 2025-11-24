@@ -12,6 +12,7 @@ export type Database = {
       assignments: {
         Row: {
           class_id: string
+          content: Json | null
           created_at: string
           due_date: string | null
           id: string
@@ -19,6 +20,7 @@ export type Database = {
         }
         Insert: {
           class_id: string
+          content?: Json | null
           created_at?: string
           due_date?: string | null
           id?: string
@@ -26,6 +28,7 @@ export type Database = {
         }
         Update: {
           class_id?: string
+          content?: Json | null
           created_at?: string
           due_date?: string | null
           id?: string
@@ -37,6 +40,42 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_members: {
+        Row: {
+          class_id: string
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_members_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -68,6 +107,38 @@ export type Database = {
             foreignKeyName: "classes_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          full_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
