@@ -68,6 +68,12 @@ const getFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
         }
         return JSON.parse(item);
     } catch (error) {
+        // If parsing fails, it's likely a plain string that shouldn't have been parsed.
+        // This is a recovery mechanism from the previous bug.
+        const item = window.localStorage.getItem(key);
+        if (item) {
+          return item as unknown as T;
+        }
         console.error(`Error reading from localStorage key “${key}”:`, error);
         return defaultValue;
     }
@@ -277,7 +283,11 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
   };
   
   const refetchClasses = async () => {
-    await fetchData();
+    if (session) {
+        const res = await fetch('/api/classes');
+        const data = await res.json();
+        setClasses(data || []);
+    }
   }
 
   const refetchAssignments = async () => {

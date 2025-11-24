@@ -56,7 +56,7 @@ This file tracks the major features that have been implemented and outlines the 
     *   [x] **Automatic Sync**: Local data is automatically synced to Supabase when a user logs in.
     *   [x] **Live Data Fetching**: Logged-in users fetch their classes and assignments directly from Supabase.
 *   **Student Classroom Features**:
-    *   [x] **Join a Class**: Students can join classes using a manual code or by scanning a QR code.
+    *   [x] **Join a Class**: Students can join classes using a manual code or by scanning a QR code. The system now fully supports this via a dedicated API endpoint and updates the database.
 
 ---
 
@@ -379,8 +379,8 @@ This is the master checklist for all remaining features, compiled from `README.m
     *   [ ] **1.51.2 Features**: Silent hours, per-channel preferences, snooze.
     *   [ ] **1.51.3 Implementation**: Notification queue (Redis), push via FCM/APNs, mail via Postmark/SendGrid.
 
-*   **1.52 — Enterprise SSO & Directory Sync**
-    *   [ ] **152.1 Functionality**: LDAP / SAML / SCIM provisioning; auto-provision classes from SIS.
+*   **152 — Enterprise SSO & Directory Sync**
+    *   [ ] **1.52.1 Functionality**: LDAP / SAML / SCIM provisioning; auto-provision classes from SIS.
     *   [ ] **1.52.2 Implementation**: SCIM endpoints, scheduled sync jobs.
 
 *   **1.53 — Intelligent Onboarding Flow**
@@ -389,7 +389,7 @@ This is the master checklist for all remaining features, compiled from `README.m
 
 *   **1.54 — Role-based Dashboards & Shortcuts**
     *   [ ] **1.54.1 Functionality**: Verschillende dashboards per rol, power-user shortcuts.
-    *   [ ] **1.54.2 Implementation**: Store UI shortcuts per user, keyboard shortcuts cheat sheet.
+    *   [ ] **154.2 Implementation**: Store UI shortcuts per user, keyboard shortcuts cheat sheet.
 
 *   **1.55 — Real-time Collaboration SDK**
     *   [ ] **1.55.1 Functionality**: SDK voor collaborative annotations, live quiz sessions, shared whiteboards.

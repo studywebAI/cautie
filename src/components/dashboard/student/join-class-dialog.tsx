@@ -8,19 +8,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ScanLine, Loader2 } from 'lucide-react';
+import { ScanLine, Loader2, Link } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type JoinClassDialogProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onClassJoined: (classCode: string) => void;
+  onClassJoined: (classCode: string) => Promise<boolean>;
 };
 
 export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassDialogProps) {
@@ -28,6 +29,7 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
   const [activeTab, setActiveTab] = useState('code');
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const { toast } = useToast();
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -114,7 +116,7 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
   }, [isOpen, activeTab, startCamera, stopCamera]);
 
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!classCode.trim()) {
       toast({
         title: 'Class code is required',
@@ -122,11 +124,17 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
       });
       return;
     }
-    onClassJoined(classCode);
-    toast({
-      title: 'Successfully joined class!',
-    });
-    resetAndClose();
+
+    setIsJoining(true);
+    const success = await onClassJoined(classCode);
+    setIsJoining(false);
+
+    if (success) {
+      toast({
+        title: 'Successfully joined class!',
+      });
+      resetAndClose();
+    }
   };
 
   const resetAndClose = () => {
@@ -140,7 +148,7 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
         if (!open) resetAndClose();
         else setIsOpen(true);
     }}>
-      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Join a Class</DialogTitle>
           <DialogDescription>
@@ -159,14 +167,11 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
                         <Label htmlFor="class-code">Class Code</Label>
                         <Input
                           id="class-code"
-                          placeholder="e.g., A4B-C8D"
+                          placeholder="e.g., a1b2c3d4-e5f6-..."
                           value={classCode}
                           onChange={(e) => setClassCode(e.target.value)}
                         />
                     </div>
-                     <Button onClick={handleJoin} className="w-full">
-                        Join Class
-                    </Button>
                 </div>
             </TabsContent>
             <TabsContent value="qr">
@@ -200,6 +205,15 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
                 </div>
             </TabsContent>
         </Tabs>
+
+        <DialogFooter>
+            <Button variant="outline" onClick={resetAndClose}>Cancel</Button>
+            <Button onClick={handleJoin} disabled={isJoining || !classCode}>
+              {isJoining && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Link className="mr-2 h-4 w-4" />
+              Join Class
+            </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

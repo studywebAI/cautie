@@ -1,51 +1,65 @@
-
 'use client';
 
 import { useState, useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import { JoinClassDialog } from './join-class-dialog';
 import { PlusCircle } from 'lucide-react';
-import type { ClassInfo } from '@/contexts/app-context';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { ClassCard } from '../teacher/class-card';
-
-
-// Mock data for classes a student can join. In a real app, this would come from a database.
-const joinableClasses: Record<string, Omit<ClassInfo, 'id' | 'owner_id' | 'created_at' | 'description' >> = {
-  'HIST-101': {
-    name: 'History 101: The Ancient World',
-  },
-  'SCI-202': {
-    name: 'Biology: The Human Body',
-  },
-  'ART-300': {
-    name: 'Introduction to Modern Art',
-  },
-};
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 
 export function StudentClasses() {
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
-  const [enrolledClasses, setEnrolledClasses] = useState<ClassInfo[]>([]);
+  const { classes, isLoading, refetchClasses, role } = useContext(AppContext) as AppContextType;
+  const { toast } = useToast();
 
-  const handleClassJoined = (classCode: string) => {
-    // In a real app, you'd verify the classCode against a backend.
-    // Here, we'll use our mock data.
-    const classToJoinData = joinableClasses[classCode.toUpperCase()];
+  const handleClassJoined = async (classCode: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/classes/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ class_code: classCode }),
+      });
 
-    if (classToJoinData && !enrolledClasses.some(c => c.name === classToJoinData.name)) {
-       const newClass: ClassInfo = {
-            id: classCode.toUpperCase(),
-            name: classToJoinData.name,
-            description: 'A mock class description',
-            owner_id: 'mock-owner',
-            created_at: new Date().toISOString(),
-       }
-      setEnrolledClasses(prev => [...prev, newClass]);
-    } else {
-      // You might want to show a toast message if the code is invalid or already joined
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to join class.');
+      }
+
+      // Refetch the list of classes to include the newly joined one
+      await refetchClasses();
+      return true;
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Could not join class',
+        description: error.message,
+      });
+      return false;
     }
   };
+  
+  // Only show classes the user is a member of, not ones they own
+  const enrolledClasses = classes.filter(c => c.owner_id !== (AppContext as any).session?.user?.id);
+
+  if (isLoading || !classes) {
+      return (
+         <div className="flex flex-col gap-8">
+            <header className="flex justify-between items-center">
+                 <div>
+                    <Skeleton className="h-10 w-64" />
+                    <Skeleton className="h-4 w-96 mt-2" />
+                </div>
+                <Skeleton className="h-10 w-36" />
+            </header>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64" />)}
+            </div>
+        </div>
+      );
+  }
 
   return (
     <div className="flex flex-col gap-8">
