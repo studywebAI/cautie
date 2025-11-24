@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -35,7 +36,7 @@ export function AppSidebar() {
   const isToolsPath = pathname.startsWith('/tools') || pathname === '/material';
 
   const menuItems = [
-    { href: '/', label: dictionary.sidebar.dashboard, icon: Home },
+    { href: '/dashboard', label: dictionary.sidebar.dashboard, icon: Home },
     { href: '/subjects', label: dictionary.sidebar.subjects, icon: BookOpen },
     { href: '/classes', label: dictionary.sidebar.classes, icon: School },
     { href: '/agenda', label: dictionary.sidebar.agenda, icon: Calendar },
