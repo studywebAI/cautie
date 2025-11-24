@@ -15,3 +15,4 @@ import '@/ai/flows/generate-teacher-dashboard-data.ts';
 import '@/ai/flows/generate-class-ideas.ts';
 import '@/ai/flows/generate-quiz-duel-data.ts';
 import '@/ai/flows/generate-single-flashcard.ts';
+import '@/ai/flows/generate-multiple-choice-from-flashcard.ts';
