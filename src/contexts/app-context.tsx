@@ -2,9 +2,11 @@
 'use client';
 
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import type { SessionRecapData } from '@/lib/types';
+import type { SessionRecapData, Task, Alert, Deadline, Subject, AiSuggestion, QuickAccessItem, ProgressData } from '@/lib/types';
 import type { Tables } from '@/lib/supabase/database.types';
 import type { Session } from '@supabase/supabase-js';
+import { generateDashboardData } from '@/ai/flows/generate-dashboard-data';
+
 
 export type UserRole = 'student' | 'teacher';
 export type ClassInfo = Tables<'classes'>;
@@ -15,6 +17,16 @@ export type Student = {
     avatarUrl?: string;
     overallProgress: number;
 };
+
+type StudentDashboardData = {
+    tasks: Task[];
+    alerts: Alert[];
+    deadlines: Deadline[];
+    subjects: Subject[];
+    aiSuggestions: AiSuggestion[];
+    quickAccessItems: QuickAccessItem[];
+    progressData: ProgressData[];
+}
 
 
 export type AppContextType = {
@@ -32,6 +44,7 @@ export type AppContextType = {
   setReducedMotion: (enabled: boolean) => void;
   sessionRecap: SessionRecapData | null;
   setSessionRecap: (data: SessionRecapData | null) => void;
+  studentDashboardData: StudentDashboardData | null;
   classes: ClassInfo[];
   createClass: (newClass: { name: string; description: string | null }) => Promise<void>;
   refetchClasses: () => Promise<void>;
@@ -75,6 +88,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
   const [reducedMotion, setReducedMotionState] = useState(false);
 
   const [sessionRecap, setSessionRecap] = useState<SessionRecapData | null>(null);
+  const [studentDashboardData, setStudentDashboardData] = useState<StudentDashboardData | null>(null);
 
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
@@ -146,9 +160,10 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
       if (session) {
           // User is logged in
           try {
-              const [classesRes, assignmentsRes] = await Promise.all([
+              const [classesRes, assignmentsRes, dashboardRes] = await Promise.all([
                   fetch('/api/classes'),
-                  fetch('/api/assignments')
+                  fetch('/api/assignments'),
+                  generateDashboardData({ studentName: session.user.email || 'Student', subjects: ["History", "Math", "Science", "Dutch"] })
               ]);
               if (!classesRes.ok || !assignmentsRes.ok) {
                 throw new Error('Failed to fetch data from API');
@@ -157,15 +172,28 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
               const assignmentsData = await assignmentsRes.json();
               setClasses(classesData || []);
               setAssignments(assignmentsData || []);
+              setStudentDashboardData(dashboardRes);
           } catch (error) {
               console.error("Failed to fetch Supabase data:", error);
               setClasses([]);
               setAssignments([]);
+              setStudentDashboardData(null);
           }
       } else {
-          // User is a guest, fetch from localStorage
-          setClasses(getFromLocalStorage('studyweb-local-classes', []));
-          setAssignments(getFromLocalStorage('studyweb-local-assignments', []));
+          // User is a guest, fetch from localStorage and generate some AI data
+           try {
+                const [localClasses, localAssignments, dashboardRes] = await Promise.all([
+                    Promise.resolve(getFromLocalStorage<ClassInfo[]>('studyweb-local-classes', [])),
+                    Promise.resolve(getFromLocalStorage<ClassAssignment[]>('studyweb-local-assignments', [])),
+                    generateDashboardData({ studentName: 'Guest', subjects: ["History", "Math", "Science", "Dutch"] })
+                ]);
+                setClasses(localClasses);
+                setAssignments(localAssignments);
+                setStudentDashboardData(dashboardRes);
+            } catch (error) {
+                console.error("Failed to fetch guest data:", error);
+                setStudentDashboardData(null);
+            }
       }
       setIsLoading(false);
   }, [session]);
@@ -318,6 +346,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     setReducedMotion,
     sessionRecap,
     setSessionRecap,
+    studentDashboardData,
     classes,
     createClass,
     refetchClasses,
@@ -334,5 +363,3 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     </AppContext.Provider>
   );
 };
-
-    

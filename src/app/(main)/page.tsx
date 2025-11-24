@@ -10,10 +10,16 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, School, Users, FileText, Activity } from "lucide-react";
 import { ClassCard } from "@/components/dashboard/teacher/class-card";
-
+import { TodayPlan } from "@/components/dashboard/today-plan";
+import { Alerts } from "@/components/dashboard/alerts";
+import { MySubjects } from "@/components/dashboard/my-subjects";
+import { AiSuggestions } from "@/components/dashboard/ai-suggestions";
+import { QuickAccess } from "@/components/dashboard/quick-access";
+import { ProgressChart } from "@/components/dashboard/stats/progress-chart";
+import { SessionRecap } from "@/components/dashboard/stats/session-recap";
 
 function StudentDashboard() {
-  const { isLoading, session } = useContext(AppContext) as AppContextType;
+  const { isLoading, session, studentDashboardData, sessionRecap } = useContext(AppContext) as AppContextType;
 
   if (isLoading && !session) {
      return (
@@ -33,13 +39,33 @@ function StudentDashboard() {
     )
   }
 
+  if (isLoading || !studentDashboardData) {
+    return <DashboardSkeleton />;
+  }
+
+  const { tasks, alerts, deadlines, subjects, aiSuggestions, quickAccessItems, progressData } = studentDashboardData;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8">
-            <UpcomingDeadlines />
+            <TodayPlan tasks={tasks} />
+            <MySubjects subjects={subjects} />
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Statistics</CardTitle>
+                    <CardDescription>Your study activity and latest results.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   <ProgressChart progressData={progressData} />
+                   <SessionRecap sessionRecap={sessionRecap} />
+                </CardContent>
+            </Card>
         </div>
         <div className="lg:col-span-1 flex flex-col gap-6 md:gap-8">
-            {/* Other student components can go here */}
+            <Alerts alerts={alerts} />
+            <UpcomingDeadlines />
+            <AiSuggestions aiSuggestions={aiSuggestions} />
+            <QuickAccess quickAccessItems={quickAccessItems} />
         </div>
     </div>
   );
