@@ -14,10 +14,11 @@ import { Alerts } from "@/components/dashboard/alerts";
 import { MySubjects } from "@/components/dashboard/my-subjects";
 import { parseISO, isFuture, differenceInDays } from 'date-fns';
 import type { Alert, Subject } from '@/lib/types';
+import { TodaysAgenda } from "@/components/dashboard/todays-agenda";
 
 
 function StudentDashboard() {
-  const { isLoading, session, assignments, classes } = useContext(AppContext) as AppContextType;
+  const { isLoading, session, assignments, classes, personalTasks } = useContext(AppContext) as AppContextType;
 
   if (isLoading && !session) {
      return (
@@ -37,7 +38,7 @@ function StudentDashboard() {
     )
   }
 
-  if (isLoading || !assignments || !classes) {
+  if (isLoading || !assignments || !classes || !personalTasks) {
     return <DashboardSkeleton />;
   }
   
@@ -71,10 +72,10 @@ function StudentDashboard() {
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Welcome to your Dashboard</CardTitle>
-                    <CardDescription>Here's what's happening. Navigate to the Agenda to manage your tasks or start studying in your classes.</CardDescription>
+                    <CardDescription>Here's what's on your agenda for today. Navigate to the full Agenda to manage all your tasks.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground">Your study plan for today will appear here once you've set up your tasks in the Agenda.</p>
+                    <TodaysAgenda assignments={assignments} personalTasks={personalTasks} classes={classes} />
                 </CardContent>
             </Card>
             <MySubjects subjects={subjects} />
@@ -251,3 +252,5 @@ export default function DashboardPage() {
       role === 'student' ? <StudentDashboard /> : <TeacherSummaryDashboard />
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -69,3 +70,5 @@ export function TodaysAgenda({ assignments, personalTasks, classes }: TodaysAgen
     </div>
   );
 }
+
+    
