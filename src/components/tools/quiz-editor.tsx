@@ -1,14 +1,15 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, PlusCircle, ArrowLeft, Play, Undo2, BookCheck, Wand2, Plus } from 'lucide-react';
+import { Loader2, Trash2, ArrowLeft, Play, Undo2, BookCheck, Wand2, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatePresence, motion } from 'framer-motion';
 import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
@@ -19,6 +20,8 @@ import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Separator } from '../ui/separator';
+import { AppContext, AppContextType } from '@/contexts/app-context';
+
 
 const manualQuestionSchema = z.object({
   question: z.string().min(5, { message: "Question must be at least 5 characters long." }),
@@ -36,14 +39,17 @@ type QuizEditorProps = {
   onStartQuiz: (finalQuiz: Quiz) => void;
   onBack: () => void;
   isAssignmentContext?: boolean;
-  onCreateForAssignment?: (finalQuiz: Quiz) => void;
 };
 
-export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignmentContext = false, onCreateForAssignment }: QuizEditorProps) {
+export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignmentContext = false }: QuizEditorProps) {
   const [currentQuiz, setCurrentQuiz] = useState<Quiz>(quiz);
+  const [isLoading, setIsLoading] = useState(false);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [lastDeleted, setLastDeleted] = useState<{ question: QuizQuestion; index: number } | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
+  const appContext = useContext(AppContext);
+  const { createAssignment } = appContext as AppContextType;
 
   const form = useForm<ManualQuestionFormValues>({
     resolver: zodResolver(manualQuestionSchema),
@@ -145,9 +151,56 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
     setLastDeleted(null);
   };
   
+  const handleCreateForAssignment = async () => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const classId = searchParams.get('classId');
+
+    if (!classId) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Class ID is missing.' });
+        return;
+    }
+
+    setIsLoading(true);
+    try {
+        // 1. Create the material
+        const materialResponse = await fetch('/api/materials', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: currentQuiz.title,
+                class_id: classId,
+                type: 'QUIZ',
+                content: currentQuiz,
+                source_text_for_concepts: sourceText,
+            }),
+        });
+        if (!materialResponse.ok) throw new Error('Failed to save quiz as material.');
+        const newMaterial = await materialResponse.json();
+
+        // 2. Create the assignment linked to the material
+        await createAssignment({
+            title: currentQuiz.title,
+            class_id: classId,
+            due_date: null,
+            material_id: newMaterial.id,
+        });
+
+        toast({
+            title: 'Assignment Created!',
+            description: `"${currentQuiz.title}" has been saved and assigned to the class.`,
+        });
+
+        router.push(`/class/${classId}`);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Failed to create assignment', description: error.message });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+  
   const handlePrimaryAction = () => {
-    if (isAssignmentContext && onCreateForAssignment) {
-        onCreateForAssignment(currentQuiz);
+    if (isAssignmentContext) {
+        handleCreateForAssignment();
     } else {
         onStartQuiz(currentQuiz);
     }
@@ -287,9 +340,9 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Setup
         </Button>
-        <Button onClick={handlePrimaryAction} disabled={currentQuiz.questions.length === 0}>
-          <PrimaryButtonIcon className="mr-2 h-4 w-4" />
-          {primaryButtonText}
+        <Button onClick={handlePrimaryAction} disabled={currentQuiz.questions.length === 0 || isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PrimaryButtonIcon className="mr-2 h-4 w-4" />}
+            {isLoading ? 'Creating...' : primaryButtonText}
         </Button>
       </CardFooter>
     </Card>

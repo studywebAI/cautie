@@ -63,7 +63,7 @@ export async function GET(request: Request) {
 
 // POST a new assignment
 export async function POST(request: Request) {
-  const { title, due_date, class_id } = await request.json();
+  const { title, due_date, class_id, material_id } = await request.json();
   const cookieStore = cookies();
   const supabase = createServerClient<Database>({ cookies: () => cookieStore });
   
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('assignments')
     .insert([
-      { title, due_date, class_id },
+      { title, due_date, class_id, material_id },
     ])
     .select()
     .single();

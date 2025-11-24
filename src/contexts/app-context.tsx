@@ -32,7 +32,7 @@ export type AppContextType = {
   createClass: (newClass: { name: string; description: string | null }) => Promise<void>;
   refetchClasses: () => Promise<void>;
   assignments: ClassAssignment[];
-  createAssignment: (newAssignment: Omit<ClassAssignment, 'id' | 'created_at' | 'content'>) => Promise<void>;
+  createAssignment: (newAssignment: Omit<ClassAssignment, 'id' | 'created_at'>) => Promise<void>;
   refetchAssignments: () => Promise<void>;
   students: Student[];
   personalTasks: PersonalTask[];
@@ -277,7 +277,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     }
   };
 
-  const createAssignment = async (newAssignmentData: Omit<ClassAssignment, 'id' | 'created_at' | 'content'>) => {
+  const createAssignment = async (newAssignmentData: Omit<ClassAssignment, 'id' | 'created_at'>) => {
      if (session) {
         // Logged-in user: save to Supabase
         const response = await fetch('/api/assignments', {
@@ -292,7 +292,6 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
         const newAssignment: ClassAssignment = {
             id: `local-assign-${Date.now()}`,
             created_at: new Date().toISOString(),
-            content: null,
             ...newAssignmentData
         };
         const updatedAssignments = [...assignments, newAssignment];

@@ -58,6 +58,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
             title,
             due_date: format(dueDate, 'yyyy-MM-dd'),
             class_id: classId,
+            material_id: null, // This is for assignments without materials
         });
         
         toast({
@@ -103,13 +104,13 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
         <DialogHeader>
           <DialogTitle>Create New Assignment</DialogTitle>
           <DialogDescription>
-            Assign new material to your class. You can create a new quiz or flashcard set to attach.
+            Assign new work to your class. You can create an assignment with or without attached materials.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-6 py-4">
           <div className="grid gap-2">
             <Label htmlFor="title">Assignment Title</Label>
-            <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Chapter 5 Quiz" />
+            <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Chapter 5 Reading" />
           </div>
           
            <div className="grid gap-2">
@@ -146,11 +147,12 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
           <Separator />
           
            <div className="grid gap-2">
-            <Label>Attach Material</Label>
+            <Label>Material</Label>
+            <p className="text-sm text-muted-foreground">You can create material now, or create an assignment without material.</p>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                  <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="secondary">Create New Material</Button>
+                    <Button variant="secondary">Create New Material...</Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     <DropdownMenuItem onClick={() => navigateToTool('quiz')}>
@@ -165,7 +167,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
                 </DropdownMenu>
 
                 <Button variant="secondary" onClick={() => {}} disabled>
-                  Attach Existing Material (Coming Soon)
+                  Attach Existing (Soon)
                 </Button>
             </div>
           </div>

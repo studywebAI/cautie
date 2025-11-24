@@ -1,11 +1,12 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, PlusCircle, ArrowLeft, Play, Undo2, BookCheck, Wand2, Plus } from 'lucide-react';
+import { Loader2, Trash2, ArrowLeft, Play, Undo2, BookCheck, Wand2, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatePresence, motion } from 'framer-motion';
 import { generateSingleFlashcard } from '@/ai/flows/generate-single-flashcard';
@@ -13,6 +14,7 @@ import type { Flashcard } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
+import { AppContext, AppContextType } from '@/contexts/app-context';
 
 type FlashcardEditorProps = {
   cards: Flashcard[];
@@ -20,14 +22,17 @@ type FlashcardEditorProps = {
   onStartStudy: (finalCards: Flashcard[]) => void;
   onBack: () => void;
   isAssignmentContext?: boolean;
-  onCreateForAssignment?: (finalCards: Flashcard[]) => void;
 };
 
-export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack, isAssignmentContext = false, onCreateForAssignment }: FlashcardEditorProps) {
+export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack, isAssignmentContext = false }: FlashcardEditorProps) {
   const [currentCards, setCurrentCards] = useState<Flashcard[]>(cards);
+  const [isLoading, setIsLoading] = useState(false);
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [lastDeleted, setLastDeleted] = useState<{ card: Flashcard; index: number } | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
+  const appContext = useContext(AppContext);
+  const { createAssignment } = appContext as AppContextType;
 
   const [manualFront, setManualFront] = useState('');
   const [manualBack, setManualBack] = useState('');
@@ -101,10 +106,59 @@ export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack, isAss
     setCurrentCards(newCards);
     setLastDeleted(null);
   };
+  
+  const handleCreateForAssignment = async () => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const classId = searchParams.get('classId');
+
+    if (!classId) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Class ID is missing.' });
+        return;
+    }
+
+    setIsLoading(true);
+    try {
+        // 1. Create the material
+        const materialTitle = `Flashcards: ${sourceText.substring(0, 30)}...`;
+        const materialResponse = await fetch('/api/materials', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: materialTitle,
+                class_id: classId,
+                type: 'FLASHCARDS',
+                content: currentCards,
+                source_text_for_concepts: sourceText,
+            }),
+        });
+        if (!materialResponse.ok) throw new Error('Failed to save flashcards as material.');
+        const newMaterial = await materialResponse.json();
+
+        // 2. Create the assignment linked to the material
+        await createAssignment({
+            title: materialTitle,
+            class_id: classId,
+            due_date: null,
+            material_id: newMaterial.id,
+        });
+
+        toast({
+            title: 'Assignment Created!',
+            description: `The flashcard set has been saved and assigned to the class.`,
+        });
+
+        router.push(`/class/${classId}`);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Failed to create assignment', description: error.message });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
 
   const handlePrimaryAction = () => {
-    if (isAssignmentContext && onCreateForAssignment) {
-      onCreateForAssignment(currentCards);
+    if (isAssignmentContext) {
+      handleCreateForAssignment();
     } else {
       onStartStudy(currentCards);
     }
@@ -199,9 +253,9 @@ export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack, isAss
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Setup
         </Button>
-        <Button onClick={handlePrimaryAction} disabled={currentCards.length === 0}>
-          <PrimaryButtonIcon className="mr-2 h-4 w-4" />
-          {primaryButtonText}
+        <Button onClick={handlePrimaryAction} disabled={currentCards.length === 0 || isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PrimaryButtonIcon className="mr-2 h-4 w-4" />}
+            {isLoading ? 'Creating...' : primaryButtonText}
         </Button>
       </CardFooter>
     </Card>

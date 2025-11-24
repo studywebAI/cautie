@@ -60,9 +60,9 @@ export async function GET(request: Request) {
 }
 
 
-// POST a new material (specifically a NOTE for now)
+// POST a new material
 export async function POST(request: Request) {
-  const { title, notes_content, class_id } = await request.json();
+  const { title, class_id, type, notes_content, content, source_text_for_concepts } = await request.json();
   const cookieStore = cookies();
   const supabase = createServerClient<Database>({ cookies: () => cookieStore });
   
@@ -82,36 +82,43 @@ export async function POST(request: Request) {
      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // 1. Create the note content first
-  const { data: note, error: noteError } = await supabase
-    .from('notes')
-    .insert({ title, content: notes_content })
-    .select()
-    .single();
+  let noteId = null;
 
-  if (noteError || !note) {
-    return NextResponse.json({ error: noteError?.message || 'Failed to create note content' }, { status: 500 });
+  // Handle NOTE type specifically
+  if (type === 'NOTE' && notes_content) {
+    const { data: note, error: noteError } = await supabase
+      .from('notes')
+      .insert({ title, content: notes_content })
+      .select()
+      .single();
+
+    if (noteError || !note) {
+      return NextResponse.json({ error: noteError?.message || 'Failed to create note content' }, { status: 500 });
+    }
+    noteId = note.id;
   }
-
-  // 2. Generate concepts from the note content
-  const sourceTextForConcepts = notes_content.map((n: any) => `# ${n.title}\n${n.content}`).join('\n\n');
+  
+  // Generate concepts from the provided source text
   let concepts = [];
-  try {
-    const graph = await generateKnowledgeGraph({ sourceText: sourceTextForConcepts });
-    concepts = graph.concepts;
-  } catch (aiError) {
-    console.warn("AI concept generation failed:", aiError);
-    // Continue without concepts if AI fails
+  if (source_text_for_concepts) {
+    try {
+      const graph = await generateKnowledgeGraph({ sourceText: source_text_for_concepts });
+      concepts = graph.concepts;
+    } catch (aiError) {
+      console.warn("AI concept generation failed:", aiError);
+      // Continue without concepts if AI fails
+    }
   }
 
-  // 3. Create the material entry linking to the note
+  // Create the material entry
   const { data: material, error: materialError } = await supabase
     .from('materials')
     .insert({
       class_id,
       title,
-      type: 'NOTE',
-      content_id: note.id,
+      type,
+      content_id: noteId,
+      content: content || null, // Store quiz/flashcard JSON
       concepts: concepts,
     })
     .select()
@@ -119,7 +126,9 @@ export async function POST(request: Request) {
 
   if (materialError) {
     // Attempt to clean up the orphaned note if material creation fails
-    await supabase.from('notes').delete().eq('id', note.id);
+    if (noteId) {
+      await supabase.from('notes').delete().eq('id', noteId);
+    }
     return NextResponse.json({ error: materialError.message }, { status: 500 });
   }
 

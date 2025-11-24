@@ -13,26 +13,26 @@ export type Database = {
       assignments: {
         Row: {
           class_id: string
-          content: Json | null
           created_at: string
           due_date: string | null
           id: string
+          material_id: string | null
           title: string
         }
         Insert: {
           class_id: string
-          content?: Json | null
           created_at?: string
           due_date?: string | null
           id?: string
+          material_id?: string | null
           title: string
         }
         Update: {
           class_id?: string
-          content?: Json | null
           created_at?: string
           due_date?: string | null
           id?: string
+          material_id?: string | null
           title?: string
         }
         Relationships: [
@@ -41,6 +41,13 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
             referencedColumns: ["id"]
           },
         ]
@@ -117,7 +124,8 @@ export type Database = {
         Row: {
           class_id: string
           concepts: Json | null
-          content_id: string
+          content: Json | null
+          content_id: string | null
           created_at: string
           id: string
           title: string
@@ -126,7 +134,8 @@ export type Database = {
         Insert: {
           class_id: string
           concepts?: Json | null
-          content_id: string
+          content?: Json | null
+          content_id?: string | null
           created_at?: string
           id?: string
           title: string
@@ -135,7 +144,8 @@ export type Database = {
         Update: {
           class_id?: string
           concepts?: Json | null
-          content_id?: string
+          content?: Json | null
+          content_id?: string | null
           created_at?: string
           id?: string
           title?: string
