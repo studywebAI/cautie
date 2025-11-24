@@ -165,7 +165,7 @@ function FlashcardsPageContent() {
 
   const totalLoading = isLoading || isProcessingFile;
   const mainButtonIcon = isAssignmentContext ? <BookCheck className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />;
-  const mainButtonText = isAssignment-context ? 'Create & Attach to Assignment' : 'Generate with AI';
+  const mainButtonText = isAssignmentContext ? 'Create & Attach to Assignment' : 'Generate with AI';
 
   if (isLoading) {
      return (
@@ -281,7 +281,7 @@ function FlashcardsPageContent() {
             ) : (
               mainButtonIcon
             )}
-            {isLoading ? 'Generating...' : mainButtonText}
+            {isLoading ? 'Generating...' : 'Generate with AI'}
           </Button>
         </CardFooter>
       </Card>

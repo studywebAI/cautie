@@ -190,7 +190,7 @@ function QuizPageContent() {
   
   const finalButtonText = quizMode === 'duel'
     ? 'Start Duel'
-    : (quizMode === 'boss-fight' ? 'Start Boss Fight' : mainButtonText);
+    : (quizMode === 'boss-fight' ? 'Start Boss Fight' : (isAssignmentContext ? 'Create & Attach' : 'Generate with AI'));
 
 
   if (isLoading) {

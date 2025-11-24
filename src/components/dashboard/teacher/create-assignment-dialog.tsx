@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon, BrainCircuit, Copy, Loader2, FileSignature } from 'lucide-react';
+import { CalendarIcon, BrainCircuit, Copy, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { AppContext, AppContextType } from '@/contexts/app-context';
@@ -147,7 +147,23 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
           
            <div className="grid gap-2">
             <Label>Attach Material</Label>
-             <div className="grid grid-cols-1 gap-2 mt-1">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                 <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary">Create New Material</Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={() => navigateToTool('quiz')}>
+                      <BrainCircuit className="mr-2 h-4 w-4" />
+                      Create New Quiz
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigateToTool('flashcards')}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Create New Flashcards
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <Button variant="secondary" onClick={() => {}} disabled>
                   Attach Existing Material (Coming Soon)
                 </Button>
