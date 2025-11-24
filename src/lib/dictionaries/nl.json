@@ -1,3 +1,4 @@
+
 {
   "sidebar": {
     "dashboard": "Dashboard",
@@ -89,6 +90,7 @@
     "title": "Agenda",
     "description": "Jouw geconsolideerde kalender van deadlines, taken en persoonlijke afspraken.",
     "eventsOn": "Gebeurtenissen op",
-    "noEvents": "Geen gebeurtenissen gepland voor deze dag."
+    "noEvents": "Geen gebeurtenissen gepland voor deze dag.",
+    "addTask": "Taak Toevoegen"
   }
 }

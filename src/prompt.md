@@ -1,4 +1,3 @@
-
 # 🚀 **MASTER DEVELOPMENT PLAN (Focused on Agenda & Classes)**
 
 This is a focused checklist for the next set of features, prioritizing the core Agenda and Class systems.
@@ -6,7 +5,6 @@ This is a focused checklist for the next set of features, prioritizing the core 
 ## **PHASE 1: AGENDA & CLASS FOUNDATION**
 
 *   [ ] **3. Student Functionaliteit (Alles wat student kan)**
-    *   [ ] **3.1 Student kan eigen taken toevoegen**: Formulier voor Titel, Omschrijving, Deadline, etc.
     *   [ ] **3.5 Student kan agenda’s importeren**: Google Calendar, Apple Calendar, Microsoft Outlook.
 *   [ ] **4. Docent Functionaliteit (Alles wat docent kan)**
     *   [ ] **4.1 Docent kan huiswerk en toetsen inplannen**: Formulier voor Titel, Deadline, Koppelen aan klas & materiaal.
@@ -23,6 +21,4 @@ This is a focused checklist for the next set of features, prioritizing the core 
 
 ## **PHASE 3: UI & UX POLISH**
 
-*   [ ] **2.2 Kalender UI**: Kleurcodes voor item types (blauw, rood, geel, groen, paars).
 *   [ ] **2.3 Sidebar rechts (Vandaag Paneel)**: "Wat moet je vandaag doen", "Achterstallig", "AI Smart Suggestion".
-

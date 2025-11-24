@@ -1,3 +1,4 @@
+
 {
   "sidebar": {
     "dashboard": "Dashboard",
@@ -89,6 +90,7 @@
     "title": "Agenda",
     "description": "Your consolidated calendar of deadlines, tasks, and personal appointments.",
     "eventsOn": "Events on",
-    "noEvents": "No events scheduled for this day."
+    "noEvents": "No events scheduled for this day.",
+    "addTask": "Add Task"
   }
 }

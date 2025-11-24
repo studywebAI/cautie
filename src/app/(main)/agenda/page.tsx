@@ -8,7 +8,11 @@ import { useDictionary } from '@/contexts/dictionary-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookCheck, BrainCircuit } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CreateTaskDialog } from '@/components/agenda/create-task-dialog';
+import { BookCheck, BrainCircuit, PlusCircle } from 'lucide-react';
+import type { PersonalTask } from '@/lib/types';
+
 
 type CalendarEvent = {
   id: string;
@@ -22,13 +26,15 @@ export default function AgendaPage() {
   const { assignments, classes, isLoading, role } = useContext(AppContext) as AppContextType;
   const { dictionary } = useDictionary();
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
+  const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([]);
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   
   const isStudent = role === 'student';
 
   const events: CalendarEvent[] = useMemo(() => {
-    if (!isStudent || !assignments || !classes) return [];
+    if (!isStudent) return [];
     
-    return assignments
+    const assignmentEvents = (assignments || [])
         .filter(a => a.due_date)
         .map(a => {
             const className = classes.find(c => c.id === a.class_id)?.name || 'Class';
@@ -40,7 +46,17 @@ export default function AgendaPage() {
                 type: 'assignment' as const,
             }
         });
-  }, [assignments, classes, isStudent]);
+
+    const personalEvents = personalTasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        subject: t.subject || 'Personal',
+        date: t.date,
+        type: 'personal' as const
+    }));
+    
+    return [...assignmentEvents, ...personalEvents];
+  }, [assignments, classes, isStudent, personalTasks]);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
@@ -58,6 +74,11 @@ export default function AgendaPage() {
   const eventsForSelectedDay = eventsByDate.get(selectedDayString) || [];
   
   const eventDays = Array.from(eventsByDate.keys()).map(dateString => parseISO(dateString));
+
+  const handleTaskCreated = (newTask: Omit<PersonalTask, 'id'>) => {
+    const taskWithId = { ...newTask, id: `personal-${Date.now()}` };
+    setPersonalTasks(prev => [...prev, taskWithId]);
+  };
   
   if (isLoading && isStudent) {
     return (
@@ -88,10 +109,17 @@ export default function AgendaPage() {
   }
 
   return (
+    <>
     <div className="flex flex-col gap-8">
-      <header>
-        <h1 className="text-3xl font-bold font-headline">{dictionary.agenda.title}</h1>
-        <p className="text-muted-foreground">{dictionary.agenda.description}</p>
+      <header className="flex justify-between items-center">
+        <div>
+            <h1 className="text-3xl font-bold font-headline">{dictionary.agenda.title}</h1>
+            <p className="text-muted-foreground">{dictionary.agenda.description}</p>
+        </div>
+        <Button onClick={() => setIsCreateTaskOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Task
+        </Button>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -122,13 +150,16 @@ export default function AgendaPage() {
                 <CardContent className="space-y-4 min-h-[200px]">
                     {eventsForSelectedDay.length > 0 ? (
                         eventsForSelectedDay.map(event => (
-                            <div key={event.id} className="p-3 bg-muted/50 rounded-lg border-l-4" style={{borderColor: `hsl(var(--${event.type === 'assignment' ? 'destructive' : 'primary'}))`}}>
+                            <div key={event.id} className="p-3 bg-muted/50 rounded-lg border-l-4" 
+                                 style={{borderColor: `hsl(var(--${event.type === 'assignment' ? 'destructive' : 'primary'}))`}}>
                                 <div className='flex justify-between items-start'>
                                   <div>
                                     <p className="font-semibold">{event.title}</p>
                                     <p className="text-sm text-muted-foreground">{event.subject}</p>
                                   </div>
-                                  {event.type === 'assignment' ? <BookCheck className="h-4 w-4 text-destructive"/> : <BrainCircuit className="h-4 w-4 text-primary"/>}
+                                  {event.type === 'assignment' 
+                                    ? <BookCheck className="h-4 w-4 text-destructive"/> 
+                                    : <BrainCircuit className="h-4 w-4 text-primary"/>}
                                 </div>
                             </div>
                         ))
@@ -143,5 +174,12 @@ export default function AgendaPage() {
 
       </div>
     </div>
+    <CreateTaskDialog 
+        isOpen={isCreateTaskOpen}
+        setIsOpen={setIsCreateTaskOpen}
+        onTaskCreated={handleTaskCreated}
+        initialDate={selectedDay}
+    />
+    </>
   );
 }
