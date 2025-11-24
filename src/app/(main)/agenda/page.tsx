@@ -77,8 +77,8 @@ export default function AgendaPage() {
   
   const todaySuggestion: AiSuggestion | null = null; // Placeholder for AI suggestions
 
-  const handleTaskCreated = (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => {
-    createPersonalTask(newTask);
+  const handleTaskCreated = async (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => {
+    await createPersonalTask(newTask);
   };
   
   if (isLoading && isStudent) {

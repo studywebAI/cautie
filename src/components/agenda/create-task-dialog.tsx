@@ -29,7 +29,7 @@ import { generateStudyPlanFromTask } from '@/ai/flows/generate-study-plan-from-t
 type CreateTaskDialogProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onTaskCreated: (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => void;
+  onTaskCreated: (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => Promise<void>;
   initialDate?: Date;
 };
 
