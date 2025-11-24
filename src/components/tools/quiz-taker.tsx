@@ -9,7 +9,7 @@ import { explainAnswer } from '@/ai/flows/explain-answer';
 import { generateQuiz } from '@/ai/flows/generate-quiz';
 import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Trophy, Zap, Bomb, TrendingUp, BookOpen, Clock, Target, ArrowLeft } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Trophy, Zap, Bomb, TrendingUp, BookOpen, Clock, Target, ArrowLeft, Shield } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ import type { Quiz, QuizQuestion, SessionRecapData } from '@/lib/types';
 
 
 type AnswersState = { [questionId: string]: string };
-export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" | "adaptive" | "duel";
+export type QuizMode = "normal" | "practice" | "exam" | "survival" | "speedrun" | "adaptive" | "duel" | "boss-fight";
 
 const SURVIVAL_PENALTY_COUNT = 3;
 const SURVIVAL_QUESTION_TIME = 20; // 20 seconds per question
@@ -54,6 +54,10 @@ const modeDetails: Record<QuizMode, { title: string; description: string }> = {
     adaptive: {
         title: "Adaptive Mode",
         description: "The question difficulty adapts to your performance."
+    },
+    "boss-fight": {
+        title: "Boss Fight",
+        description: "Reach the final boss question. If you fail, you start over."
     },
     duel: {
         title: "Duel Mode",
@@ -175,6 +179,28 @@ function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, setSessio
         )
     }
 
+    if (mode === 'boss-fight') {
+        return (
+            <Card>
+                <CardHeader className="items-center text-center">
+                    <Trophy className="h-16 w-16 text-yellow-500" />
+                    <CardTitle className="font-headline text-3xl mt-4">Victory!</CardTitle>
+                    <CardDescription>You have defeated the boss question and completed the quiz.</CardDescription>
+                </CardHeader>
+                <CardContent className="text-center space-y-2">
+                    <p className="font-semibold">You earned the "Topic Master" badge!</p>
+                    <p className="text-muted-foreground text-sm">+500 EXP</p>
+                </CardContent>
+                <CardFooter className="justify-center">
+                    <Button onClick={onRestart}>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Challenge Another Topic
+                    </Button>
+                </CardFooter>
+            </Card>
+        );
+    }
+
     const chartData = [
         { name: 'correct', value: correctCount, fill: 'var(--color-correct)' },
         { name: 'incorrect', value: incorrectCount, fill: 'var(--color-incorrect)' },
@@ -271,11 +297,24 @@ function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, setSessio
     )
 }
 
-function Question({ question, onAnswer, disabled, selectedOptionId }: { question: QuizQuestion, onAnswer: (optionId: string) => void, disabled: boolean, selectedOptionId: string | null }) {
+function Question({ question, onAnswer, disabled, selectedOptionId, isBoss }: { question: QuizQuestion, onAnswer: (optionId: string) => void, disabled: boolean, selectedOptionId: string | null, isBoss?: boolean }) {
     const correctOption = question.options.find(o => o.isCorrect);
     
     return (
         <div>
+            {isBoss && (
+                <div className="mb-4 text-center">
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.2, type: 'spring', stiffness: 150 }}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-destructive/10 border border-destructive/50 text-destructive rounded-full font-semibold"
+                    >
+                        <ShieldAlert className="h-5 w-5" />
+                        BOSS QUESTION
+                    </motion.div>
+                </div>
+            )}
             <p className="font-semibold mb-4 text-lg">{question.question}</p>
             <RadioGroup onValueChange={onAnswer} value={selectedOptionId || ''} disabled={disabled}>
                 <div className="space-y-3">
@@ -350,15 +389,10 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         const newStrikes = strikes + 1;
         setStrikes(newStrikes);
         
-        if (mode === 'survival') {
+        if (mode === 'survival' || mode === 'speedrun') {
             if (newStrikes >= MAX_STRIKES) {
                 handleFinishQuiz();
-            } else {
-                // handleSurvivalPenalty();
             }
-        }
-        if (mode === 'speedrun' && newStrikes >= MAX_STRIKES) {
-            handleFinishQuiz();
         }
     }, [strikes, mode, handleFinishQuiz]);
 
@@ -491,12 +525,33 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             const isAnswerCorrect = optionId === correctOption?.id;
             setIsCorrect(isAnswerCorrect);
             setIsAnswered(true);
+            
+            const isBossQuestion = mode === 'boss-fight' && currentIndex === currentQuestions.length - 1;
 
             if (!isAnswerCorrect) {
                  handleIncorrectAnswer();
                  if (mode === 'survival') {
                     handleSurvivalPenalty();
                  }
+                 if (isBossQuestion) {
+                     toast({
+                        title: 'Boss Defeated You!',
+                        description: 'You answered the final question incorrectly. The quiz will now restart.',
+                        variant: 'destructive',
+                        duration: 5000,
+                     });
+                     setTimeout(() => {
+                         setCurrentIndex(0);
+                         setAnswers({});
+                         setIsAnswered(false);
+                         setIsCorrect(false);
+                         setStrikes(0);
+                     }, 2000);
+                 }
+            } else {
+                if (isBossQuestion) {
+                    handleFinishQuiz();
+                }
             }
 
             if (mode === 'adaptive') {
@@ -618,7 +673,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
 
     const questionCounter = () => {
         if (mode === 'adaptive') return `${currentIndex + 1} / ${ADAPTIVE_QUESTION_COUNT}`;
-        if (mode === 'normal' || mode === 'exam') return `${currentIndex + 1} / ${currentQuestions.length}`;
+        if (mode === 'normal' || mode === 'exam' || mode === 'boss-fight') return `${currentIndex + 1} / ${currentQuestions.length}`;
         return `${currentIndex + 1} / ${currentQuestions.length}`;
     }
 
@@ -636,7 +691,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                     <p className="text-sm font-medium text-muted-foreground">
                         Question: {questionCounter()}
                     </p>
-                    {(mode === 'survival' || mode === 'exam') && <Progress value={(currentIndex / currentQuestions.length) * 100} className="h-1.5" />}
+                    {(mode === 'survival' || mode === 'exam' || mode === 'boss-fight') && <Progress value={(currentIndex / currentQuestions.length) * 100} className="h-1.5" />}
                     {mode === 'survival' && <Progress value={(questionTimeLeft / SURVIVAL_QUESTION_TIME) * 100} className="h-1.5" />}
                  </div>
             </CardHeader>
@@ -673,6 +728,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                                     onAnswer={(optionId) => handleAnswerChange(question.id, optionId)}
                                     disabled={(isAnswered && mode !== 'exam') || isGeneratingNext}
                                     selectedOptionId={selectedOptionId}
+                                    isBoss={mode === 'boss-fight' && currentIndex === currentQuestions.length - 1}
                                 />
                                 {isAnswered && (
                                     <div className="mt-4 space-y-4">

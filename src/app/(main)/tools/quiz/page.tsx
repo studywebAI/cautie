@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { generateQuiz } from '@/ai/flows/generate-quiz';
 import { processMaterial } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon, Swords, BookCheck } from 'lucide-react';
+import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon, Swords, BookCheck, Shield } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -59,7 +59,7 @@ function QuizPageContent() {
       if (quizMode === 'duel') {
         setCurrentView('duel');
       } else {
-        const count = (quizMode === 'survival' || quizMode === 'adaptive') ? 1 : questionCount;
+        const count = (quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'boss-fight') ? 1 : questionCount;
         const response = await generateQuiz({ sourceText: text, questionCount: count });
         setGeneratedQuiz(response);
         if (isEditMode) {
@@ -176,13 +176,21 @@ function QuizPageContent() {
     ? 'Create & Attach to Assignment'
     : 'Generate with AI';
 
-  const mainButtonIcon = quizMode === 'duel' 
-    ? <Swords className="mr-2 h-4 w-4" /> 
-    : (isAssignmentContext ? <BookCheck className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />);
+  let mainButtonIcon;
+    switch(quizMode) {
+        case 'duel': 
+            mainButtonIcon = <Swords className="mr-2 h-4 w-4" />;
+            break;
+        case 'boss-fight':
+            mainButtonIcon = <Shield className="mr-2 h-4 w-4" />;
+            break;
+        default:
+            mainButtonIcon = isAssignmentContext ? <BookCheck className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />;
+    }
   
   const finalButtonText = quizMode === 'duel'
     ? 'Start Duel'
-    : mainButtonText;
+    : (quizMode === 'boss-fight' ? 'Start Boss Fight' : mainButtonText);
 
 
   if (isLoading) {
@@ -285,6 +293,7 @@ function QuizPageContent() {
                     <SelectItem value="survival">Survival Mode</SelectItem>
                     <SelectItem value="speedrun">Speedrun Mode</SelectItem>
                     <SelectItem value="adaptive">Adaptive Mode</SelectItem>
+                    <SelectItem value="boss-fight">Boss Fight Mode</SelectItem>
                     <SelectItem value="duel">Duel Mode (1v1)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -294,7 +303,7 @@ function QuizPageContent() {
                  <Select 
                     value={String(questionCount)} 
                     onValueChange={(value) => setQuestionCount(Number(value))}
-                    disabled={quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel'}
+                    disabled={quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel' || quizMode === 'boss-fight'}
                  >
                   <SelectTrigger id="question-count">
                     <SelectValue placeholder="Select number of questions" />
@@ -308,7 +317,7 @@ function QuizPageContent() {
                     <SelectItem value="50">50 Questions (Long Exam)</SelectItem>
                   </SelectContent>
                 </Select>
-                 {(quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel') && <p className="text-xs text-muted-foreground">Number of questions is managed by the AI in this mode.</p>}
+                 {(quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel' || quizMode === 'boss-fight') && <p className="text-xs text-muted-foreground">Number of questions is managed by the AI in this mode.</p>}
               </div>
            </div>
            <div className="flex items-center space-x-2">
@@ -316,7 +325,7 @@ function QuizPageContent() {
                     id="edit-mode" 
                     checked={isEditMode}
                     onCheckedChange={setIsEditMode}
-                    disabled={quizMode === 'adaptive' || quizMode === 'duel'}
+                    disabled={quizMode === 'adaptive' || quizMode === 'duel' || quizMode === 'boss-fight'}
                 />
                 <Label htmlFor="edit-mode">Review & Edit Before Starting</Label>
            </div>
