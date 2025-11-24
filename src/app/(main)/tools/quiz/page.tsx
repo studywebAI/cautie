@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, Suspense, useCallback, useContext } from 'react';
@@ -146,32 +147,33 @@ function QuizPageContent() {
     // In a real app, this would save the quiz and associate it with the classId
     console.log("Creating quiz for assignment in class:", classId, finalQuiz);
     toast({
-      title: "Quiz Created for Assignment",
+      title: "Quiz Created",
       description: `"${finalQuiz.title}" is ready to be assigned.`,
     });
-    router.push(`/class/${classId}`);
+    if (classId) {
+        router.push(`/class/${classId}`);
+    } else {
+        router.push('/classes');
+    }
   };
 
   const handleRestart = () => {
     setGeneratedQuiz(null);
     setCurrentView('setup');
     if (isAssignmentContext) {
-        router.push(`/class/${classId}`);
+        if (classId) {
+            router.push(`/class/${classId}`);
+        } else {
+            router.push('/classes');
+        }
     }
   }
 
   const totalLoading = isLoading || isProcessingFile;
-  const mainButtonAction = isAssignmentContext ? () => {
-    if (isEditMode) {
-      handleGenerate(sourceText);
-    } else {
-      // In a real app, this would trigger a final save. For now, we simulate.
-      handleGenerate(sourceText);
-    }
-   } : handleFormSubmit;
+  const mainButtonAction = isAssignmentContext ? () => handleGenerate(sourceText) : handleFormSubmit;
   
-  const mainButtonText = isAssignmentContext
-    ? (isEditMode ? 'Proceed to Edit' : 'Generate & Create Assignment')
+  const mainButtonText = isAssignmentContext 
+    ? 'Create & Attach to Assignment'
     : 'Generate with AI';
 
   const mainButtonIcon = quizMode === 'duel' 
@@ -212,9 +214,9 @@ function QuizPageContent() {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">{isAssignmentContext ? 'Create New Quiz Assignment' : 'AI Quiz Generator'}</h1>
+        <h1 className="text-3xl font-bold font-headline">{isAssignmentContext ? 'Create New Quiz' : 'AI Quiz Generator'}</h1>
         <p className="text-muted-foreground">
-          {isAssignmentContext ? `Create a new quiz from text or a file to assign to your class.` : `Paste text or upload a file to automatically generate a multiple-choice quiz.`}
+          {isAssignmentContext ? `Create a new quiz from text or a file to attach to your assignment.` : `Paste text or upload a file to automatically generate a multiple-choice quiz.`}
         </p>
       </header>
 

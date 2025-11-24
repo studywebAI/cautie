@@ -141,23 +141,31 @@ function FlashcardsPageContent() {
     // In a real app, this would save the flashcards and associate with the classId
     console.log("Creating flashcards for assignment in class:", classId, finalCards);
     toast({
-      title: "Flashcards Created for Assignment",
+      title: "Flashcards Created",
       description: `The new set is ready to be assigned.`,
     });
-    router.push(`/class/${classId}`);
+    if (classId) {
+        router.push(`/class/${classId}`);
+    } else {
+        router.push('/classes');
+    }
   };
 
   const handleRestart = () => {
     setGeneratedCards(null);
     setCurrentView('setup');
      if (isAssignmentContext) {
-        router.push(`/class/${classId}`);
+        if (classId) {
+            router.push(`/class/${classId}`);
+        } else {
+            router.push('/classes');
+        }
     }
   };
 
   const totalLoading = isLoading || isProcessingFile;
   const mainButtonIcon = isAssignmentContext ? <BookCheck className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />;
-  const mainButtonText = isAssignmentContext ? 'Create for Assignment' : 'Generate with AI';
+  const mainButtonText = isAssignment-context ? 'Create & Attach to Assignment' : 'Generate with AI';
 
   if (isLoading) {
      return (
@@ -186,9 +194,9 @@ function FlashcardsPageContent() {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">{isAssignmentContext ? 'Create New Flashcard Assignment' : 'AI Flashcards'}</h1>
+        <h1 className="text-3xl font-bold font-headline">{isAssignmentContext ? 'Create New Flashcard Set' : 'AI Flashcards'}</h1>
         <p className="text-muted-foreground">
-          {isAssignmentContext ? `Create a new set of flashcards to assign to your class.` : `Paste any text or upload a file to automatically generate a set of flashcards.`}
+          {isAssignmentContext ? `Create a new set of flashcards to attach to your assignment.` : `Paste any text or upload a file to automatically generate a set of flashcards.`}
         </p>
       </header>
 

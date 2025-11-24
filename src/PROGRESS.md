@@ -48,7 +48,7 @@ This file tracks the major features that have been implemented and outlines the 
     *   [x] Added a role switcher to toggle between Student and Teacher views.
     *   [x] **Create Class (UI & Frontend Logic)**: Implemented a multi-step, AI-assisted dialog for creating new classes.
     *   [x] **Class Details Foundation**: Created a details page for individual classes to display assignments and student lists.
-    *   [x] **Create Assignment (UI & Frontend Logic)**: Implemented dialog and client-side logic for creating assignments.
+    *   [x] **Create Assignment (UI & Frontend Logic)**: Implemented dialog and client-side logic for creating assignments, including attaching new/existing materials.
     *   [x] **Class Idea Agent**: Created an AI flow to help teachers brainstorm class names and descriptions.
 *   **Core Data System**:
     *   [x] **Local-First Storage**: Guest user data (classes, assignments) is stored in `localStorage`.
@@ -142,7 +142,7 @@ This is the master checklist for all remaining features, compiled from `README.m
 *   **10. Integration Features (Agenda, Dashboard, Classes)**
     *   [ ] **10.1 Quiz Deadlines**: Uit agenda overgenomen.
     *   [ ] **10.2 Quiz Reminders**: “Je hebt nog 2 quizzen openstaan”; “Toets Biologie over 3 dagen → oefen nu 10 vragen”.
-    *   [ ] **10.3 Class Assigned Quiz**: Docent zet quiz open voor klas → jij ziet hem in je Dashboard.
+    *   [x] **10.3 Class Assigned Quiz**: Docent zet quiz open voor klas → jij ziet hem in je Dashboard. (Frontend logic implemented)
     *   [ ] **10.4 Auto-Suggested Quizzes**: Op basis van: agenda; je prestaties; je zwakke onderwerpen.
 
 *   **11. Settings / Preferences (per quiz en globaal)**
@@ -200,7 +200,7 @@ This is the master checklist for all remaining features, compiled from `README.m
     *   [ ] **4.7 Voice Over**: Text → speech van kaarten.
 
 *   **5. CLASSROOM FEATURES**
-    *   [ ] **5.1 Teacher Assigns Deck**: Docent kan: deck verplichten; timer zetten; deadline; minimum percentage; meerdere sessies; hard mode / easy mode.
+    *   [x] **5.1 Teacher Assigns Deck**: Docent kan: deck verplichten; timer zetten; deadline; minimum percentage; meerdere sessies; hard mode / easy mode. (Frontend logic implemented)
     *   [ ] **5.2 Teacher Stats**: Voor elke student: studied minutes; cards reviewed; accuracy; weak topics; skipped cards.
     *   [ ] **5.3 Class Decks**: Docenten maken decks beschikbaar aan hele klas.
 
@@ -414,19 +414,3 @@ This is the master checklist for all remaining features, compiled from `README.m
 *   **160 — Multi-tenant Isolation & Data Partitioning**
     *   [ ] **1.60.1 Functionality**: Support many schools safely (per-tenant data partitioning, resource quotas, billing scoping).
     *   [ ] **1.60.2 Implementation**: RLS row-level filters, stats per tenant, tenant-specific feature flags.
-
-```xml
-*   **1.59.1 Functionality**: Centralize all notifications with silent hours, per-channel preferences, snooze.
-```
-
-*   **1.60.1 Functionality**: Centralize all notifications with silent hours, per-channel preferences, snooze.
-
-*   **1.61.1 Functionality**: Nightly DB backups, point-in-time restore, replication, test DR runbook.
-    [ ] **1.62.1 Functionality**:
-*   **1.63.1 Functionality**:
-*   **1.64.1 Functionality**:
-
-*   **1.65.1 Functionality**:
-*   [ ] **1.66.1 Functionality**: Centralized Configuration Management"
-
-    

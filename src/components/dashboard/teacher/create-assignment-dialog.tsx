@@ -94,6 +94,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
   };
 
   const navigateToTool = (tool: 'quiz' | 'flashcards') => {
+    setIsOpen(false);
     const params = new URLSearchParams({
       context: 'assignment',
       classId: classId,
