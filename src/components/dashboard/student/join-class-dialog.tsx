@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -15,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ScanLine, Loader2, Link } from 'lucide-react';
+import { ScanLine, Loader2, Link as LinkIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type JoinClassDialogProps = {
@@ -126,7 +127,7 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
     }
 
     setIsJoining(true);
-    const success = await onClassJoined(classCode);
+    const success = await onClassJoined(classCode.trim());
     setIsJoining(false);
 
     if (success) {
@@ -210,7 +211,7 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined }: JoinClassD
             <Button variant="outline" onClick={resetAndClose}>Cancel</Button>
             <Button onClick={handleJoin} disabled={isJoining || !classCode}>
               {isJoining && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Link className="mr-2 h-4 w-4" />
+              <LinkIcon className="mr-2 h-4 w-4" />
               Join Class
             </Button>
         </DialogFooter>

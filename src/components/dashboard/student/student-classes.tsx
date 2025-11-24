@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useContext } from 'react';
@@ -12,10 +13,19 @@ import { useToast } from '@/hooks/use-toast';
 
 export function StudentClasses() {
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
-  const { classes, isLoading, refetchClasses, role } = useContext(AppContext) as AppContextType;
+  const { classes, isLoading, refetchClasses, session } = useContext(AppContext) as AppContextType;
   const { toast } = useToast();
 
   const handleClassJoined = async (classCode: string): Promise<boolean> => {
+    if (!session) {
+        toast({
+            variant: 'destructive',
+            title: 'You must be logged in',
+            description: 'Please log in or create an account to join a class.',
+        });
+        return false;
+    }
+    
     try {
       const response = await fetch('/api/classes/join', {
         method: 'POST',
@@ -41,8 +51,7 @@ export function StudentClasses() {
     }
   };
   
-  // Only show classes the user is a member of, not ones they own
-  const enrolledClasses = classes.filter(c => c.owner_id !== (AppContext as any).session?.user?.id);
+  const enrolledClasses = classes.filter(c => c.owner_id !== session?.user?.id);
 
   if (isLoading || !classes) {
       return (
