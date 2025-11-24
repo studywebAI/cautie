@@ -17,6 +17,8 @@ import { AiSuggestions } from "@/components/dashboard/ai-suggestions";
 import { QuickAccess } from "@/components/dashboard/quick-access";
 import { ProgressChart } from "@/components/dashboard/stats/progress-chart";
 import { SessionRecap } from "@/components/dashboard/stats/session-recap";
+import { differenceInDays, parseISO, isFuture } from 'date-fns';
+
 
 function StudentDashboard() {
   const { isLoading, session, studentDashboardData, sessionRecap } = useContext(AppContext) as AppContextType;
@@ -72,15 +74,21 @@ function StudentDashboard() {
 }
 
 function TeacherSummaryDashboard() {
-    const { classes, assignments, isLoading } = useContext(AppContext) as AppContextType;
+    const { classes, assignments, students, isLoading } = useContext(AppContext) as AppContextType;
 
     if (isLoading || !classes) {
         return <DashboardSkeleton />;
     }
     
-    // Mock data for now, will be replaced with real aggregations from Supabase
-    const totalStudents = classes.length * 20;
-    const lowProgressAlerts = classes.length > 0 ? 3 : 0;
+    const totalStudents = students.length; // Now using real student count from context
+    
+    const activeAssignments = assignments.filter(a => {
+        if (!a.due_date) return false;
+        const dueDate = parseISO(a.due_date);
+        return isFuture(dueDate);
+    }).length;
+    
+    const lowProgressAlerts = 0; // Placeholder until progress is tracked
 
     return (
         <div className="flex flex-col gap-8">
@@ -117,8 +125,8 @@ function TeacherSummaryDashboard() {
                          <FileText className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{assignments.length}</div>
-                        <p className="text-xs text-muted-foreground">due this week</p>
+                        <div className="text-2xl font-bold">{activeAssignments}</div>
+                        <p className="text-xs text-muted-foreground">upcoming assignments</p>
                     </CardContent>
                 </Card>
                   <Card>
@@ -149,9 +157,14 @@ function TeacherSummaryDashboard() {
                     </div>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {classes.slice(0, 2).map(classInfo => (
-                        <ClassCard key={classInfo.id} classInfo={classInfo} />
-                    ))}
+                    {classes.slice(0, 2).map(classInfo => {
+                        const classAssignments = assignments.filter(a => a.class_id === classInfo.id);
+                        // This is still a simplification for the dashboard view, 
+                        // but uses the fetched data. A more robust implementation
+                        // would fetch students per class.
+                        const classStudents = students; 
+                        return <ClassCard key={classInfo.id} classInfo={classInfo} assignments={classAssignments} students={classStudents} />;
+                    })}
                      {classes.length === 0 && (
                         <p className="text-muted-foreground col-span-2 text-center p-8">You haven't created any classes yet. <Link href="/classes" className="text-primary hover:underline">Create one now</Link> to get started.</p>
                     )}
@@ -255,5 +268,3 @@ export default function DashboardPage() {
       role === 'student' ? <StudentDashboard /> : <TeacherSummaryDashboard />
   );
 }
-
-    

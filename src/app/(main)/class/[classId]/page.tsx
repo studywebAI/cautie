@@ -2,7 +2,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState, useMemo } from 'react';
 import { AppContext, AppContextType, ClassInfo } from '@/contexts/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AssignmentList } from '@/components/dashboard/teacher/assignment-list';
@@ -17,8 +17,9 @@ export default function ClassDetailsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
 
-  const classInfo: ClassInfo | undefined = classes.find(c => c.id === classId);
-  const classAssignments = assignments.filter(a => a.class_id === classId);
+  const classInfo: ClassInfo | undefined = useMemo(() => classes.find(c => c.id === classId), [classes, classId]);
+  const classAssignments = useMemo(() => assignments.filter(a => a.class_id === classId), [assignments, classId]);
+
 
   useEffect(() => {
     if (!classId || classId.startsWith('local-')) {
@@ -45,10 +46,12 @@ export default function ClassDetailsPage() {
       }
     };
 
-    fetchStudents();
+    if(classId) {
+        fetchStudents();
+    }
   }, [classId]);
 
-  const isLoading = isAppLoading || isStudentsLoading;
+  const isLoading = isAppLoading || (isStudentsLoading && classId && !classId.startsWith('local-'));
 
   if (isLoading && !classInfo) {
     return (
@@ -90,7 +93,7 @@ export default function ClassDetailsPage() {
           <AssignmentList assignments={classAssignments} classId={classId} />
         </div>
         <div className="lg:col-span-1">
-          <StudentList students={students} isLoading={isStudentsLoading} />
+          <StudentList students={students} isLoading={isLoading} />
         </div>
       </div>
     </div>

@@ -6,19 +6,31 @@ import { Progress } from '@/components/ui/progress';
 import { Users, BookCheck, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
-import type { ClassInfo } from '@/contexts/app-context';
+import type { ClassInfo, ClassAssignment } from '@/contexts/app-context';
+import type { Student } from '@/lib/teacher-types';
+import { differenceInDays, parseISO, isFuture } from 'date-fns';
 
 type ClassCardProps = {
   classInfo: ClassInfo;
+  assignments: ClassAssignment[];
+  students: Student[];
 };
 
-export function ClassCard({ classInfo }: ClassCardProps) {
+export function ClassCard({ classInfo, assignments, students }: ClassCardProps) {
+  const studentCount = students.length;
 
-  // The following will be replaced by real data from related tables
-  const studentCount = Math.floor(Math.random() * 15) + 10; // Mock student count
-  const assignmentsDue = Math.floor(Math.random() * 3); // Mock assignments due
-  const averageProgress = Math.floor(Math.random() * 50) + 50; // Mock progress
-  const alerts = assignmentsDue > 1 ? ['Multiple assignments are due soon.'] : [];
+  const assignmentsDue = assignments.filter(a => {
+    if (!a.due_date) return false;
+    const dueDate = parseISO(a.due_date);
+    return isFuture(dueDate) && differenceInDays(dueDate, new Date()) <= 7;
+  }).length;
+  
+  const averageProgress = 0; // Placeholder until progress tracking is implemented
+  
+  const alerts: string[] = [];
+  if (assignmentsDue > 0) {
+    alerts.push(`${assignmentsDue} assignment${assignmentsDue > 1 ? 's are' : ' is'} due this week.`);
+  }
 
   return (
     <Link href={`/class/${classInfo.id}`} className="group">
@@ -28,7 +40,7 @@ export function ClassCard({ classInfo }: ClassCardProps) {
           <div className="flex items-center text-sm text-muted-foreground pt-1 gap-4">
             <div className="flex items-center gap-1.5">
               <Users className="h-4 w-4" />
-              <span>{studentCount} Students</span>
+              <span>{studentCount} Student{studentCount !== 1 ? 's' : ''}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <BookCheck className="h-4 w-4" />

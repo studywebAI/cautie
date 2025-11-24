@@ -6,17 +6,13 @@ import type { SessionRecapData, Task, Alert, Deadline, Subject, AiSuggestion, Qu
 import type { Tables } from '@/lib/supabase/database.types';
 import type { Session } from '@supabase/supabase-js';
 import { generateDashboardData } from '@/ai/flows/generate-dashboard-data';
+import type { Student } from '@/lib/teacher-types';
 
 
 export type UserRole = 'student' | 'teacher';
 export type ClassInfo = Tables<'classes'>;
 export type ClassAssignment = Tables<'assignments'>;
-export type Student = {
-    id: string;
-    name: string;
-    avatarUrl?: string;
-    overallProgress: number;
-};
+
 
 type StudentDashboardData = {
     tasks: Task[];
@@ -185,10 +181,25 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
               setClasses(classesData || []);
               setAssignments(assignmentsData || []);
               setStudentDashboardData(dashboardRes);
+              
+              // Fetch all students for all classes owned by the teacher
+              const ownedClassIds = (classesData || []).filter((c: ClassInfo) => c.owner_id === session.user.id).map((c: ClassInfo) => c.id);
+              if (ownedClassIds.length > 0) {
+                // This is a simplified fetch; ideally, we'd fetch students per class on demand.
+                // For now, fetching all students for the dashboard works.
+                 const studentPromises = ownedClassIds.map((id: string) => fetch(`/api/classes/${id}/members`).then(res => res.json()));
+                 const studentsPerClass = await Promise.all(studentPromises);
+                 const allStudents = studentsPerClass.flat();
+                 // Remove duplicates
+                 const uniqueStudents = Array.from(new Set(allStudents.map(s => s.id))).map(id => allStudents.find(s => s.id === id));
+                 setStudents(uniqueStudents);
+              }
+
           } catch (error) {
               console.error("Failed to fetch Supabase data:", error);
               setClasses([]);
               setAssignments([]);
+              setStudents([]);
               setStudentDashboardData(null);
           }
       } else {
