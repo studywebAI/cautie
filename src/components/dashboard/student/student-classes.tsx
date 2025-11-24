@@ -5,33 +5,21 @@ import { useState, useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import { JoinClassDialog } from './join-class-dialog';
 import { PlusCircle } from 'lucide-react';
-import type { ClassInfo } from '@/lib/teacher-types';
+import type { ClassInfo } from '@/contexts/app-context';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { ClassCard } from '../teacher/class-card';
 
 
 // Mock data for classes a student can join. In a real app, this would come from a database.
-const joinableClasses: Record<string, Omit<ClassInfo, 'id'>> = {
+const joinableClasses: Record<string, Omit<ClassInfo, 'id' | 'owner_id' | 'created_at' | 'description' >> = {
   'HIST-101': {
     name: 'History 101: The Ancient World',
-    studentCount: 25,
-    averageProgress: 78,
-    assignmentsDue: 2,
-    alerts: [],
   },
   'SCI-202': {
     name: 'Biology: The Human Body',
-    studentCount: 22,
-    averageProgress: 85,
-    assignmentsDue: 1,
-    alerts: ["Quiz on the circulatory system is next week."],
   },
   'ART-300': {
     name: 'Introduction to Modern Art',
-    studentCount: 18,
-    averageProgress: 92,
-    assignmentsDue: 0,
-    alerts: [],
   },
 };
 
@@ -48,7 +36,10 @@ export function StudentClasses() {
     if (classToJoinData && !enrolledClasses.some(c => c.name === classToJoinData.name)) {
        const newClass: ClassInfo = {
             id: classCode.toUpperCase(),
-            ...classToJoinData,
+            name: classToJoinData.name,
+            description: 'A mock class description',
+            owner_id: 'mock-owner',
+            created_at: new Date().toISOString(),
        }
       setEnrolledClasses(prev => [...prev, newClass]);
     } else {
