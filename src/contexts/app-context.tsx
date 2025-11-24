@@ -232,10 +232,9 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
         // Guest user: save to localStorage
         const newAssignment: ClassAssignment = {
             id: `local-assign-${Date.now()}`,
-            title: newAssignmentData.title,
-            due_date: newAssignmentData.due_date,
-            class_id: newAssignmentData.class_id,
             created_at: new Date().toISOString(),
+            content: null,
+            ...newAssignmentData
         };
         const updatedAssignments = [...assignments, newAssignment];
         setAssignments(updatedAssignments);

@@ -1,19 +1,11 @@
 
 'use client';
 
-import { TodayPlan } from "@/components/dashboard/today-plan";
-import { Alerts } from "@/components/dashboard/alerts";
 import { UpcomingDeadlines } from "@/components/dashboard/upcoming-deadlines";
-import { AiSuggestions } from "@/components/dashboard/ai-suggestions";
-import { MySubjects } from "@/components/dashboard/my-subjects";
 import { useContext } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AppContext, AppContextType } from "@/contexts/app-context";
-import { QuickAccess } from "@/components/dashboard/quick-access";
-import { ProgressChart } from "@/components/dashboard/stats/progress-chart";
-import { SessionRecap } from "@/components/dashboard/stats/session-recap";
-import { useDictionary } from "@/contexts/dictionary-context";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, School, Users, FileText, Activity } from "lucide-react";
@@ -209,10 +201,29 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
-  const { role, isLoading } = useContext(AppContext) as AppContextType;
+  const { role, isLoading, session } = useContext(AppContext) as AppContextType;
 
-  if(isLoading) {
+  if (isLoading && session) {
     return <DashboardSkeleton />;
+  }
+
+  // A different view for guest users
+  if (!session) {
+    return (
+        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
+            <div className="flex flex-col items-center gap-2">
+                <h3 className="text-2xl font-bold tracking-tight">
+                Welcome to StudyWeb
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                Log in to see your personalized dashboard or start using the AI tools.
+                </p>
+                <Button asChild className="mt-4">
+                    <Link href="/login">Log In / Sign Up</Link>
+                </Button>
+            </div>
+        </div>
+    )
   }
 
   return (

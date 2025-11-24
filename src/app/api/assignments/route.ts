@@ -7,7 +7,7 @@ import type { Database } from '@/lib/supabase/database.types'
 
 export const dynamic = 'force-dynamic'
 
-// GET all assignments for the classes owned by the logged-in user
+// GET all assignments for the classes owned by the logged-in user OR assignments for classes they are a member of
 export async function GET(request: Request) {
   const cookieStore = cookies();
   const supabase = createServerClient<Database>({ cookies: () => cookieStore });
@@ -17,17 +17,29 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 1. Get the IDs of the classes owned by the user
-  const { data: ownedClasses, error: classesError } = await supabase
+  // 1. Get the IDs of all classes the user is a member of (student) or owns (teacher)
+  const { data: ownedClasses, error: ownedError } = await supabase
     .from('classes')
     .select('id')
     .eq('owner_id', session.user.id);
   
-  if (classesError) {
-    return NextResponse.json({ error: classesError.message }, { status: 500 });
+  if (ownedError) {
+    return NextResponse.json({ error: ownedError.message }, { status: 500 });
   }
 
-  const classIds = ownedClasses.map(c => c.id);
+  const { data: memberClasses, error: memberError } = await supabase
+    .from('class_members')
+    .select('class_id')
+    .eq('user_id', session.user.id);
+  
+  if (memberError) {
+    return NextResponse.json({ error: memberError.message }, { status: 500 });
+  }
+  
+  const ownedClassIds = ownedClasses.map(c => c.id);
+  const memberClassIds = memberClasses.map(c => c.class_id);
+  const classIds = [...new Set([...ownedClassIds, ...memberClassIds])];
+
 
   if (classIds.length === 0) {
     return NextResponse.json([]);

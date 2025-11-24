@@ -58,10 +58,10 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
   const { createAssignment } = useContext(AppContext) as AppContextType;
 
   const handleCreateAssignment = async () => {
-    if (!title || !dueDate || !materialId) {
+    if (!title || !dueDate) {
       toast({
         title: 'Missing Information',
-        description: 'Please fill out all required fields.',
+        description: 'Please fill out at least the title and due date.',
         variant: 'destructive',
       });
       return;
