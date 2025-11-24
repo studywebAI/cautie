@@ -246,5 +246,3 @@ export default function DashboardPage() {
       role === 'student' ? <StudentDashboard /> : <TeacherSummaryDashboard />
   );
 }
-
-    
