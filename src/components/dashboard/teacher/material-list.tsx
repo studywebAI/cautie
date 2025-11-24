@@ -45,7 +45,6 @@ function CreateNoteDialog({ isOpen, setIsOpen, classId }: CreateNoteDialogProps)
   const [sourceText, setSourceText] = useState('');
   const [title, setTitle] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isAiLoading, setIsAiLoading] = useState(false);
   const { refetchMaterials } = useContext(AppContext) as AppContextType;
   const { toast } = useToast();
 

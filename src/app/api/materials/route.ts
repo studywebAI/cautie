@@ -31,12 +31,18 @@ export async function GET(request: Request) {
     .select('owner_id')
     .eq('id', classId)
     .single();
-
+  
   if (classError || !classData) {
-    return NextResponse.json({ error: 'Class not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Class not found' }, { status: 404 });
   }
 
-  if (classData.owner_id !== session.user.id) {
+  const { data: memberData, error: memberError } = await supabase
+    .from('class_members')
+    .select()
+    .eq('class_id', classId)
+    .eq('user_id', session.user.id);
+    
+  if (classData.owner_id !== session.user.id && (!memberData || memberData.length === 0)) {
      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
