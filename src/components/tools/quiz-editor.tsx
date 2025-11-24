@@ -14,7 +14,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
 import type { Quiz, QuizQuestion, QuizOption } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '../ui/form';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
