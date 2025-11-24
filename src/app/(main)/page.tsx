@@ -13,8 +13,26 @@ import { ClassCard } from "@/components/dashboard/teacher/class-card";
 
 
 function StudentDashboard() {
-  // This dashboard will be re-implemented once student data is connected to Supabase.
-  // For now, it will show a placeholder.
+  const { isLoading, session } = useContext(AppContext) as AppContextType;
+
+  if (isLoading && !session) {
+     return (
+        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
+            <div className="flex flex-col items-center gap-2">
+                <h3 className="text-2xl font-bold tracking-tight">
+                Welcome to StudyWeb
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                Log in to save your progress and access your classes.
+                </p>
+                <Button asChild className="mt-4">
+                    <Link href="/login">Log In / Sign Up</Link>
+                </Button>
+            </div>
+        </div>
+    )
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8">
@@ -207,26 +225,9 @@ export default function DashboardPage() {
     return <DashboardSkeleton />;
   }
 
-  // A different view for guest users
-  if (!session) {
-    return (
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
-            <div className="flex flex-col items-center gap-2">
-                <h3 className="text-2xl font-bold tracking-tight">
-                Welcome to StudyWeb
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                Log in to see your personalized dashboard or start using the AI tools.
-                </p>
-                <Button asChild className="mt-4">
-                    <Link href="/login">Log In / Sign Up</Link>
-                </Button>
-            </div>
-        </div>
-    )
-  }
-
   return (
       role === 'student' ? <StudentDashboard /> : <TeacherSummaryDashboard />
   );
 }
+
+    
