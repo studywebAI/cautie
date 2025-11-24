@@ -21,7 +21,7 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Security check: Ensure the requesting user is the owner of the class
+  // Security check: Ensure the requesting user is the owner of the class or a member
   const { data: classData, error: classError } = await supabase
     .from('classes')
     .select('owner_id')
@@ -32,17 +32,22 @@ export async function GET(
     return NextResponse.json({ error: 'Class not found' }, { status: 404 });
   }
 
-  if (classData.owner_id !== session.user.id) {
-    // Also allow members of the class to see other members
-     const { data: memberData, error: memberError } = await supabase
+  let isMemberOrOwner = classData.owner_id === session.user.id;
+
+  if (!isMemberOrOwner) {
+    const { data: memberData, error: memberError } = await supabase
         .from('class_members')
         .select()
         .eq('class_id', classId)
         .eq('user_id', session.user.id)
         .single();
-    if (memberError || !memberData) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (!memberError && memberData) {
+        isMemberOrOwner = true;
     }
+  }
+
+  if (!isMemberOrOwner) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   // Fetch all user IDs from the class_members table for the given class
@@ -67,17 +72,23 @@ export async function GET(
     .select('id, full_name, avatar_url')
     .in('id', userIds);
     
-   const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
+   // Fetch user emails from auth.users (requires admin client)
+   const supabaseAdmin = createServerClient<Database>(
+     process.env.NEXT_PUBLIC_SUPABASE_URL!,
+     process.env.SUPABASE_SERVICE_ROLE_KEY!,
+     { cookies: () => cookieStore }
+   );
+   const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
     
    if (profilesError || usersError) {
      return NextResponse.json({ error: profilesError?.message || usersError?.message }, { status: 500 });
    }
 
   // Combine profile data with email from auth.users
-  const students = users.users
+  const students = usersData.users
     .filter(user => userIds.includes(user.id))
     .map(user => {
-        const profile = profiles.find(p => p.id === user.id);
+        const profile = profiles?.find(p => p.id === user.id);
         return {
             id: user.id,
             name: profile?.full_name,

@@ -51,7 +51,6 @@ export function AssignmentList({ assignments, classId }: AssignmentListProps) {
             <TableBody>
               {assignments.map((assignment) => {
                   const submissionRate = 0; // Placeholder until submissions are tracked
-                  const totalStudents = 20; // Placeholder
                   return (
                       <TableRow key={assignment.id}>
                           <TableCell className="font-medium">{assignment.title}</TableCell>
