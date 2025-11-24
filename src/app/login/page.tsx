@@ -69,8 +69,7 @@ export default async function LoginPage({ searchParams }: { searchParams: { mess
   }
 
   return (
-     <div className="flex min-h-screen w-full items-center justify-center bg-muted/30 p-4">
-        <div className="flex flex-col items-center gap-4 text-center mb-12">
+        <div className="flex flex-col items-center gap-4 text-center">
             <div className="flex items-center gap-2.5 mb-4">
               <div className="p-2 rounded-lg bg-primary text-primary-foreground">
                 <Wrench className="h-7 w-7" />
@@ -146,6 +145,5 @@ export default async function LoginPage({ searchParams }: { searchParams: { mess
             </TabsContent>
           </Tabs>
         </div>
-     </div>
   )
 }
