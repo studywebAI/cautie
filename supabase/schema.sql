@@ -1,144 +1,148 @@
 --
--- comprehensive schema for studyweb
+-- Universal App-Wide Schema for StudyWeb
+-- This script is idempotent and can be run multiple times.
 --
 
--- 1. drop existing objects to ensure a clean slate
-drop policy if exists "allow delete on own profile" on public.profiles;
-drop policy if exists "allow update on own profile" on public.profiles;
-drop policy if exists "allow read for authenticated users" on public.profiles;
-drop policy if exists "allow insert for authenticated users" on public.profiles;
-drop policy if exists "allow delete for owners" on public.assignments;
-drop policy if exists "allow update for owners" on public.assignments;
-drop policy if exists "allow insert for class owners" on public.assignments;
-drop policy if exists "allow read for class members" on public.assignments;
-drop policy if exists "allow delete for owners" on public.class_members;
-drop policy if exists "allow insert for authenticated users" on public.class_members;
-drop policy if exists "allow read for class members" on public.class_members;
-drop policy if exists "allow delete for owners" on public.classes;
-drop policy if exists "allow update for owners" on public.classes;
-drop policy if exists "allow insert for authenticated users" on public.classes;
-drop policy if exists "allow read for class members" on public.classes;
+-- 1. Drop existing objects in reverse order of dependency
+-- Drop policies first
+DROP POLICY IF EXISTS "Allow authenticated select access" ON "public"."assignments";
+DROP POLICY IF EXISTS "Allow owner full access" ON "public"."assignments";
+DROP POLICY IF EXISTS "Allow authenticated select access" ON "public"."class_members";
+DROP POLICY IF EXISTS "Allow class owner to manage members" ON "public"."class_members";
+DROP POLICY IF EXISTS "Allow member to leave class" ON "public"."class_members";
+DROP POLICY IF EXISTS "Allow member to view class info" ON "public"."classes";
+DROP POLICY IF EXISTS "Allow owner full access" ON "public"."classes";
+DROP POLICY IF EXISTS "Allow individual read access" ON "public"."profiles";
+DROP POLICY IF EXISTS "Allow individual update access" ON "public"."profiles";
+-- Drop trigger
+DROP TRIGGER IF EXISTS "on_auth_user_created" ON "auth"."users";
+-- Drop tables
+DROP TABLE IF EXISTS "public"."class_members";
+DROP TABLE IF EXISTS "public"."assignments";
+DROP TABLE IF EXISTS "public"."classes";
+DROP TABLE IF EXISTS "public"."profiles";
+-- Drop function
+DROP FUNCTION IF EXISTS "public"."handle_new_user";
 
-drop table if exists public.assignments;
-drop table if exists public.class_members;
-drop table if exists public.classes;
-drop table if exists public.profiles;
 
-drop function if exists public.create_user_profile;
+-- 2. Create Tables in the correct order
+-- Create profiles table first
+CREATE TABLE public.profiles (
+    id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    full_name text,
+    avatar_url text,
+    role text,
+    updated_at timestamptz
+);
+-- Comment on table and columns
+COMMENT ON TABLE public.profiles IS 'Profile data for each user.';
+COMMENT ON COLUMN public.profiles.id IS 'References the internal user id from auth.users';
 
--- 2. create tables
+-- Create classes table
+CREATE TABLE public.classes (
+    id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    name text NOT NULL,
+    description text,
+    owner_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+-- Comment on table and columns
+COMMENT ON TABLE public.classes IS 'Represents a class or course.';
+COMMENT ON COLUMN public.classes.owner_id IS 'The user who owns and manages the class.';
 
--- profiles table
-create table
-  public.profiles (
-    id uuid not null primary key references auth.users (id) on delete cascade,
-    updated_at timestamp with time zone null,
-    full_name text null,
-    avatar_url text null,
-    role text null default 'student'::text
+-- Create assignments table
+CREATE TABLE public.assignments (
+    id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    class_id uuid NOT NULL REFERENCES public.classes(id) ON DELETE CASCADE,
+    title text NOT NULL,
+    content json,
+    due_date timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+-- Comment on table and columns
+COMMENT ON TABLE public.assignments IS 'Assignments given in a class.';
+COMMENT ON COLUMN public.assignments.class_id IS 'The class this assignment belongs to.';
+
+-- Create class_members table
+CREATE TABLE public.class_members (
+    class_id uuid NOT NULL REFERENCES public.classes(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    role text NOT NULL DEFAULT 'student',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (class_id, user_id)
+);
+-- Comment on table and columns
+COMMENT ON TABLE public.class_members IS 'Tracks which users are members of which classes.';
+
+-- 3. Create Functions and Triggers
+-- Function to create a profile for a new user
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, avatar_url, role)
+  VALUES (
+    NEW.id,
+    NEW.raw_user_meta_data ->> 'full_name',
+    NEW.raw_user_meta_data ->> 'avatar_url',
+    'student' -- Default role
   );
-
--- classes table
-create table
-  public.classes (
-    id uuid not null default gen_random_uuid () primary key,
-    created_at timestamp with time zone not null default now(),
-    name text not null,
-    description text null,
-    owner_id uuid not null references auth.users (id) on delete cascade
-  );
-
--- class_members table
-create table
-  public.class_members (
-    class_id uuid not null references public.classes (id) on delete cascade,
-    user_id uuid not null references auth.users (id) on delete cascade,
-    created_at timestamp with time zone not null default now(),
-    role text not null default 'student'::text,
-    primary key (class_id, user_id)
-  );
-
--- assignments table
-create table
-  public.assignments (
-    id uuid not null default gen_random_uuid () primary key,
-    class_id uuid not null references public.classes (id) on delete cascade,
-    created_at timestamp with time zone not null default now(),
-    title text not null,
-    due_date timestamp with time zone null,
-    content jsonb null
-  );
-
--- 3. create function to handle new user profile creation
-create function public.create_user_profile()
-returns trigger
-language plpgsql
-security definer set search_path = public
-as $$
-begin
-  insert into public.profiles (id, full_name, avatar_url, role)
-  values (
-    new.id,
-    new.raw_user_meta_data->>'full_name',
-    new.raw_user_meta_data->>'avatar_url',
-    'student'
-  );
-  return new;
-end;
+  RETURN NEW;
+END;
 $$;
+-- Trigger to call the function when a new user signs up
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- 4. create trigger to call the function on new user signup
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.create_user_profile();
 
+-- 4. Set up Row Level Security (RLS)
+-- Enable RLS for all tables
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.class_members ENABLE ROW LEVEL SECURITY;
 
--- 5. enable row level security (rls)
-alter table public.profiles enable row level security;
-alter table public.classes enable row level security;
-alter table public.class_members enable row level security;
-alter table public.assignments enable row level security;
+-- Policies for profiles
+CREATE POLICY "Allow individual read access" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Allow individual update access" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
--- 6. create rls policies
-
--- profiles policies
-create policy "allow read for authenticated users" on public.profiles for select using (auth.uid() is not null);
-create policy "allow insert for authenticated users" on public.profiles for insert with check (auth.uid() = id);
-create policy "allow update on own profile" on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id);
-create policy "allow delete on own profile" on public.profiles for delete using (auth.uid() = id);
-
--- classes policies
-create policy "allow read for class members" on public.classes for select using (
-  id in (select class_id from public.class_members where user_id = auth.uid())
-  or owner_id = auth.uid()
-);
-create policy "allow insert for authenticated users" on public.classes for insert with check (auth.uid() = owner_id);
-create policy "allow update for owners" on public.classes for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
-create policy "allow delete for owners" on public.classes for delete using (auth.uid() = owner_id);
-
--- class_members policies
-create policy "allow read for class members" on public.class_members for select using (
-  class_id in (select class_id from public.class_members where user_id = auth.uid())
-);
-create policy "allow insert for authenticated users" on public.class_members for insert with check (auth.uid() is not null);
-create policy "allow delete for owners" on public.class_members for delete using (
-  class_id in (select id from public.classes where owner_id = auth.uid())
-  or user_id = auth.uid() -- users can leave classes
+-- Policies for classes
+CREATE POLICY "Allow owner full access" ON public.classes FOR ALL USING (auth.uid() = owner_id);
+CREATE POLICY "Allow member to view class info" ON public.classes FOR SELECT USING (
+  EXISTS (
+    SELECT 1
+    FROM public.class_members
+    WHERE class_members.class_id = classes.id AND class_members.user_id = auth.uid()
+  )
 );
 
--- assignments policies
-create policy "allow read for class members" on public.assignments for select using (
-  class_id in (select class_id from public.class_members where user_id = auth.uid())
-  or class_id in (select id from public.classes where owner_id = auth.uid())
+-- Policies for class_members
+CREATE POLICY "Allow class owner to manage members" ON public.class_members FOR ALL USING (
+  EXISTS (
+    SELECT 1
+    FROM public.classes
+    WHERE classes.id = class_members.class_id AND classes.owner_id = auth.uid()
+  )
 );
-create policy "allow insert for class owners" on public.assignments for insert with check (
-  class_id in (select id from public.classes where owner_id = auth.uid())
+CREATE POLICY "Allow authenticated select access" ON public.class_members FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow member to leave class" ON public.class_members FOR DELETE USING (auth.uid() = user_id);
+
+
+-- Policies for assignments
+CREATE POLICY "Allow owner full access" ON public.assignments FOR ALL USING (
+    EXISTS (
+        SELECT 1
+        FROM public.classes
+        WHERE classes.id = assignments.class_id AND classes.owner_id = auth.uid()
+    )
 );
-create policy "allow update for owners" on public.assignments for update using (
-  class_id in (select id from public.classes where owner_id = auth.uid())
-) with check (
-  class_id in (select id from public.classes where owner_id = auth.uid())
-);
-create policy "allow delete for owners" on public.assignments for delete using (
-  class_id in (select id from public.classes where owner_id = auth.uid())
+CREATE POLICY "Allow authenticated select access" ON public.assignments FOR SELECT USING (
+    EXISTS (
+        SELECT 1
+        FROM public.class_members
+        WHERE class_members.class_id = assignments.class_id AND class_members.user_id = auth.uid()
+    )
 );
