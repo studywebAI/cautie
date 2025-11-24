@@ -15,6 +15,7 @@ This file tracks the major features that have been implemented and outlines the 
     *   [x] **Adaptive Mode**: AI adjusts question difficulty based on performance, with on-the-fly question generation.
     *   [x] **Speedrun Mode**: Timed mode with a "three strikes" system and a final score based on speed and accuracy.
     *   [x] **Survival Mode**: Incorrect answers add more questions to the queue.
+    *   [x] **1.9 Duel Mode**: Implemented a mock 1v1 duel against an AI opponent.
 *   **1.22 & 1.26 – Teacher & AI Features**:
     *   [x] **Teacher Dashboard Foundation**: Implemented the basic UI for the teacher dashboard, showing an overview of classes.
     *   [x] **1.26.4 – Teacher Helper Agent (Data Generation)**: Created an AI flow to generate realistic data for the teacher dashboard.
@@ -33,6 +34,7 @@ This file tracks the major features that have been implemented and outlines the 
     *   [x] **Type Mode (Active Recall)**: User must type the answer.
     *   [x] **Multiple Choice Mode**: AI generates MCQs from flashcards.
     *   [x] **AI Flashcard Generation**: Generate flashcards from text.
+    *   [x] **Flashcard Editor**: Added a review/edit screen to modify AI-generated cards before studying.
 
 ### ✅ **TAB 3 — DASHBOARD & CORE PLATFORM**
 
@@ -48,6 +50,13 @@ This file tracks the major features that have been implemented and outlines the 
     *   [x] **Class Details Foundation**: Created a details page for individual classes to display assignments and student lists.
     *   [x] **Create Assignment (UI & Frontend Logic)**: Implemented dialog and client-side logic for creating assignments.
     *   [x] **Class Idea Agent**: Created an AI flow to help teachers brainstorm class names and descriptions.
+*   **Core Data System**:
+    *   [x] **Local-First Storage**: Guest user data (classes, assignments) is stored in `localStorage`.
+    *   [x] **Supabase Integration**: Full login/signup flow with Supabase.
+    *   [x] **Automatic Sync**: Local data is automatically synced to Supabase when a user logs in.
+    *   [x] **Live Data Fetching**: Logged-in users fetch their classes and assignments directly from Supabase.
+*   **Student Classroom Features**:
+    *   [x] **Join a Class**: Students can join classes using a manual code or by scanning a QR code.
 
 ---
 
@@ -66,7 +75,6 @@ This is the master checklist for all remaining features, compiled from `README.m
     *   [ ] **1.6 Mastery Mode**: Je moet elke categorie 100% “groen” krijgen. Elke fout zet die categorie terug naar 0%.
     *   [ ] **1.7 Hyperfocus Mode**: kies 1 subonderwerp → 20 vragen alleen daarover; AI maakt automatisch subonderwerpen.
     *   [ ] **1.8 Exam Simulation**: hele proefwerken nabootsen met: tijdslimiet (bijv 50 min); geen terugknop; docent kan echte examens importeren.
-    *   [ ] **1.9 Duel Mode**: 1v1 tegen iemand anders; wie sneller goed heeft → punt; realtime socket-based.
     *   [ ] **1.10 Team Battle**: teams → binnen een klas; elke vraag geeft team-score; leaderboard per dag/week.
 
 *   **2. Quiz Creation UI (voor gebruikers & docenten)**
@@ -157,7 +165,7 @@ This is the master checklist for all remaining features, compiled from `README.m
 *   **1. CORE FLASHCARD SYSTEM**
     *   [ ] **1.1 Decks**: titel; beschrijving; kleur; icon; tags (AI genereert automatisch tags); vak; niveau; eigenaar; gedeeld met klas of privé.
     *   [ ] **1.2 Cards**: voorkant; achterkant; voorbeeldzin; afbeelding; multiple choice opties (optioneel); context blok (optioneel); AI gegenereerde extra uitleg (hidden tot klik).
-    *   [ ] **1.3 Card formats**: basic reversed; cloze deletion (AI genereert automatisch blanks); image occlusion; audio prompt; audio answer; comparison card (“vergelijk X vs Y”); label image (“wijs het juiste deel aan”).
+    *   [x] **1.3 Card formats**: basic reversed; cloze deletion (AI genereert automatisch blanks); image occlusion; audio prompt; audio answer; comparison card (“vergelijk X vs Y”); label image (“wijs het juiste deel aan”). (Cloze is implemented via Type Mode).
     *   [ ] **1.4 Views**: list view; grid view; preview mode (zoals Quizlet); compact mode; high focus mode (fullscreen, minimal UI).
 
 *   **2. AI FLASHCARD GENERATION**
@@ -251,7 +259,7 @@ This is the master checklist for all remaining features, compiled from `README.m
     *   [ ] **1.21.3 Actions**: Study Now, Open, Export, Share, AI Summary.
 
 *   **1.22 — AI Notes (Automatische Notities)**
-    *   [ ] **1.22.1 Functionality**: AI maakt notities van tekst, foto's, PDF, YouTube, slides.
+    *   [ ] **122.1 Functionality**: AI maakt notities van tekst, foto's, PDF, YouTube, slides.
     *   [ ] **1.22.2 Options**: "Exam style", "Simple language", "Long & detailed", "Bullet points", "Vocabulary Glossary", "Flashcards genereren".
     *   [ ] **1.22.3 Storage**: Opslaan in user_id → notes → note_id.
 
@@ -352,7 +360,7 @@ This is the master checklist for all remaining features, compiled from `README.m
 
 *   **1.47 — Content Moderation & Trust Signals**
     *   [ ] **1.47.1 Functionality**: Moderation voor profanity, plagiarism, PII; reputation score for UGC.
-    *   [ ] **1.47.2 Implementation**: AI moderation + heuristics, moderation queue UI.
+    *   [ ] **1.47.2 Implementation**: AI-moderatie + heuristieken, moderatie wachtrij UI.
 
 *   **1.48 — Adaptive Pricing & Billing Engine**
     *   [ ] **1.48.1 Functionality**: SaaS billing (per-seat, tiered features, usage-based, coupons).
@@ -372,7 +380,7 @@ This is the master checklist for all remaining features, compiled from `README.m
     *   [ ] **1.51.3 Implementation**: Notification queue (Redis), push via FCM/APNs, mail via Postmark/SendGrid.
 
 *   **1.52 — Enterprise SSO & Directory Sync**
-    *   [ ] **1.52.1 Functionality**: LDAP / SAML / SCIM provisioning; auto-provision classes from SIS.
+    *   [ ] **152.1 Functionality**: LDAP / SAML / SCIM provisioning; auto-provision classes from SIS.
     *   [ ] **1.52.2 Implementation**: SCIM endpoints, scheduled sync jobs.
 
 *   **1.53 — Intelligent Onboarding Flow**
@@ -395,7 +403,7 @@ This is the master checklist for all remaining features, compiled from `README.m
     *   [ ] **1.57.1 Functionality**: Nightly DB backups, point-in-time restore, replication, test DR runbook.
     *   [ ] **1.57.2 Implementation**: Automate with infra tools, documented playbooks.
 
-*   **1.58 — Reusable Component Library (Design System)**
+*   **158 — Reusable Component Library (Design System)**
     *   [ ] **1.58.1 Functionality**: Single source of truth components (Buttons, Inputs, etc.) met docs & Storybook.
     *   [ ] **1.58.2 Implementation**: Monorepo package, storybook + accessibility checks.
 
@@ -406,3 +414,19 @@ This is the master checklist for all remaining features, compiled from `README.m
 *   **160 — Multi-tenant Isolation & Data Partitioning**
     *   [ ] **1.60.1 Functionality**: Support many schools safely (per-tenant data partitioning, resource quotas, billing scoping).
     *   [ ] **1.60.2 Implementation**: RLS row-level filters, stats per tenant, tenant-specific feature flags.
+
+```xml
+*   **1.59.1 Functionality**: Centralize all notifications with silent hours, per-channel preferences, snooze.
+```
+
+*   **1.60.1 Functionality**: Centralize all notifications with silent hours, per-channel preferences, snooze.
+
+*   **1.61.1 Functionality**: Nightly DB backups, point-in-time restore, replication, test DR runbook.
+    [ ] **1.62.1 Functionality**:
+*   **1.63.1 Functionality**:
+*   **1.64.1 Functionality**:
+
+*   **1.65.1 Functionality**:
+*   [ ] **1.66.1 Functionality**: Centralized Configuration Management"
+
+    

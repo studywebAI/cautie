@@ -103,12 +103,13 @@ export type Flashcard = z.infer<typeof FlashcardSchema>;
 
 
 // Types for MCQ from flashcard
-const McqOptionSchema = z.object({
+export const McqOptionSchema = z.object({
   id: z.string().describe('Unique identifier for the option (e.g., "a", "b", "c").'),
   text: z.string().describe('The text of the answer option.'),
 });
 
 export const McqQuestionSchema = z.object({
+  id: z.string().describe('Unique identifier for the question.'),
   question: z.string().describe('The text of the question, derived from the flashcard front.'),
   options: z.array(McqOptionSchema).describe('An array of 3 to 4 possible answer options.'),
   correctOptionId: z.string().describe('The ID of the correct answer option.'),

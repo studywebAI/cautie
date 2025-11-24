@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { type Flashcard } from '@/ai/flows/generate-flashcards';
+import { type Flashcard } from '@/lib/types';
 import { explainAnswer } from '@/ai/flows/explain-answer';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronsLeftRight, ArrowLeft, ArrowRight, RefreshCw, Lightbulb, Loader2 } from 'lucide-react';
