@@ -5,7 +5,6 @@ import { createContext, useState, useEffect, ReactNode, useCallback } from 'reac
 import type { SessionRecapData, Task, Alert, Deadline, Subject, AiSuggestion, QuickAccessItem, ProgressData } from '@/lib/types';
 import type { Tables } from '@/lib/supabase/database.types';
 import type { Session } from '@supabase/supabase-js';
-import { generateDashboardData } from '@/ai/flows/generate-dashboard-data';
 import type { Student } from '@/lib/teacher-types';
 
 
@@ -168,10 +167,9 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
       if (session) {
           // User is logged in
           try {
-              const [classesRes, assignmentsRes, dashboardRes] = await Promise.all([
+              const [classesRes, assignmentsRes] = await Promise.all([
                   fetch('/api/classes'),
                   fetch('/api/assignments'),
-                  generateDashboardData({ studentName: session.user.email || 'Student', subjects: ["History", "Math", "Science", "Dutch"] })
               ]);
               if (!classesRes.ok || !assignmentsRes.ok) {
                 throw new Error('Failed to fetch data from API');
@@ -180,19 +178,16 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
               const assignmentsData = await assignmentsRes.json();
               setClasses(classesData || []);
               setAssignments(assignmentsData || []);
-              setStudentDashboardData(dashboardRes);
               
               // Fetch all students for all classes owned by the teacher
               const ownedClassIds = (classesData || []).filter((c: ClassInfo) => c.owner_id === session.user.id).map((c: ClassInfo) => c.id);
               if (ownedClassIds.length > 0) {
-                // This is a simplified fetch; ideally, we'd fetch students per class on demand.
-                // For now, fetching all students for the dashboard works.
                  const studentPromises = ownedClassIds.map((id: string) => fetch(`/api/classes/${id}/members`).then(res => res.json()));
                  const studentsPerClass = await Promise.all(studentPromises);
                  const allStudents = studentsPerClass.flat();
                  // Remove duplicates
                  const uniqueStudents = Array.from(new Set(allStudents.map(s => s.id))).map(id => allStudents.find(s => s.id === id));
-                 setStudents(uniqueStudents);
+                 setStudents(uniqueStudents || []);
               }
 
           } catch (error) {
@@ -200,22 +195,18 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
               setClasses([]);
               setAssignments([]);
               setStudents([]);
-              setStudentDashboardData(null);
           }
       } else {
-          // User is a guest, fetch from localStorage and generate some AI data
+          // User is a guest, fetch from localStorage
            try {
-                const [localClasses, localAssignments, dashboardRes] = await Promise.all([
+                const [localClasses, localAssignments] = await Promise.all([
                     Promise.resolve(getFromLocalStorage<ClassInfo[]>('studyweb-local-classes', [])),
                     Promise.resolve(getFromLocalStorage<ClassAssignment[]>('studyweb-local-assignments', [])),
-                    generateDashboardData({ studentName: 'Guest', subjects: ["History", "Math", "Science", "Dutch"] })
                 ]);
                 setClasses(localClasses);
                 setAssignments(localAssignments);
-                setStudentDashboardData(dashboardRes);
             } catch (error) {
                 console.error("Failed to fetch guest data:", error);
-                setStudentDashboardData(null);
             }
       }
       setIsLoading(false);
@@ -379,7 +370,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     setReducedMotion,
     sessionRecap,
     setSessionRecap,
-    studentDashboardData,
+    studentDashboardData: null, // This is now obsolete
     classes,
     createClass,
     refetchClasses,

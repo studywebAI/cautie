@@ -5,23 +5,19 @@ import { UpcomingDeadlines } from "@/components/dashboard/upcoming-deadlines";
 import { useContext } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AppContext, AppContextType } from "@/contexts/app-context";
+import { AppContext, AppContextType, ClassInfo } from "@/contexts/app-context";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, School, Users, FileText, Activity } from "lucide-react";
 import { ClassCard } from "@/components/dashboard/teacher/class-card";
-import { TodayPlan } from "@/components/dashboard/today-plan";
 import { Alerts } from "@/components/dashboard/alerts";
 import { MySubjects } from "@/components/dashboard/my-subjects";
-import { AiSuggestions } from "@/components/dashboard/ai-suggestions";
-import { QuickAccess } from "@/components/dashboard/quick-access";
-import { ProgressChart } from "@/components/dashboard/stats/progress-chart";
-import { SessionRecap } from "@/components/dashboard/stats/session-recap";
-import { differenceInDays, parseISO, isFuture } from 'date-fns';
+import { parseISO, isFuture, differenceInDays } from 'date-fns';
+import type { Alert, Subject } from '@/lib/types';
 
 
 function StudentDashboard() {
-  const { isLoading, session, studentDashboardData, sessionRecap } = useContext(AppContext) as AppContextType;
+  const { isLoading, session, assignments, classes } = useContext(AppContext) as AppContextType;
 
   if (isLoading && !session) {
      return (
@@ -41,33 +37,51 @@ function StudentDashboard() {
     )
   }
 
-  if (isLoading || !studentDashboardData) {
+  if (isLoading || !assignments || !classes) {
     return <DashboardSkeleton />;
   }
+  
+  const enrolledClasses = classes.filter(c => c.owner_id !== session?.user?.id);
 
-  const { tasks, alerts, deadlines, subjects, aiSuggestions, quickAccessItems, progressData } = studentDashboardData;
+  const subjects: Subject[] = enrolledClasses.map(c => ({
+    id: c.id,
+    name: c.name,
+    progress: 0 // Placeholder until progress is tracked
+  }));
+
+  const alerts: Alert[] = assignments
+    .filter(a => {
+        if (!a.due_date) return false;
+        const dueDate = parseISO(a.due_date);
+        const daysUntilDue = differenceInDays(dueDate, new Date());
+        return isFuture(dueDate) && daysUntilDue <= 3;
+    })
+    .map(a => ({
+        id: `alert-${a.id}`,
+        title: `Deadline Approaching: ${a.title}`,
+        description: `Your assignment for ${classes.find(c => c.id === a.class_id)?.name} is due soon.`,
+        variant: 'warning',
+        icon: 'AlertTriangle'
+    }));
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8">
-            <TodayPlan tasks={tasks} />
-            <MySubjects subjects={subjects} />
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Statistics</CardTitle>
-                    <CardDescription>Your study activity and latest results.</CardDescription>
+                    <CardTitle className="font-headline">Welcome to your Dashboard</CardTitle>
+                    <CardDescription>Here's what's happening. Navigate to the Agenda to manage your tasks or start studying in your classes.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   <ProgressChart progressData={progressData} />
-                   <SessionRecap sessionRecap={sessionRecap} />
+                <CardContent>
+                    <p className="text-muted-foreground">Your study plan for today will appear here once you've set up your tasks in the Agenda.</p>
                 </CardContent>
             </Card>
+            <MySubjects subjects={subjects} />
         </div>
         <div className="lg:col-span-1 flex flex-col gap-6 md:gap-8">
             <Alerts alerts={alerts} />
             <UpcomingDeadlines />
-            <AiSuggestions aiSuggestions={aiSuggestions} />
-            <QuickAccess quickAccessItems={quickAccessItems} />
         </div>
     </div>
   );
@@ -80,7 +94,7 @@ function TeacherSummaryDashboard() {
         return <DashboardSkeleton />;
     }
     
-    const totalStudents = students.length; // Now using real student count from context
+    const totalStudents = students.length;
     
     const activeAssignments = assignments.filter(a => {
         if (!a.due_date) return false;
@@ -159,10 +173,11 @@ function TeacherSummaryDashboard() {
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {classes.slice(0, 2).map(classInfo => {
                         const classAssignments = assignments.filter(a => a.class_id === classInfo.id);
-                        // This is still a simplification for the dashboard view, 
-                        // but uses the fetched data. A more robust implementation
-                        // would fetch students per class.
-                        const classStudents = students; 
+                        const classStudents = students.filter(s => {
+                            // This is a placeholder logic. Real implementation needs class membership data.
+                            // For now, we assume all students are in all classes for the preview.
+                            return true; 
+                        });
                         return <ClassCard key={classInfo.id} classInfo={classInfo} assignments={classAssignments} students={classStudents} />;
                     })}
                      {classes.length === 0 && (
@@ -185,7 +200,7 @@ function DashboardSkeleton() {
                         <Skeleton className="h-4 w-1/2" />
                     </CardHeader>
                     <CardContent>
-                        <Skeleton className="h-48 w-full" />
+                        <Skeleton className="h-24 w-full" />
                     </CardContent>
                 </Card>
                  <Card>
@@ -193,28 +208,8 @@ function DashboardSkeleton() {
                         <Skeleton className="h-8 w-1/2" />
                         <Skeleton className="h-4 w-1/3" />
                     </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-32 w-full" />
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                         <Skeleton className="h-8 w-1/2" />
-                        <Skeleton className="h-4 w-1/3" />
-                    </CardHeader>
-                    <CardContent>
-                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-40" />)}
-                        </div>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                         <Skeleton className="h-8 w-1/2" />
-                        <Skeleton className="h-4 w-1/3" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-64 w-full" />
+                     <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-40" />)}
                     </CardContent>
                 </Card>
             </div>
@@ -238,18 +233,6 @@ function DashboardSkeleton() {
                         <Skeleton className="h-12 w-full" />
                         <Skeleton className="h-12 w-full" />
                         <Skeleton className="h-12 w-full" />
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <Skeleton className="h-8 w-1/2" />
-                        <Skeleton className="h-4 w-1/3" />
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-4">
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                         <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
                     </CardContent>
                 </Card>
             </div>

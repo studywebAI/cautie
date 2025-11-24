@@ -38,7 +38,7 @@ export function Alerts({ alerts }: AlertsProps) {
         <CardDescription>{dictionary.dashboard.alerts.description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {alerts.map((alert) => {
+        {alerts.length > 0 ? alerts.map((alert) => {
             const Icon = iconMap[alert.icon] || AlertTriangle;
             return (
               <AlertUI key={alert.id} className={cn(variantClasses[alert.variant])}>
@@ -47,7 +47,9 @@ export function Alerts({ alerts }: AlertsProps) {
                 <AlertDescription>{alert.description}</AlertDescription>
               </AlertUI>
             );
-        })}
+        }) : (
+          <p className="text-sm text-muted-foreground text-center py-4">No important alerts right now.</p>
+        )}
       </CardContent>
     </Card>
   );
