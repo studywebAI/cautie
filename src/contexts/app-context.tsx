@@ -49,7 +49,7 @@ export type AppContextType = {
   createClass: (newClass: { name: string; description: string | null }) => Promise<void>;
   refetchClasses: () => Promise<void>;
   assignments: ClassAssignment[];
-  createAssignment: (newAssignment: { title: string; due_date: string; class_id: string }) => Promise<void>;
+  createAssignment: (newAssignment: Omit<ClassAssignment, 'id' | 'created_at' | 'content'>) => Promise<void>;
   refetchAssignments: () => Promise<void>;
   students: Student[];
 };
@@ -240,8 +240,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
         body: JSON.stringify(newClassData),
       });
       if (!response.ok) throw new Error('Failed to create class in Supabase');
-      const savedClass = await response.json();
-      setClasses(prev => [...prev, savedClass]);
+      await refetchClasses();
     } else {
       // Guest user: save to localStorage
       const newClass: ClassInfo = {
@@ -257,7 +256,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     }
   };
 
-  const createAssignment = async (newAssignmentData: { title: string; due_date: string; class_id: string }) => {
+  const createAssignment = async (newAssignmentData: Omit<ClassAssignment, 'id' | 'created_at' | 'content'>) => {
      if (session) {
         // Logged-in user: save to Supabase
         const response = await fetch('/api/assignments', {
@@ -266,8 +265,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
             body: JSON.stringify(newAssignmentData),
         });
         if (!response.ok) throw new Error('Failed to create assignment in Supabase');
-        const savedAssignment = await response.json();
-        setAssignments(prev => [...prev, savedAssignment]);
+        await refetchAssignments();
     } else {
         // Guest user: save to localStorage
         const newAssignment: ClassAssignment = {
@@ -282,17 +280,25 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     }
   };
   
-  const refetchClasses = async () => {
+  const refetchClasses = useCallback(async () => {
     if (session) {
         const res = await fetch('/api/classes');
-        const data = await res.json();
-        setClasses(data || []);
+        if (res.ok) {
+            const data = await res.json();
+            setClasses(data || []);
+        }
     }
-  }
+  }, [session]);
 
-  const refetchAssignments = async () => {
-     await fetchData();
-  }
+  const refetchAssignments = useCallback(async () => {
+     if (session) {
+        const res = await fetch('/api/assignments');
+        if (res.ok) {
+            const data = await res.json();
+            setAssignments(data || []);
+        }
+    }
+  }, [session]);
 
   // ---- Settings and Preferences ----
   useEffect(() => {

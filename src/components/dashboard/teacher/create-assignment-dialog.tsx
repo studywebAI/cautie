@@ -129,7 +129,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="material">Select Material</Label>
+            <Label htmlFor="material">Attach Material</Label>
             <p className="text-sm text-muted-foreground">Choose from your existing materials or create something new.</p>
             <Select value={materialId} onValueChange={setMaterialId}>
               <SelectTrigger>

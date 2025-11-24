@@ -4,11 +4,7 @@ This is a focused checklist for the next set of features, prioritizing the core 
 
 ## **PHASE 1: AGENDA & CLASS FOUNDATION**
 
-*   [x] **2.2 Kalender UI: Kleurcodes voor item types**
-*   [x] **3.1 Student kan eigen taken toevoegen**
-*   [x] **4.1 Docent kan huiswerk en toetsen inplannen**: Formulier voor Titel, Deadline, Koppelen aan klas & materiaal.
 *   [ ] **3.5 Student kan agenda’s importeren**: Google Calendar, Apple Calendar, Microsoft Outlook.
-*   [ ] **5.1 Docent maakt taak in Classes → automatisch in Agenda**: Realtime sync naar studenten.
 *   [ ] **7. Agenda Filter System**
     *   [ ] Filters voor 'Mijn taken', 'Docent taken', 'Deadlines', 'Toetsen'.
 

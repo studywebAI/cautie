@@ -13,7 +13,8 @@ export async function GET(request: Request) {
   
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // For guests, return an empty array. The client will use local storage.
+    return NextResponse.json([]);
   }
   
   // Get classes the user owns
@@ -48,11 +49,11 @@ export async function GET(request: Request) {
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    memberClasses = data;
+    memberClasses = data || [];
   }
   
   const allClasses = [...ownedClasses, ...memberClasses];
-  // Remove duplicates in case a teacher is also a member of their own class
+  // Remove duplicates in case a user is somehow a member of their own class
   const uniqueClasses = Array.from(new Set(allClasses.map(c => c.id)))
     .map(id => allClasses.find(c => c.id === id));
 

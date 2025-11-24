@@ -24,6 +24,7 @@ export async function GET(request: Request) {
     .eq('owner_id', session.user.id);
   
   if (ownedError) {
+    console.error('Error fetching owned classes:', ownedError);
     return NextResponse.json({ error: ownedError.message }, { status: 500 });
   }
 
@@ -33,6 +34,7 @@ export async function GET(request: Request) {
     .eq('user_id', session.user.id);
   
   if (memberError) {
+    console.error('Error fetching member classes:', memberError);
     return NextResponse.json({ error: memberError.message }, { status: 500 });
   }
   
@@ -52,6 +54,7 @@ export async function GET(request: Request) {
     .in('class_id', classIds);
 
   if (error) {
+    console.error('Error fetching assignments for classes:', classIds, error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
