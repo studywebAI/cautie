@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useContext, useMemo } from 'react';
-import { format, parseISO, isToday } from 'date-fns';
-import { AppContext, AppContextType } from '@/contexts/app-context';
+import { format, parseISO } from 'date-fns';
+import { AppContext, AppContextType, PersonalTask } from '@/contexts/app-context';
 import { useDictionary } from '@/contexts/dictionary-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { CreateTaskDialog } from '@/components/agenda/create-task-dialog';
 import { TodayPanel } from '@/components/agenda/today-panel';
 import { PlusCircle } from 'lucide-react';
-import type { PersonalTask } from '@/lib/types';
+import type { AiSuggestion } from '@/lib/types';
 
 
 export type CalendarEvent = {
@@ -24,10 +24,9 @@ export type CalendarEvent = {
 };
 
 export default function AgendaPage() {
-  const { assignments, classes, isLoading, role, studentDashboardData } = useContext(AppContext) as AppContextType;
+  const { assignments, classes, isLoading, role, personalTasks, createPersonalTask } = useContext(AppContext) as AppContextType;
   const { dictionary } = useDictionary();
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
-  const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([]);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   
   const isStudent = role === 'student';
@@ -52,7 +51,7 @@ export default function AgendaPage() {
         id: t.id,
         title: t.title,
         subject: t.subject || 'Personal',
-        date: t.date,
+        date: parseISO(t.date),
         type: 'personal' as const
     }));
     
@@ -76,11 +75,10 @@ export default function AgendaPage() {
   
   const eventDays = Array.from(eventsByDate.keys()).map(dateString => parseISO(dateString));
   
-  const todaySuggestion = studentDashboardData?.aiSuggestions ? studentDashboardData.aiSuggestions[0] : null;
+  const todaySuggestion: AiSuggestion | null = null; // Placeholder for AI suggestions
 
-  const handleTaskCreated = (newTask: Omit<PersonalTask, 'id'>) => {
-    const taskWithId = { ...newTask, id: `personal-${Date.now()}` };
-    setPersonalTasks(prev => [...prev, taskWithId]);
+  const handleTaskCreated = (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => {
+    createPersonalTask(newTask);
   };
   
   if (isLoading && isStudent) {

@@ -11,6 +11,7 @@ import type { Student } from '@/lib/teacher-types';
 export type UserRole = 'student' | 'teacher';
 export type ClassInfo = Tables<'classes'>;
 export type ClassAssignment = Tables<'assignments'>;
+export type PersonalTask = Tables<'personal_tasks'>;
 
 
 type StudentDashboardData = {
@@ -39,7 +40,6 @@ export type AppContextType = {
   setReducedMotion: (enabled: boolean) => void;
   sessionRecap: SessionRecapData | null;
   setSessionRecap: (data: SessionRecapData | null) => void;
-  studentDashboardData: StudentDashboardData | null;
   classes: ClassInfo[];
   createClass: (newClass: { name: string; description: string | null }) => Promise<void>;
   refetchClasses: () => Promise<void>;
@@ -47,6 +47,8 @@ export type AppContextType = {
   createAssignment: (newAssignment: Omit<ClassAssignment, 'id' | 'created_at' | 'content'>) => Promise<void>;
   refetchAssignments: () => Promise<void>;
   students: Student[];
+  personalTasks: PersonalTask[];
+  createPersonalTask: (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => Promise<void>;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -95,11 +97,11 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
   const [reducedMotion, setReducedMotionState] = useState(false);
 
   const [sessionRecap, setSessionRecap] = useState<SessionRecapData | null>(null);
-  const [studentDashboardData, setStudentDashboardData] = useState<StudentDashboardData | null>(null);
 
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([]);
   
   // Track previous session state to detect login
   const [prevSession, setPrevSession] = useState<Session | null>(session);
@@ -108,8 +110,10 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     console.log("Starting data sync to Supabase...");
     const localClasses = getFromLocalStorage<ClassInfo[]>('studyweb-local-classes', []);
     const localAssignments = getFromLocalStorage<ClassAssignment[]>('studyweb-local-assignments', []);
+    const localPersonalTasks = getFromLocalStorage<PersonalTask[]>('studyweb-local-personal-tasks', []);
 
-    if (localClasses.length === 0 && localAssignments.length === 0) {
+
+    if (localClasses.length === 0 && localAssignments.length === 0 && localPersonalTasks.length === 0) {
       console.log("No local data to sync.");
       return; // Nothing to sync
     }
@@ -152,9 +156,27 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
       }));
       console.log("Synced assignments.");
 
+      // Sync personal tasks
+      await Promise.all(localPersonalTasks.map(async (task) => {
+        const response = await fetch('/api/personal-tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: task.title,
+            description: task.description,
+            date: task.date,
+            subject: task.subject,
+          }),
+        });
+        if (!response.ok) throw new Error(`Failed to sync personal task: ${task.title}`);
+      }));
+      console.log("Synced personal tasks.");
+
+
       // Clear local storage after successful sync
       saveToLocalStorage('studyweb-local-classes', []);
       saveToLocalStorage('studyweb-local-assignments', []);
+      saveToLocalStorage('studyweb-local-personal-tasks', []);
       console.log("Local storage cleared.");
     } catch (error) {
       console.error("Data synchronization failed:", error);
@@ -167,17 +189,20 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
       if (session) {
           // User is logged in
           try {
-              const [classesRes, assignmentsRes] = await Promise.all([
+              const [classesRes, assignmentsRes, personalTasksRes] = await Promise.all([
                   fetch('/api/classes'),
                   fetch('/api/assignments'),
+                  fetch('/api/personal-tasks'),
               ]);
-              if (!classesRes.ok || !assignmentsRes.ok) {
+              if (!classesRes.ok || !assignmentsRes.ok || !personalTasksRes.ok) {
                 throw new Error('Failed to fetch data from API');
               }
               const classesData = await classesRes.json();
               const assignmentsData = await assignmentsRes.json();
+              const personalTasksData = await personalTasksRes.json();
               setClasses(classesData || []);
               setAssignments(assignmentsData || []);
+              setPersonalTasks(personalTasksData || []);
               
               // Fetch all students for all classes owned by the teacher
               const ownedClassIds = (classesData || []).filter((c: ClassInfo) => c.owner_id === session.user.id).map((c: ClassInfo) => c.id);
@@ -194,17 +219,20 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
               console.error("Failed to fetch Supabase data:", error);
               setClasses([]);
               setAssignments([]);
+              setPersonalTasks([]);
               setStudents([]);
           }
       } else {
           // User is a guest, fetch from localStorage
            try {
-                const [localClasses, localAssignments] = await Promise.all([
+                const [localClasses, localAssignments, localPersonalTasks] = await Promise.all([
                     Promise.resolve(getFromLocalStorage<ClassInfo[]>('studyweb-local-classes', [])),
                     Promise.resolve(getFromLocalStorage<ClassAssignment[]>('studyweb-local-assignments', [])),
+                    Promise.resolve(getFromLocalStorage<PersonalTask[]>('studyweb-local-personal-tasks', [])),
                 ]);
                 setClasses(localClasses);
                 setAssignments(localAssignments);
+                setPersonalTasks(localPersonalTasks);
             } catch (error) {
                 console.error("Failed to fetch guest data:", error);
             }
@@ -280,6 +308,29 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
         setAssignments(updatedAssignments);
         saveToLocalStorage('studyweb-local-assignments', updatedAssignments);
     }
+  };
+
+   const createPersonalTask = async (newTaskData: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => {
+     if (session) {
+        const response = await fetch('/api/personal-tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newTaskData),
+        });
+        if (!response.ok) throw new Error('Failed to create personal task in Supabase');
+        const newTask = await response.json();
+        setPersonalTasks(prev => [...prev, newTask]);
+     } else {
+        const newTask: PersonalTask = {
+            id: `local-task-${Date.now()}`,
+            created_at: new Date().toISOString(),
+            user_id: 'local-user',
+            ...newTaskData
+        };
+        const updatedTasks = [...personalTasks, newTask];
+        setPersonalTasks(updatedTasks);
+        saveToLocalStorage('studyweb-local-personal-tasks', updatedTasks);
+     }
   };
   
   const refetchClasses = useCallback(async () => {
@@ -370,7 +421,6 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     setReducedMotion,
     sessionRecap,
     setSessionRecap,
-    studentDashboardData: null, // This is now obsolete
     classes,
     createClass,
     refetchClasses,
@@ -378,6 +428,8 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     createAssignment,
     refetchAssignments,
     students,
+    personalTasks,
+    createPersonalTask,
   };
 
 

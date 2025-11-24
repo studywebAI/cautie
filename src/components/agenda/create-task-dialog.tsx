@@ -20,7 +20,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import type { PersonalTask } from '@/lib/types';
+import type { PersonalTask } from '@/contexts/app-context';
 import { Switch } from '../ui/switch';
 import { Separator } from '../ui/separator';
 import { generateStudyPlanFromTask } from '@/ai/flows/generate-study-plan-from-task';
@@ -29,7 +29,7 @@ import { generateStudyPlanFromTask } from '@/ai/flows/generate-study-plan-from-t
 type CreateTaskDialogProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onTaskCreated: (newTask: Omit<PersonalTask, 'id'>) => void;
+  onTaskCreated: (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => void;
   initialDate?: Date;
 };
 
@@ -66,14 +66,14 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
                 todayDate: format(new Date(), 'yyyy-MM-dd'),
             });
 
-            plan.subTasks.forEach(subTask => {
-                onTaskCreated({
+            for (const subTask of plan.subTasks) {
+                await onTaskCreated({
                     title: subTask.title,
                     description: `AI-generated step for "${title}"`,
-                    date: new Date(subTask.date), // Assumes date is in a parseable format
+                    date: subTask.date,
                     subject: subject,
                 });
-            });
+            }
 
             toast({
                 title: 'Study Plan Created!',
@@ -87,11 +87,11 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
                 description: 'Could not generate a study plan. The main task was added instead.',
             });
             // Fallback to creating the single main task
-            onTaskCreated({ title, description, date, subject });
+            await onTaskCreated({ title, description, date: format(date, 'yyyy-MM-dd'), subject });
         }
     } else {
       // Non-AI task creation
-      onTaskCreated({ title, description, date, subject });
+      await onTaskCreated({ title, description, date: format(date, 'yyyy-MM-dd'), subject });
       toast({
         title: 'Task Created',
         description: `"${title}" has been added to your agenda.`,
