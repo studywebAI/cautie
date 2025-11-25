@@ -89,11 +89,14 @@ function StudentDashboard() {
 }
 
 function TeacherSummaryDashboard() {
-    const { classes, assignments, students, isLoading } = useContext(AppContext) as AppContextType;
+    const { classes, assignments, students, isLoading, session } = useContext(AppContext) as AppContextType;
 
     if (isLoading || !classes) {
         return <DashboardSkeleton />;
     }
+    
+    // For teacher dashboard, we only care about classes they own.
+    const teacherClasses = classes.filter(c => c.owner_id === session?.user.id);
     
     const totalStudents = students.length;
     
@@ -120,7 +123,7 @@ function TeacherSummaryDashboard() {
                         <School className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{classes.length}</div>
+                        <div className="text-2xl font-bold">{teacherClasses.length}</div>
                         <p className="text-xs text-muted-foreground">classes managed</p>
                     </CardContent>
                 </Card>
@@ -172,10 +175,10 @@ function TeacherSummaryDashboard() {
                     </div>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {classes.slice(0, 2).map(classInfo => (
+                    {teacherClasses.slice(0, 2).map(classInfo => (
                          <ClassCard key={classInfo.id} classInfo={classInfo} />
                     ))}
-                     {classes.length === 0 && (
+                     {teacherClasses.length === 0 && (
                         <p className="text-muted-foreground col-span-2 text-center p-8">You haven't created any classes yet. <Link href="/classes" className="text-primary hover:underline">Create one now</Link> to get started.</p>
                     )}
                 </CardContent>
@@ -184,6 +187,7 @@ function TeacherSummaryDashboard() {
         </div>
     );
 }
+
 
 function DashboardSkeleton() {
     return (
@@ -240,6 +244,11 @@ export default function DashboardPage() {
 
   if (isLoading && session) {
     return <DashboardSkeleton />;
+  }
+
+  // When not logged in, always show the student/guest view.
+  if (!session) {
+    return <StudentDashboard />;
   }
 
   return (

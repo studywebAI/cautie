@@ -26,7 +26,6 @@ import {
   Calendar,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
-import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useDictionary } from '@/contexts/dictionary-context';
 
@@ -79,14 +78,14 @@ export function AppSidebar() {
           ))}
           <Collapsible defaultOpen={pathname.startsWith('/tools')}>
              <CollapsibleTrigger asChild>
-                <Link href="/tools" className={cn(
+                <div className={cn(
                   "flex items-center w-full justify-start gap-2 p-2 font-medium text-sm h-auto rounded-md transition-colors",
                   pathname.startsWith('/tools') ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 )}>
                     <Folder className="h-5 w-5" />
                     <span>{dictionary.sidebar.tools.title}</span>
                     <ChevronDown className={cn("h-4 w-4 ml-auto transition-transform", pathname.startsWith('/tools') && 'rotate-180')} />
-                </Link>
+                </div>
              </CollapsibleTrigger>
              <CollapsibleContent>
                 <div className="pl-7 pt-2 flex flex-col gap-1">
