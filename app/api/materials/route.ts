@@ -105,8 +105,8 @@ export async function POST(request: Request) {
       const graph = await generateKnowledgeGraph({ sourceText: source_text_for_concepts });
       concepts = graph.concepts;
     } catch (aiError) {
-      console.warn("AI concept generation failed:", aiError);
-      // Continue without concepts if AI fails
+      console.error("AI concept generation failed:", aiError);
+      return NextResponse.json({ error: 'AI concept generation failed' }, { status: 500 });
     }
   }
 
