@@ -1,4 +1,3 @@
-
 'use client';
 
 import { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
@@ -80,7 +79,7 @@ const saveToLocalStorage = <T,>(key: string, value: T) => {
 };
 
 
-export const AppProvider = ({ children }: { children: ReactNode }) => {
+export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -457,7 +456,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 export const useDictionary = () => {
   const context = useContext(AppContext);
   if (!context) {
-    throw new Error('useDictionary must be used within a AppProvider');
+    throw new Error('useDictionary must be used within an AppContextProvider');
   }
   return { dictionary: context.dictionary };
 };
