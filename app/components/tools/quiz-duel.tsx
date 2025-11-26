@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { generateQuizDuelData, QuizDuelData } from '@/ai/flows/generate-quiz-duel-data';
+import { generateQuizDuelData, QuizDuelData } from '@lib/ai/flows/generate-quiz-duel-data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, RefreshCw, User, Check, X, Swords } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
