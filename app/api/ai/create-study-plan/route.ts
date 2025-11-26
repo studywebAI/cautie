@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { runFlow } from 'genkit';
-import { createStudyPlan } from '../../../../ai/flows/study-plan';
+import { createStudyPlan } from '@/lib/ai/flows/study-plan';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
