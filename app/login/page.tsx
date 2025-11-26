@@ -2,7 +2,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { headers, cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import {-START_CODE_CHANGE-}
 import { AuthForm } from './auth-form'
 
 export default function Login({
@@ -65,4 +64,3 @@ export default function Login({
     />
   )
 }
-{-END_CODE_CHANGE-}
