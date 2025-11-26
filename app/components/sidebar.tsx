@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useContext } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -27,25 +28,45 @@ import {
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { cn } from '@/lib/utils';
-import { useDictionary } from '@/contexts/app-context';
+import { AppContext, AppContextType } from '@/contexts/app-context';
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { dictionary } = useDictionary();
-  const isToolsPath = pathname.startsWith('/tools') || pathname === '/material';
+  const { dictionary, role, teacherView } = useContext(AppContext) as AppContextType;
 
-  const menuItems = [
+  // Determine the effective role for displaying the UI
+  const isTeacherView = role === 'teacher' && !teacherView;
+
+  // Define menu structures for different roles
+  const studentMenuItems = [
     { href: '/', label: dictionary.sidebar.dashboard, icon: Home },
     { href: '/subjects', label: dictionary.sidebar.subjects, icon: BookOpen },
     { href: '/classes', label: dictionary.sidebar.classes, icon: School },
     { href: '/agenda', label: dictionary.sidebar.agenda, icon: Calendar },
-    { href: '/material', label: dictionary.sidebar.tools.materialProcessor, icon: FileSignature },
+  ];
+
+  const teacherMenuItems = [
+    { href: '/', label: dictionary.sidebar.dashboard, icon: Home },
+    { href: '/classes', label: dictionary.sidebar.classes, icon: School },
+    { href: '/agenda', label: dictionary.sidebar.agenda, icon: Calendar },
   ];
 
   const toolsMenuItems = [
+    { href: '/material', label: dictionary.sidebar.tools.materialProcessor, icon: FileSignature },
     { href: '/tools/quiz', label: dictionary.sidebar.tools.quizGenerator, icon: BrainCircuit },
     { href: '/tools/flashcards', label: dictionary.sidebar.tools.flashcardMaker, icon: Copy },
-  ]
+  ];
+
+  const menuItems = isTeacherView ? teacherMenuItems : studentMenuItems;
+
+  // Check if the current path is within the tools section to keep the collapsible open
+  const isToolsPath = pathname.startsWith('/tools') || pathname.startsWith('/material');
+
+  // Helper to determine if a menu item is active
+  const isItemActive = (href: string) => {
+    if (href === '/') return pathname === '/';
+    return pathname.startsWith(href);
+  }
 
   return (
     <Sidebar>
@@ -65,7 +86,7 @@ export function AppSidebar() {
             <SidebarMenuItem key={item.label}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href && item.href === '/'}
+                isActive={isItemActive(item.href)}
                 tooltip={item.label}
                 className="font-medium"
               >
@@ -76,15 +97,15 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          <Collapsible defaultOpen={pathname.startsWith('/tools')}>
+          <Collapsible defaultOpen={isToolsPath}>
              <CollapsibleTrigger asChild>
                 <div className={cn(
                   "flex items-center w-full justify-start gap-2 p-2 font-medium text-sm h-auto rounded-md transition-colors",
-                  pathname.startsWith('/tools') ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                  isToolsPath ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 )}>
                     <Folder className="h-5 w-5" />
                     <span>{dictionary.sidebar.tools.title}</span>
-                    <ChevronDown className={cn("h-4 w-4 ml-auto transition-transform", pathname.startsWith('/tools') && 'rotate-180')} />
+                    <ChevronDown className={cn("h-4 w-4 ml-auto transition-transform", isToolsPath && 'rotate-180')} />
                 </div>
              </CollapsibleTrigger>
              <CollapsibleContent>
@@ -93,7 +114,7 @@ export function AppSidebar() {
                          <SidebarMenuButton
                             key={item.label}
                             asChild
-                            isActive={pathname === item.href}
+                            isActive={isItemActive(item.href)}
                             tooltip={item.label}
                             className="font-medium h-9"
                         >

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useContext, Suspense } from 'react';
@@ -5,11 +6,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UploadCloud, FileText, ImageIcon, Loader2, BrainCircuit, BookCopy } from 'lucide-react';
+import { UploadCloud, FileText, ImageIcon, Loader2, BrainCircuit, BookCopy, Sparkles } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { processMaterial, ProcessMaterialOutput } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
 import { AppContext, useDictionary } from '@/contexts/app-context';
+
 
 type FileType = 'text' | 'image' | 'file';
 
@@ -24,15 +26,22 @@ function MaterialPageContent() {
   const searchParams = useSearchParams();
   const sourceTextFromParams = searchParams.get('sourceText') || '';
 
+  const [title, setTitle] = useState('');
   const [inputText, setInputText] = useState(sourceTextFromParams);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileDataUri, setFileDataUri] = useState<string | null>(null);
   const [fileType, setFileType] = useState<FileType>('text');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const [result, setResult] = useState<ProcessMaterialOutput | null>(null);
   const { toast } = useToast();
   const appContext = useContext(AppContext);
   const { dictionary } = useDictionary();
+
+  if (!appContext) {
+      throw new Error("AppContext not available");
+  }
+  const { createMaterial } = appContext;
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -40,6 +49,7 @@ function MaterialPageContent() {
 
     setUploadedFile(file);
     setResult(null);
+    setTitle(''); // Reset title when file changes
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -62,15 +72,16 @@ function MaterialPageContent() {
     setIsLoading(true);
     setResult(null);
     try {
-      if (!appContext) {
-        throw new Error("AppContext not available");
-      }
       const response = await processMaterial({
         text: inputText || undefined,
         fileDataUri: fileDataUri || undefined,
         language: appContext.language,
       });
       setResult(response);
+      // Pre-fill title if it's empty
+      if (!title && response.analysis.title) {
+          setTitle(response.analysis.title);
+      }
     } catch (error) {
       console.error('Error processing material:', error);
       toast({
@@ -82,6 +93,52 @@ function MaterialPageContent() {
       setIsLoading(false);
     }
   };
+
+  const handleGenerateTitle = async () => {
+      if (!inputText) {
+          toast({ variant: 'destructive', title: 'No text provided', description: 'Please enter some text to generate a title.'});
+          return;
+      }
+      setIsGeneratingTitle(true);
+      try {
+          const response = await fetch('/api/ai/generate-title', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: inputText }),
+          });
+          if (!response.ok) throw new Error('Failed to generate title');
+          const data = await response.json();
+          setTitle(data.title);
+      } catch (error) {
+          console.error('Error generating title:', error);
+          toast({ variant: 'destructive', title: 'Title generation failed', description: 'The AI could not generate a title. Please try again.'});
+      } finally {
+          setIsGeneratingTitle(false);
+      }
+  }
+
+  const handleSaveMaterial = async () => {
+      if (!result || !title) {
+          toast({ variant: 'destructive', title: 'Cannot Save', description: 'A title and processed content are required to save.'});
+          return;
+      }
+      setIsLoading(true);
+      try {
+          await createMaterial({
+              title,
+              content: inputText,
+              summary: result.analysis.summary,
+              subject: result.analysis.topic, // Assuming topic can be used as subject
+          });
+          toast({ title: 'Material Saved', description: 'Your new material has been added to your library.'});
+          router.push('/subjects'); // Or wherever you want to redirect after saving
+      } catch (error) {
+          console.error('Error saving material:', error);
+          toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the material to the database.'});
+      } finally {
+          setIsLoading(false);
+      }
+  }
 
   const handleActionClick = (actionId: string, sourceText: string) => {
     if (!sourceText) return;
@@ -99,39 +156,53 @@ function MaterialPageContent() {
     }
   };
 
+  const hasContent = !!uploadedFile || !!inputText;
 
   return (
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="text-3xl font-bold font-headline">{dictionary.material.title}</h1>
-        <p className="text-muted-foreground">
-          {dictionary.material.description}
-        </p>
+        <p className="text-muted-foreground">{dictionary.material.description}</p>
       </header>
 
       <Card>
         <CardHeader>
           <CardTitle>{dictionary.material.importTitle}</CardTitle>
-          <CardDescription>
-            {dictionary.material.importDescription}
-          </CardDescription>
+          <CardDescription>{dictionary.material.importDescription}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+        <div className="grid gap-2">
+            <Label htmlFor="title">Material Title</Label>
+            <div className="flex gap-2">
+                <Input 
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g., 'Photosynthesis Explained'"
+                    disabled={!!result}
+                />
+                <Button onClick={handleGenerateTitle} variant="outline" disabled={!inputText || isGeneratingTitle || !!result}>
+                    {isGeneratingTitle ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    <span className="ml-2 hidden sm:inline">Generate</span>
+                </Button>
+            </div>
+        </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-4">
                <label htmlFor="file-upload" className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <UploadCloud className="w-10 h-10 mb-3 text-muted-foreground" />
                   <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">{dictionary.material.clickToUpload}</span> {dictionary.material.dragAndDrop}</p>
-                  <p className="text-xs text-muted-foreground">PDF, DOCX, TXT, PNG, JPG</p>
+                  <p className="text-xs text-muted-foreground">PDF, DOCX, TXT</p>
                 </div>
-                <Input id="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".pdf,.docx,.txt,.png,.jpg,.jpeg" />
+                <Input id="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".pdf,.docx,.txt" disabled={!!result} />
               </label>
               {uploadedFile && (
                 <div className="flex items-center gap-2 p-2 rounded-md bg-background border">
-                  {fileType === 'image' ? <ImageIcon className="h-5 w-5 text-primary" /> : <FileText className="h-5 w-5 text-primary" />}
+                  <FileText className="h-5 w-5 text-primary" />
                   <span className="text-sm font-medium truncate">{uploadedFile.name}</span>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={clearFile}>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={clearFile} disabled={!!result}>
                     <span className="sr-only">{dictionary.material.remove}</span>
                     &times;
                   </Button>
@@ -146,15 +217,22 @@ function MaterialPageContent() {
               onChange={(e) => {
                 setInputText(e.target.value);
                 setResult(null);
-                setFileType('text');
               }}
+              readOnly={!!result}
             />
           </div>
           <div className="flex justify-end">
-            <Button onClick={handleProcess} disabled={(!uploadedFile && !inputText) || isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isLoading ? dictionary.material.processing : dictionary.material.processWithAi}
-            </Button>
+             {result ? (
+                <Button onClick={handleSaveMaterial} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Save Material
+                </Button>
+            ) : (
+                <Button onClick={handleProcess} disabled={!hasContent || isLoading || !title}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isLoading ? dictionary.material.processing : dictionary.material.processWithAi}
+                </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -162,7 +240,7 @@ function MaterialPageContent() {
       {result && (
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">{result.analysis.title}</CardTitle>
+                <CardTitle className="font-headline">{title}</CardTitle>
                 <CardDescription>Topic: {result.analysis.topic}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
