@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { generateQuiz } from '@/ai/flows/generate-quiz';
-import { processMaterial } from '@/ai/flows/process-material';
+import { generateQuiz } from '@lib/ai/flows/generate-quiz';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon, Swords, BookCheck, Shield } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -95,38 +94,8 @@ function QuizPageContent() {
     setSourceText('');
     setGeneratedQuiz(null);
     setIsProcessingFile(true);
-
-    if (file.type.startsWith('image/')) {
-        setFileType('image');
-    } else {
-        setFileType('file');
-    }
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        const dataUri = e.target?.result as string;
-        try {
-            const response = await processMaterial({
-                fileDataUri: dataUri,
-                language: appContext.language,
-            });
-            setSourceText(response.analysis.sourceText);
-            toast({
-                title: 'File Processed',
-                description: 'The content has been extracted. You can now generate a quiz.',
-            });
-        } catch (error) {
-            console.error('Error processing file:', error);
-            toast({
-                variant: 'destructive',
-                title: 'File Processing Failed',
-                description: 'The AI could not extract content from the file. Please try a different file or paste the text manually.',
-            });
-        } finally {
-            setIsProcessingFile(false);
-        }
-    };
-    reader.readAsDataURL(file);
+    toast({ title: 'Functionality Disabled', description: 'File processing is temporarily disabled.' });
+    setIsProcessingFile(false);
   };
   
   const clearFile = () => {
