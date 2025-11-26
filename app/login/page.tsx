@@ -2,7 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { headers, cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { AuthForm } from './auth-form'
+import { AuthForm } from '@/components/auth-form'
 
 export default function Login({
   searchParams,
