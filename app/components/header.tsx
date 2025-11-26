@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useContext } from 'react';
@@ -39,17 +38,17 @@ export function AppHeader() {
       <div className="flex items-center gap-4">
         {session ? (
             <>
-                <div className="hidden sm:flex items-center justify-between p-2 rounded-md">
-                    <Label htmlFor="role-switcher-desktop" className="flex items-center gap-2 cursor-pointer pr-3">
+                <div className="flex items-center justify-between p-2 rounded-md">
+                    <Label htmlFor="role-switcher" className="flex items-center gap-2 cursor-pointer pr-3">
                       <User className={`h-5 w-5 transition-colors ${isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
                     </Label>
                     <Switch
-                        id="role-switcher-desktop"
+                        id="role-switcher"
                         checked={!isStudent}
                         onCheckedChange={(checked) => setRole(checked ? 'teacher' : 'student')}
                         aria-label="Toggle between student and teacher view"
                     />
-                    <Label htmlFor="role-switcher-desktop" className="flex items-center gap-2 cursor-pointer pl-3">
+                    <Label htmlFor="role-switcher" className="flex items-center gap-2 cursor-pointer pl-3">
                       <BookUser className={`h-5 w-5 transition-colors ${!isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
                     </Label>
                 </div>
@@ -70,24 +69,6 @@ export function AppHeader() {
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                         <div className="p-2 sm:hidden">
-                             <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
-                                <Label htmlFor="role-switcher-mobile" className="flex items-center gap-2 cursor-pointer">
-                                  <User className={`h-5 w-5 transition-colors ${isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
-                                  <span>Student</span>
-                                </Label>
-                                <Switch
-                                    id="role-switcher-mobile"
-                                    checked={!isStudent}
-                                    onCheckedChange={(checked) => setRole(checked ? 'teacher' : 'student')}
-                                />
-                                <Label htmlFor="role-switcher-mobile" className="flex items-center gap-2 cursor-pointer">
-                                  <BookUser className={`h-5 w-5 transition-colors ${!isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
-                                  <span>Teacher</span>
-                                </Label>
-                            </div>
-                        </div>
-                        <DropdownMenuSeparator className="sm:hidden" />
                         <DropdownMenuItem onClick={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
