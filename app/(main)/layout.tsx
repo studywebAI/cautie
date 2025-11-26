@@ -9,18 +9,18 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     const { state } = useSidebar();
 
     return (
-        <div className={cn(
-            "grid min-h-screen w-full",
-            state === 'expanded' ? "md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]" : "md:grid-cols-[5rem_1fr] lg:grid-cols-[5rem_1fr]"
-        )}>
+        <>
             <AppSidebar />
-            <div className="relative flex h-screen flex-col overflow-y-auto">
+            <div className={cn(
+                "flex flex-col transition-[margin-left] duration-300 ease-in-out",
+                state === 'expanded' ? "md:ml-[220px] lg:ml-[280px]" : "md:ml-[5rem]"
+            )}>
                 <AppHeader />
-                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
+                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 bg-muted/40 min-h-screen">
                     {children}
                 </main>
             </div>
-        </div>
+        </>
     );
 }
 
