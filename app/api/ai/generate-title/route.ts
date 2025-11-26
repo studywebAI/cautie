@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { runFlow } from 'genkit';
-import { generateTitle } from '@/app/ai/flows/title-generator';
+import { generateTitle } from '../../../../ai/flows/title-generator';
 
 export async function POST(req: NextRequest) {
     try {
