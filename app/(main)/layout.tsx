@@ -14,7 +14,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             state === 'expanded' ? "md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]" : "md:grid-cols-[5rem_1fr] lg:grid-cols-[5rem_1fr]"
         )}>
             <AppSidebar />
-            <div className="flex flex-col">
+            <div className="relative flex flex-col overflow-auto">
                 <AppHeader />
                 <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
                     {children}
