@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { AiSuggestion } from "@/lib/types";
 import { BrainCircuit, FileText, Calendar } from "lucide-react";
-import { useDictionary } from "@/contexts/dictionary-context";
+import { useDictionary } from "@/contexts/app-context";
 
 const iconMap = {
   BrainCircuit,

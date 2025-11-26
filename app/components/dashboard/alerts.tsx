@@ -9,7 +9,7 @@ import { Alert as AlertUI, AlertDescription, AlertTitle } from "@/components/ui/
 import type { Alert } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Info, CheckCircle2 } from "lucide-react";
-import { useDictionary } from "@/contexts/dictionary-context";
+import { useDictionary } from "@/contexts/app-context";
 
 const variantClasses = {
   destructive: "border-red-500/50 text-red-500 dark:text-red-400 [&>svg]:text-red-500 dark:[&>svg]:text-red-400",

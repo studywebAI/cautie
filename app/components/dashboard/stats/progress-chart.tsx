@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/chart";
 import type { ProgressData } from "@/lib/types";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { useDictionary } from "@/contexts/dictionary-context";
+import { useDictionary } from "@/contexts/app-context";
 
 const chartConfig = {
   "Study Time": {

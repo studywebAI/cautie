@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { BrainCircuit, Copy, FileSignature, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { useDictionary } from '@/contexts/dictionary-context';
+import { useDictionary } from '@/contexts/app-context';
 
 export default function ToolsPage() {
   const { dictionary } = useDictionary();

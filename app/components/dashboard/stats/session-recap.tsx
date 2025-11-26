@@ -1,6 +1,6 @@
 "use client"
 
-import { useDictionary } from "@/contexts/dictionary-context";
+import { useDictionary } from "@/contexts/app-context";
 import { SessionRecapData } from "@/lib/types";
 import { Button } from "../../ui/button";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "../../ui/chart";

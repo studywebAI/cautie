@@ -8,7 +8,7 @@ import {
 import type { QuickAccessItem } from "@/lib/types";
 import Link from "next/link";
 import { Notebook, File, BrainCircuit, FileText } from "lucide-react";
-import { useDictionary } from "@/contexts/dictionary-context";
+import { useDictionary } from "@/contexts/app-context";
 
 const iconMap = {
   Notebook,
