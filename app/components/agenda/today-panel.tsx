@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { BrainCircuit, BookCheck, Lightbulb } from 'lucide-react';
 import type { CalendarEvent } from '@/app/(main)/agenda/page';
 import type { AiSuggestion } from '@/lib/types';
-import { useDictionary } from '@/contexts/dictionary-context';
+import { useDictionary } from '@/contexts/app-context';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 

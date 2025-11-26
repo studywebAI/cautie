@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/card";
 import { MySubjectsGrid } from "./my-subjects-grid";
 import type { Subject } from "@/lib/types";
-import { useDictionary } from "@/contexts/dictionary-context";
+import { useDictionary } from "@/contexts/app-context";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { ArrowRight } from "lucide-react";

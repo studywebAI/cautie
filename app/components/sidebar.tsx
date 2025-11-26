@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { cn } from '@/lib/utils';
-import { useDictionary } from '@/contexts/dictionary-context';
+import { useDictionary } from '@/contexts/app-context';
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -65,7 +65,7 @@ export function AppSidebar() {
             <SidebarMenuItem key={item.label}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href}
+                isActive={pathname === item.href && item.href === '/'}
                 tooltip={item.label}
                 className="font-medium"
               >

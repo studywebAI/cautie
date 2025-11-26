@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { TeacherDashboard } from '@/components/dashboard/teacher/teacher-dashboard';
@@ -67,5 +67,9 @@ function ClassesPageContent() {
 
 
 export default function ClassesPage() {
-    return <ClassesPageContent />;
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <ClassesPageContent />
+        </Suspense>
+    );
 }

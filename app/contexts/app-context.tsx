@@ -1,11 +1,13 @@
 
 'use client';
 
-import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
 import type { SessionRecapData } from '@/lib/types';
 import type { Tables } from '@/lib/supabase/database.types';
 import type { Session } from '@supabase/supabase-js';
 import type { Student, MaterialReference } from '@/lib/teacher-types';
+import { getDictionary } from '@/lib/get-dictionary';
+import type { Dictionary } from '@/lib/get-dictionary';
 
 
 export type UserRole = 'student' | 'teacher';
@@ -18,6 +20,7 @@ export type AppContextType = {
   isLoading: boolean;
   language: string;
   setLanguage: (language: string) => void;
+  dictionary: Dictionary;
   role: UserRole;
   setRole: (role: UserRole) => void;
   highContrast: boolean;
@@ -77,10 +80,12 @@ const saveToLocalStorage = <T,>(key: string, value: T) => {
 };
 
 
-export const AppProvider = ({ children, session }: { children: ReactNode, session: Session | null }) => {
+export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   const [language, setLanguageState] = useState('en');
+  const [dictionary, setDictionary] = useState<Dictionary>(() => getDictionary(language));
   const [role, setRoleState] = useState<UserRole>('student');
   const [highContrast, setHighContrastState] = useState(false);
   const [dyslexiaFont, setDyslexiaFontState] = useState(false);
@@ -378,6 +383,8 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
   const setLanguage = (newLanguage: string) => {
     setLanguageState(newLanguage);
     saveToLocalStorage('studyweb-language', newLanguage);
+    const newDict = getDictionary(newLanguage);
+    setDictionary(newDict);
   };
   
   const setRole = (newRole: UserRole) => {
@@ -415,6 +422,7 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
     isLoading,
     language,
     setLanguage,
+    dictionary,
     role,
     setRole,
     highContrast,
@@ -444,4 +452,12 @@ export const AppProvider = ({ children, session }: { children: ReactNode, sessio
       {children}
     </AppContext.Provider>
   );
+};
+
+export const useDictionary = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useDictionary must be used within a AppProvider');
+  }
+  return { dictionary: context.dictionary };
 };

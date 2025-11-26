@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useContext } from 'react';
-import { useRouter, useSearchParams, Suspense } from 'next/navigation';
+import { useState, useContext, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,11 @@ import { UploadCloud, FileText, ImageIcon, Loader2, BrainCircuit, BookCopy } fro
 import { Textarea } from '@/components/ui/textarea';
 import { processMaterial, ProcessMaterialOutput } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
-import { AppContext } from '@/contexts/app-context';
-import { useDictionary } from '@/contexts/dictionary-context';
+import { AppContext, useDictionary } from '@/contexts/app-context';
 
 type FileType = 'text' | 'image' | 'file';
 
-const iconMap = {
+const iconMap: { [key: string]: React.ElementType } = {
   FileText,
   BrainCircuit,
   BookCopy,

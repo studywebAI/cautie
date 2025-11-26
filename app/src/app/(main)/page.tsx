@@ -1,6 +1,5 @@
 
 'use client';
-
 import { UpcomingDeadlines } from "@/components/dashboard/upcoming-deadlines";
 import { useContext } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,7 +14,6 @@ import { MySubjects } from "@/components/dashboard/my-subjects";
 import { parseISO, isFuture, differenceInDays } from 'date-fns';
 import type { Alert, Subject } from '@/lib/types';
 import { TodaysAgenda } from "@/components/dashboard/todays-agenda";
-
 
 function StudentDashboard() {
   const { isLoading, session, assignments, classes, personalTasks } = useContext(AppContext) as AppContextType;
@@ -43,7 +41,6 @@ function StudentDashboard() {
   }
   
   const enrolledClasses = classes.filter(c => c.owner_id !== session?.user?.id);
-
   const subjects: Subject[] = enrolledClasses.map(c => ({
     id: c.id,
     name: c.name,
@@ -64,7 +61,6 @@ function StudentDashboard() {
         variant: 'warning',
         icon: 'AlertTriangle'
     }));
-
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
@@ -183,11 +179,9 @@ function TeacherSummaryDashboard() {
                     )}
                 </CardContent>
              </Card>
-
         </div>
     );
 }
-
 
 function DashboardSkeleton() {
     return (
@@ -242,7 +236,7 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const { role, isLoading, session } = useContext(AppContext) as AppContextType;
 
-  if (isLoading && session) {
+  if (isLoading) {
     return <DashboardSkeleton />;
   }
 

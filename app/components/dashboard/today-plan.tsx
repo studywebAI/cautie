@@ -16,7 +16,7 @@ import {
   PolarAngleAxis,
 } from "recharts";
 import { useState, useMemo } from "react";
-import { useDictionary } from "@/contexts/dictionary-context";
+import { useDictionary } from "@/contexts/app-context";
 
 type TodayPlanProps = {
   tasks: Task[];

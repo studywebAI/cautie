@@ -3,8 +3,7 @@
 
 import { useState, useContext, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
-import { AppContext, AppContextType, PersonalTask, ClassAssignment } from '@/contexts/app-context';
-import { useDictionary } from '@/contexts/dictionary-context';
+import { AppContext, AppContextType, PersonalTask, ClassAssignment, useDictionary } from '@/contexts/app-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';

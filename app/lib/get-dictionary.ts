@@ -2,11 +2,11 @@ import * as en from './dictionaries/en.json';
 import * as nl from './dictionaries/nl.json';
 
 const dictionaries = {
-  en: () => en,
-  nl: () => nl,
+  en: () => en.default,
+  nl: () => nl.default,
 };
 
-export type Dictionary = typeof en;
+export type Dictionary = typeof en.default;
 export type Locale = keyof typeof dictionaries;
 
 export const getDictionary = (locale: Locale): Dictionary => {
