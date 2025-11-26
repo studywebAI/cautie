@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { type Flashcard } from '@/lib/types';
-import { generateMultipleChoiceFromFlashcard, type McqQuestion } from '@/ai/flows/generate-multiple-choice-from-flashcard';
+import { generateMultipleChoiceFromFlashcard, type McqQuestion } from '@lib/ai/flows/generate-multiple-choice-from-flashcard';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';

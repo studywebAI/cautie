@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, ArrowLeft, Play, Undo2, BookCheck, Wand2, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatePresence, motion } from 'framer-motion';
-import { generateSingleFlashcard } from '@/ai/flows/generate-single-flashcard';
+import { generateSingleFlashcard } from '@lib/ai/flows/generate-single-flashcard';
 import type { Flashcard } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';

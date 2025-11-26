@@ -26,7 +26,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { generateNotes } from '@/ai/flows/generate-notes';
+import { generateNotes } from '@lib/ai/flows/generate-notes';
 import Link from 'next/link';
 
 const iconMap = {

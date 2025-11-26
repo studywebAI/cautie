@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { PersonalTask } from '@/contexts/app-context';
 import { Switch } from '../ui/switch';
 import { Separator } from '../ui/separator';
-import { generateStudyPlanFromTask } from '@/ai/flows/generate-study-plan-from-task';
+import { generateStudyPlanFromTask } from '@lib/ai/flows/generate-study-plan-from-task';
 
 
 type CreateTaskDialogProps = {
