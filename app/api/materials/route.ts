@@ -2,8 +2,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import type { Database } from '@/lib/supabase/database.types'
-import { generateKnowledgeGraph } from '@/lib/ai/flows/generate-knowledge-graph'
+import type { Database } from '@lib/supabase/database.types'
+import { generateKnowledgeGraph } from '@lib/ai/flows/generate-knowledge-graph'
 
 export const dynamic = 'force-dynamic'
 
