@@ -19,6 +19,7 @@ export type CalendarEvent = {
   id: string;
   title: string;
   subject: string;
+  description?: string;
   date: Date;
   type: 'assignment' | 'study_plan' | 'personal';
   href: string;
@@ -46,6 +47,7 @@ export default function AgendaPage() {
                 id: a.id,
                 title: a.title,
                 subject: className,
+                description: a.description,
                 date: parseISO(a.due_date!),
                 type: 'assignment' as const,
                 href: href,
@@ -56,6 +58,7 @@ export default function AgendaPage() {
         id: t.id,
         title: t.title,
         subject: t.subject || 'Personal',
+        description: t.description,
         date: parseISO(t.date),
         type: 'personal' as const,
         href: `/agenda#${t.id}`
@@ -101,11 +104,11 @@ export default function AgendaPage() {
   
   if (isLoading && isStudent) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-            <div className="md:col-span-7">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+            <div class="md:col-span-7">
                 <Skeleton className="h-[400px] w-full" />
             </div>
-            <div className="md:col-span-5">
+            <div class="md:col-span-5">
                  <Skeleton className="h-64 w-full" />
             </div>
         </div>
@@ -114,12 +117,12 @@ export default function AgendaPage() {
 
   if (!isStudent) {
     return (
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
-            <div className="flex flex-col items-center gap-2">
-                <h3 className="text-2xl font-bold tracking-tight">
+        <div class="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
+            <div class="flex flex-col items-center gap-2">
+                <h3 class="text-2xl font-bold tracking-tight">
                 Teacher Agenda Coming Soon
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p class="text-sm text-muted-foreground">
                 This view will show an aggregated calendar of all your class deadlines.
                 </p>
             </div>

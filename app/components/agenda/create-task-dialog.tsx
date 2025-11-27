@@ -71,7 +71,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
                 await onTaskCreated({
                     title: subTask.title,
                     description: `AI-generated step for "${title}"`,
-                    date: sub-task.date,
+                    date: subTask.date,
                     subject: subject,
                 });
             }

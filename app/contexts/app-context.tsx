@@ -43,6 +43,7 @@ export type AppContextType = {
   students: Student[];
   personalTasks: PersonalTask[];
   createPersonalTask: (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => Promise<void>;
+  createStudyPlanTasks: (newTasks: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>[]) => Promise<void>;
   materials: MaterialReference[];
   refetchMaterials: (classId: string) => Promise<void>;
 };
@@ -207,6 +208,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     students,
     personalTasks,
     createPersonalTask,
+    createStudyPlanTasks,
     materials,
     refetchMaterials,
   };
