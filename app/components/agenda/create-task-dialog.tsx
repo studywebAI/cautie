@@ -40,6 +40,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
   const [subject, setSubject] = useState('');
   const [useAiHelper, setUseAiHelper] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
                 await onTaskCreated({
                     title: subTask.title,
                     description: `AI-generated step for "${title}"`,
-                    date: subTask.date,
+                    date: sub-task.date,
                     subject: subject,
                 });
             }
@@ -131,7 +132,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
 
           <div className="grid gap-2">
             <Label htmlFor="date">Date / Deadline</Label>
-            <Popover>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
@@ -148,7 +149,10 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
                 <Calendar
                   mode="single"
                   selected={date}
-                  onSelect={setDate}
+                  onSelect={(d) => {
+                      setDate(d);
+                      setIsCalendarOpen(false);
+                  }}
                   initialFocus
                 />
               </PopoverContent>

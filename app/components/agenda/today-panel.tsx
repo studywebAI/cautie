@@ -30,10 +30,11 @@ export function TodayPanel({ selectedDay, events, suggestion }: TodayPanelProps)
     const content = (
          <div className="p-3 bg-muted/50 rounded-lg border-l-4" 
               style={{borderColor: `hsl(var(--${event.type === 'assignment' ? 'destructive' : 'primary'}))`}}>
-            <div className='flex justify-between items-start'>
+            <div class='flex justify-between items-start'>
               <div>
                 <p className="font-semibold">{event.title}</p>
                 <p className="text-sm text-muted-foreground">{event.subject}</p>
+                {event.description && <p className="text-sm text-muted-foreground/80 mt-1">{event.description}</p>}
               </div>
               {event.type === 'assignment' 
                 ? <BookCheck className="h-4 w-4 text-destructive"/> 
