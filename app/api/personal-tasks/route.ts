@@ -31,9 +31,9 @@ export async function GET(request: Request) {
   return NextResponse.json(data)
 }
 
-// POST a new personal task
+// POST one or more new personal tasks
 export async function POST(request: Request) {
-  const { title, description, date, subject } = await request.json();
+  const body = await request.json();
   const cookieStore = cookies();
   const supabase = createServerClient<Database>({ cookies: () => cookieStore });
   
@@ -43,18 +43,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Check if the body contains a 'tasks' array for batch insertion
+  const tasksToInsert = body.tasks || [body];
+
+  // Add user_id to each task
+  const tasksWithUser = tasksToInsert.map((task: any) => ({ ...task, user_id: user.id }));
+
   const { data, error } = await supabase
     .from('personal_tasks')
-    .insert([
-      { title, description, date, subject, user_id: user.id },
-    ])
-    .select()
-    .single();
+    .insert(tasksWithUser)
+    .select();
 
   if (error) {
-    console.error('Error creating personal task:', error);
+    console.error('Error creating personal task(s):', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // If the original request was for a single task, return a single object
+  if (!body.tasks) {
+    return NextResponse.json(data[0]);
+  }
+
+  // Otherwise, return the array of created tasks
   return NextResponse.json(data);
 }

@@ -20,6 +20,7 @@ export type Deadline = {
   id: string;
   subject: string;
   title: string;
+  description?: string;
   date: string;
   workload: string;
   status: "on-track" | "risk" | "behind";

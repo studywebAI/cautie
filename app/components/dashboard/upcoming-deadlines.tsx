@@ -47,6 +47,7 @@ export function UpcomingDeadlines() {
         id: assignment.id,
         subject: className,
         title: assignment.title,
+        description: assignment.description,
         date: format(dueDate, 'MMMM d'),
         workload: daysUntilDue >= 0 ? `Due in ${daysUntilDue} days` : `Overdue`,
         status: status,
@@ -83,7 +84,7 @@ export function UpcomingDeadlines() {
                   <div className="flex flex-col gap-0.5">
                       <p className="font-semibold">{deadline.title}</p>
                       <p className="text-sm text-muted-foreground">{deadline.subject} - {dictionary.dashboard.upcomingDeadlines.due} {deadline.date}</p>
-                      <p className="text-xs text-muted-foreground">{deadline.workload}</p>
+                      {deadline.description && <p className="text-xs text-muted-foreground truncate max-w-xs">{deadline.description}</p>}
                   </div>
                   <Badge variant="outline" className={`${statusColors[deadline.status]}`}>
                       {deadline.status === "on-track" && dictionary.dashboard.upcomingDeadlines.onTrack}

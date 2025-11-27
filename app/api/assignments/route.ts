@@ -50,7 +50,7 @@ export async function GET(request: Request) {
   // 2. Get assignments that belong to those classes
   const { data, error } = await supabase
     .from('assignments')
-    .select()
+    .select('*,classes(name)')
     .in('class_id', classIds);
 
   if (error) {
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
 
 // POST a new assignment
 export async function POST(request: Request) {
-  const { title, due_date, class_id, material_id } = await request.json();
+  const { title, due_date, class_id, material_id, description } = await request.json();
   const cookieStore = cookies();
   const supabase = createServerClient<Database>({ cookies: () => cookieStore });
   
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('assignments')
     .insert([
-      { title, due_date, class_id, material_id },
+      { title, due_date, class_id, material_id, description },
     ])
     .select()
     .single();

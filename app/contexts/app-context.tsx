@@ -104,6 +104,19 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   
   const [prevSession, setPrevSession] = useState<Session | null>(session);
 
+  const createStudyPlanTasks = async (newTasks: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>[]) => {
+    const response = await fetch('/api/personal-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tasks: newTasks }), // Send as an array
+    });
+    if (response.ok) {
+        const createdTasks = await response.json();
+        setPersonalTasks(prev => [...prev, ...createdTasks]);
+    }
+    // Handle error case appropriately
+  };
+
   // ... (sync and fetch data logic remains the same)
 
   useEffect(() => {
