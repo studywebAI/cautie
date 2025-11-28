@@ -87,7 +87,7 @@ function StudentDashboard() {
 function TeacherSummaryDashboard() {
     const { classes, assignments, students, isLoading, session } = useContext(AppContext) as AppContextType;
 
-    if (isLoading || !classes) {
+    if (isLoading || !classes || !session) {
         return <DashboardSkeleton />;
     }
     
@@ -236,7 +236,7 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const { role, isLoading, session } = useContext(AppContext) as AppContextType;
 
-  if (isLoading) {
+  if (isLoading && session) {
     return <DashboardSkeleton />;
   }
 
