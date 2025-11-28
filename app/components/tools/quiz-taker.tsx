@@ -5,9 +5,9 @@
 import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { explainAnswer } from '@/ai/flows/explain-answer';
-import { generateQuiz } from '@/ai/flows/generate-quiz';
-import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
+import { explainAnswer } from '@/lib/ai/flows/explain-answer';
+import { generateQuiz } from '@/lib/ai/flows/generate-quiz';
+import { generateSingleQuestion } from '@/lib/ai/flows/generate-single-question';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Trophy, Zap, Bomb, TrendingUp, BookOpen, Clock, Target, ArrowLeft, Shield } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
