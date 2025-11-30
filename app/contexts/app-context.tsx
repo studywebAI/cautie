@@ -18,8 +18,8 @@ export type PersonalTask = Tables<'personal_tasks'>;
 export type AppContextType = {
   session: Session | null;
   isLoading: boolean;
-  language: string;
-  setLanguage: (language: string) => void;
+  language: 'en' | 'nl';
+  setLanguage: (language: 'en' | 'nl') => void;
   dictionary: Dictionary;
   role: UserRole;
   setRole: (role: UserRole) => void;
@@ -58,12 +58,20 @@ const getFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
         if (item === null) return defaultValue;
         // For non-string types, parse JSON. For strings, just return the item.
         if (typeof defaultValue === 'string') {
+            // Validate language specifically
+            if (key === 'studyweb-language' && item !== 'en' && item !== 'nl') {
+                return defaultValue; // Fallback to default if invalid language
+            }
             return item as unknown as T;
         }
         return JSON.parse(item);
     } catch (error) {
         const item = window.localStorage.getItem(key);
         if (item) {
+          // Validate language specifically
+          if (key === 'studyweb-language' && item !== 'en' && item !== 'nl') {
+              return defaultValue; // Fallback to default if invalid language
+          }
           return item as unknown as T;
         }
         console.error(`Error reading from localStorage key “${key}”:`, error);
@@ -86,7 +94,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  const [language, setLanguageState] = useState('en');
+  const [language, setLanguageState] = useState<'en' | 'nl'>('en');
   const [dictionary, setDictionary] = useState<Dictionary>(() => getDictionary(language));
   const [role, setRoleState] = useState<UserRole>('student');
   const [teacherView, setTeacherViewState] = useState(false);
@@ -119,15 +127,46 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
   // ... (sync and fetch data logic remains the same)
 
+  const createClass = useCallback(async (newClass: { name: string; description: string | null }) => {
+    // Placeholder for class creation logic
+    console.log('createClass called with:', newClass);
+    return null;
+  }, []);
+
+  const refetchClasses = useCallback(async () => {
+    // Placeholder for refetching classes logic
+    console.log('refetchClasses called');
+  }, []);
+
+  const createAssignment = useCallback(async (newAssignment: Omit<ClassAssignment, 'id' | 'created_at'>) => {
+    // Placeholder for assignment creation logic
+    console.log('createAssignment called with:', newAssignment);
+  }, []);
+
+  const refetchAssignments = useCallback(async () => {
+    // Placeholder for refetching assignments logic
+    console.log('refetchAssignments called');
+  }, []);
+
+  const createPersonalTask = useCallback(async (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => {
+    // Placeholder for personal task creation logic
+    console.log('createPersonalTask called with:', newTask);
+  }, []);
+
+  const refetchMaterials = useCallback(async (classId: string) => {
+    // Placeholder for refetching materials logic
+    console.log('refetchMaterials called for classId:', classId);
+  }, []);
+
   useEffect(() => {
     // ... (existing useEffect logic)
-  }, [session, prevSession, fetchData, syncLocalDataToSupabase]);
+  }, [session, prevSession]);
 
   // ... (data creation functions remain the same)
 
   // ---- Settings and Preferences ----
   useEffect(() => {
-    setLanguageState(getFromLocalStorage('studyweb-language', 'en'));
+    setLanguageState(getFromLocalStorage<'en' | 'nl'>('studyweb-language', 'en'));
     setRoleState(getFromLocalStorage('studyweb-role', 'student'));
     setTeacherViewState(getFromLocalStorage('studyweb-teacher-view', false));
     
@@ -144,7 +183,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     if(rm) document.body.setAttribute('data-reduced-motion', 'true');
   }, []);
   
-  const setLanguage = (newLanguage: string) => {
+  const setLanguage = (newLanguage: 'en' | 'nl') => {
     setLanguageState(newLanguage);
     saveToLocalStorage('studyweb-language', newLanguage);
     const newDict = getDictionary(newLanguage);
