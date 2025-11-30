@@ -3,23 +3,23 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
-import { Button } from '../ui/button';
-import { explainAnswer } from '../../../lib/ai/flows/explain-answer';
-import { generateQuiz } from '../../../lib/ai/flows/generate-quiz';
-import { generateSingleQuestion } from '../../../lib/ai/flows/generate-single-question';
-import { useToast } from '../../hooks/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { explainAnswer } from '@lib/ai/flows/explain-answer';
+import { generateQuiz } from '@lib/ai/flows/generate-quiz';
+import { generateSingleQuestion } from '@lib/ai/flows/generate-single-question';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Trophy, Zap, Bomb, TrendingUp, BookOpen, Clock, Target, ArrowLeft, Shield } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { Label } from '../ui/label';
-import { cn } from '../../lib/utils';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AppContext, AppContextType } from '../../contexts/app-context';
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
+import { AppContext, AppContextType } from '@/contexts/app-context';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Pie, PieChart } from 'recharts';
-import { Progress } from '../ui/progress';
-import type { Quiz, QuizQuestion, SessionRecapData } from '../../lib/types';
+import { Progress } from '@/components/ui/progress';
+import type { Quiz, QuizQuestion, SessionRecapData } from '@/lib/types';
 
 
 type AnswersState = { [questionId: string]: string };
