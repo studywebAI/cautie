@@ -1,26 +1,16 @@
 
-
-import { NextRequest, NextResponse } from 'next/server';
+import { genkit } from 'genkit';
+import { NextRequest } from 'next/server';
 import { generateTitle } from '@lib/ai/flows/title-generator';
 
-export async function POST(req: NextRequest) {
-    try {
-        const body = await req.json();
-        const { text } = body;
-
-        if (!text) {
-            return NextResponse.json({ error: 'Text is required' }, { status: 400 });
-        }
-
-        const result = await generateTitle({ text });
-
-        return NextResponse.json(result, { status: 200 });
-
-    } catch (error: any) {
-        console.error('API Route Error:', error);
-        return NextResponse.json({ 
-            error: 'Failed to generate title.',
-            details: error.message 
-        }, { status: 500 });
-    }
-}
+export const POST = genkit({
+    flows: [generateTitle],
+    options: {
+        auth: async (req: NextRequest) => {
+            // IMPORTANT: Implement your own authentication logic here.
+            // This is a placeholder and should not be used in production.
+            // For example, you could check for a valid session or API key.
+            return { authenticated: true, user: null }; 
+        },
+    },
+});

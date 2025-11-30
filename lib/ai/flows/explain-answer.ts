@@ -1,12 +1,7 @@
-'use server';
-/**
- * @fileOverview An AI agent that explains why a quiz answer is correct or incorrect.
- *
- * - explainAnswer - A function that generates an explanation.
- */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { defineFlow } from '@genkit-ai/core';
+import { z } from 'zod';
+import { ai } from '@lib/ai/genkit';
 
 const ExplainAnswerInputSchema = z.object({
   question: z.string().describe('The quiz question that was asked.'),
@@ -14,48 +9,39 @@ const ExplainAnswerInputSchema = z.object({
   correctAnswer: z.string().describe('The correct answer to the question.'),
   isCorrect: z.boolean().describe('Whether the user\'s answer was correct.'),
 });
-type ExplainAnswerInput = z.infer<typeof ExplainAnswerInputSchema>;
 
 const ExplainAnswerOutputSchema = z.object({
   explanation: z.string().describe('A brief explanation tailored to the user\'s answer.'),
 });
-type ExplainAnswerOutput = z.infer<typeof ExplainAnswerOutputSchema>;
 
-export async function explainAnswer(
-  input: ExplainAnswerInput
-): Promise<ExplainAnswerOutput> {
-  return explainAnswerFlow(input);
-}
+export const explainAnswer = defineFlow(
+    {
+        name: 'explainAnswer',
+        inputSchema: ExplainAnswerInputSchema,
+        outputSchema: ExplainAnswerOutputSchema,
+    },
+    async (input) => {
+        const { question, selectedAnswer, correctAnswer, isCorrect } = input;
 
-const prompt = ai.definePrompt({
-  name: 'explainAnswerPrompt',
-  input: { schema: ExplainAnswerInputSchema },
-  output: { schema: ExplainAnswerOutputSchema },
-  prompt: `You are a helpful study assistant. A student has just answered a quiz question. Your task is to provide a concise explanation.
+        const prompt = `You are a helpful study assistant. A student has just answered a quiz question. Your task is to provide a concise explanation.
 
-Question: "{{{question}}}"
-The correct answer is: "{{{correctAnswer}}}"
+Question: "${question}"
+The correct answer is: "${correctAnswer}"
 
-{{#if isCorrect}}
-The user chose "{{{selectedAnswer}}}", which is the correct answer.
-Briefly explain why this answer is correct.
-{{else}}
-The user chose "{{{selectedAnswer}}}", which is incorrect.
-Briefly explain why the user's answer is wrong and why the correct answer is right.
-{{/if}}
+${isCorrect ? `The user chose "${selectedAnswer}", which is the correct answer.\nBriefly explain why this answer is correct.` : `The user chose "${selectedAnswer}", which is incorrect.\nBriefly explain why the user's answer is wrong and why the correct answer is right.`}
 
 Keep the explanation clear, friendly, and under 50 words.
-`,
-});
+`;
 
-const explainAnswerFlow = ai.defineFlow(
-  {
-    name: 'explainAnswerFlow',
-    inputSchema: ExplainAnswerInputSchema,
-    outputSchema: ExplainAnswerOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    return output!;
-  }
+        const llmResponse = await ai.generate({
+            prompt: prompt,
+            model: 'gemini-1.5-flash',
+            output: {
+                format: 'json',
+                schema: ExplainAnswerOutputSchema,
+            },
+        });
+
+        return llmResponse.output() || { explanation: '' };
+    }
 );
