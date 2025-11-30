@@ -1,37 +1,29 @@
-'use server';
-/**
- * @fileOverview An AI agent that generates flashcards from a given text.
- *
- * - generateFlashcards - A function that creates flashcards.
- */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import { FlashcardSchema } from '@/lib/types';
+import { defineFlow } from '@genkit-ai/core';
+import { z } from 'zod';
+import { ai } from '@lib/ai/genkit';
+import { FlashcardSchema } from '@lib/types';
 
 const GenerateFlashcardsInputSchema = z.object({
   sourceText: z.string().describe('The source text from which to generate flashcards.'),
   count: z.number().optional().default(10).describe('The number of flashcards to generate.'),
   existingFlashcardIds: z.array(z.string()).optional().describe('An array of flashcard front texts that should not be regenerated.'),
 });
-type GenerateFlashcardsInput = z.infer<typeof GenerateFlashcardsInputSchema>;
 
 const GenerateFlashcardsOutputSchema = z.object({
   flashcards: z.array(FlashcardSchema).describe('An array of generated flashcards.'),
 });
-export type GenerateFlashcardsOutput = z.infer<typeof GenerateFlashcardsOutputSchema>;
 
-export async function generateFlashcards(
-  input: GenerateFlashcardsInput
-): Promise<GenerateFlashcardsOutput> {
-  return generateFlashcardsFlow(input);
-}
+export const generateFlashcards = defineFlow(
+    {
+        name: 'generateFlashcards',
+        inputSchema: GenerateFlashcardsInputSchema,
+        outputSchema: GenerateFlashcardsOutputSchema,
+    },
+    async (input) => {
+        const { sourceText, count, existingFlashcardIds } = input;
 
-const prompt = ai.definePrompt({
-  name: 'generateFlashcardsPrompt',
-  input: { schema: GenerateFlashcardsInputSchema },
-  output: { schema: GenerateFlashcardsOutputSchema },
-  prompt: `You are an expert in creating effective learning materials. Your task is to generate a set of flashcards based on the provided source text. Create exactly {{{count}}} flashcards.
+        const prompt = `You are an expert in creating effective learning materials. Your task is to generate a set of flashcards based on the provided source text. Create exactly ${count} flashcards.
 
 For each flashcard, you must provide:
 1.  **id**: a unique, short, kebab-case string based on the front of the card.
@@ -39,9 +31,7 @@ For each flashcard, you must provide:
 3.  **back**: The corresponding definition or answer.
 4.  **cloze**: A "fill-in-the-blank" sentence based on the definition where the word(s) from the 'back' are replaced with "____". This sentence should provide enough context to guess the missing word.
 
-{{#if existingFlashcardIds}}
-Do not generate flashcards with front text that is identical or very similar to the text from this list: {{{existingFlashcardIds}}}.
-{{/if}}
+${existingFlashcardIds && existingFlashcardIds.length > 0 ? `Do not generate flashcards with front text that is identical or very similar to the text from this list: ${existingFlashcardIds.join(', ')}.` : ''}
 
 Example:
 - id: "mitochondria"
@@ -50,18 +40,18 @@ Example:
 - cloze: "The mitochondria is often called the ____."
 
 Source Text:
-{{{sourceText}}}
-`,
-});
+${sourceText}
+`;
 
-const generateFlashcardsFlow = ai.defineFlow(
-  {
-    name: 'generateFlashcardsFlow',
-    inputSchema: GenerateFlashcardsInputSchema,
-    outputSchema: GenerateFlashcardsOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    return output!;
-  }
+        const llmResponse = await ai.generate({
+            prompt: prompt,
+            model: 'gemini-1.5-flash',
+            output: {
+                format: 'json',
+                schema: GenerateFlashcardsOutputSchema,
+            },
+        });
+
+        return llmResponse.output() || { flashcards: [] };
+    }
 );
