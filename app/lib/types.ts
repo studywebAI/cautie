@@ -128,3 +128,18 @@ export type SessionRecapData = {
   totalQuestions: number;
   timeTaken: number;
 };
+
+// Types for Study Plan
+export const StudyPlanTaskSchema = z.object({
+  date: z.string().describe('The date for the task in YYYY-MM-DD format.'),
+  subject: z.string().describe('The subject of the task (e.g., "History", "Math", "Reading").'),
+  title: z.string().describe('A concise title for the task.'),
+  description: z.string().optional().describe('A brief description of the task.'),
+});
+
+export const StudyPlanResponseSchema = z.object({
+  tasks: z.array(StudyPlanTaskSchema).describe('An array of daily study tasks.'),
+});
+
+export type StudyPlanTask = z.infer<typeof StudyPlanTaskSchema>;
+export type StudyPlanResponse = z.infer<typeof StudyPlanResponseSchema>;

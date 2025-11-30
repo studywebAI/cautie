@@ -1,13 +1,7 @@
-'use server';
-/**
- * @fileOverview An AI agent that breaks a single large task into a smaller, actionable study plan.
- *
- * - generateStudyPlanFromTask - A function that generates a study plan for a single task.
- */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import { format } from 'date-fns';
+import { defineFlow } from '@genkit-ai/core';
+import { z } from 'zod';
+import { ai } from '@lib/ai/genkit';
 
 const StudySubTaskSchema = z.object({
   title: z.string().describe('The title of the sub-task (e.g., "Review Chapter 1", "Practice problems").'),
@@ -19,28 +13,25 @@ const GenerateStudyPlanFromTaskInputSchema = z.object({
   taskDueDate: z.string().describe('The final due date for the main task, in YYYY-MM-DD format.'),
   todayDate: z.string().describe('The current date, in YYYY-MM-DD format, to use as a starting point.'),
 });
-type GenerateStudyPlanFromTaskInput = z.infer<typeof GenerateStudyPlanFromTaskInputSchema>;
 
 const GenerateStudyPlanFromTaskOutputSchema = z.object({
   subTasks: z.array(StudySubTaskSchema).describe('An array of 2-4 generated sub-tasks, spread out between today and the due date.'),
 });
-export type GenerateStudyPlanFromTaskOutput = z.infer<typeof GenerateStudyPlanFromTaskOutputSchema>;
 
-export async function generateStudyPlanFromTask(
-  input: GenerateStudyPlanFromTaskInput
-): Promise<GenerateStudyPlanFromTaskOutput> {
-  return generateStudyPlanFromTaskFlow(input);
-}
+export const generateStudyPlanFromTask = defineFlow(
+    {
+        name: 'generateStudyPlanFromTask',
+        inputSchema: GenerateStudyPlanFromTaskInputSchema,
+        outputSchema: GenerateStudyPlanFromTaskOutputSchema,
+    },
+    async (input) => {
+        const { taskTitle, taskDueDate, todayDate } = input;
 
-const prompt = ai.definePrompt({
-  name: 'generateStudyPlanFromTaskPrompt',
-  input: { schema: GenerateStudyPlanFromTaskInputSchema },
-  output: { schema: GenerateStudyPlanFromTaskOutputSchema },
-  prompt: `You are an expert academic planner. A student has a single large task and needs a simple, actionable study plan to prepare for it.
+        const prompt = `You are an expert academic planner. A student has a single large task and needs a simple, actionable study plan to prepare for it.
 
-Today's date is: {{{todayDate}}}
-The student's task is: "{{{taskTitle}}}"
-The final due date is: {{{taskDueDate}}}
+Today's date is: ${todayDate}
+The student's task is: "${taskTitle}"
+The final due date is: ${taskDueDate}
 
 Your job is to break this main task into 2-4 smaller, logical sub-tasks.
 - Give each sub-task a clear, actionable title.
@@ -59,17 +50,17 @@ Output Sub-tasks:
 2. Title: "Create flashcards for key terms", Date: "2024-10-24"
 3. Title: "Take practice quiz on Meiosis", Date: "2024-10-26"
 4. Title: "Final review of all concepts", Date: "2024-10-27"
-`,
-});
+`;
 
-const generateStudyPlanFromTaskFlow = ai.defineFlow(
-  {
-    name: 'generateStudyPlanFromTaskFlow',
-    inputSchema: GenerateStudyPlanFromTaskInputSchema,
-    outputSchema: GenerateStudyPlanFromTaskOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    return output!;
-  }
+        const llmResponse = await ai.generate({
+            prompt: prompt,
+            model: 'gemini-1.5-flash',
+            output: {
+                format: 'json',
+                schema: GenerateStudyPlanFromTaskOutputSchema,
+            },
+        });
+
+        return llmResponse.output() || { subTasks: [] };
+    }
 );

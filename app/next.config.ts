@@ -1,5 +1,7 @@
 
+
 import type {NextConfig} from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -36,6 +38,14 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       }
     ],
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, './app'),
+      '@lib': path.resolve(__dirname, './lib'),
+    };
+    return config;
   },
 };
 

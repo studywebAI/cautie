@@ -1,7 +1,7 @@
 
-import {defineFlow} from 'genkit';
-import {z} from 'zod';
-import {ai} from '../genkit';
+import { defineFlow } from '@genkit-ai/core';
+import { z } from 'zod';
+import { ai } from '@lib/ai/genkit';
 
 const TitleRequestSchema = z.object({
     text: z.string().min(50), // Require a reasonable amount of text to generate a good title
@@ -18,7 +18,7 @@ export const generateTitle = defineFlow(
         outputSchema: TitleResponseSchema,
     },
     async (request) => {
-        const {text} = request;
+        const { text } = request;
 
         const prompt = `
             You are a highly skilled AI assistant specialized in content summarization and title generation. 
@@ -27,37 +27,34 @@ export const generateTitle = defineFlow(
 
             **Instructions:**
             1.  Read and understand the provided text.
-            2.  Identify the main topic, key concepts, and overall sentiment.
-            3.  Generate a title that is short (ideally 5-10 words), descriptive, and easy to understand.
-            4.  The title must be unique and not a generic phrase.
-            5.  Return ONLY the generated title as a JSON object.
+            2.  Identify the main subject or key topics.
+            3.  Generate a title that is short (ideally 5-10 words).
+            4.  The title should be neutral, objective, and descriptive.
+            5.  Avoid clickbait, questions, or overly sensational language.
+            6.  If the text is a conversation, reflect the core theme of the discussion.
+            
+            **Example:**
+            Text: "I'm planning a trip to Japan and want to visit Tokyo, Kyoto, and Osaka. I'm interested in historical sites, food, and technology. What are the must-see places and best ways to travel between these cities?"
+            Title: "Japan Trip Planning: Tokyo, Kyoto, Osaka"
 
-            **Text to Analyze:**
-            """
-            ${text.substring(0, 4000)} ...
-            """
+            **Text to analyze:**
+            ---
+            ${text}
+            ---
         `;
 
         const llmResponse = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
             prompt: prompt,
+            model: 'gemini-1.5-flash',
             output: {
                 format: 'json',
                 schema: TitleResponseSchema,
             },
             config: {
-                temperature: 0.5, // Lower temperature for more predictable, less creative titles
+                temperature: 0.3,
             }
         });
 
-        const output = llmResponse.output();
-
-        if (!output?.title) {
-            throw new Error('Failed to generate a title from the AI model.');
-        }
-
-        return {
-            title: output.title.replace(/"/g, ''), // Clean up any stray quotation marks
-        };
+        return llmResponse.output() || { title: 'Untitled' };
     }
 );

@@ -1,4 +1,5 @@
 
+
 import mammoth from 'mammoth';
 
 // This function is designed to run on the server-side, where it can access the file system.
@@ -11,16 +12,11 @@ export async function extractTextFromFile(file: { path: string; mimetype: string
 
     try {
         if (mimetype === 'application/pdf') {
-            // Dynamically import 'fs/promises' only when needed.
+            // Dynamically import to handle CJS/ESM issues
+            const pdf = (await import('pdf-parse')).default;
             const fs = await import('fs/promises');
             const dataBuffer = await fs.readFile(path);
-<<<<<<< HEAD
-            const pdfParse = (await import('pdf-parse')) as any;
-            const data = await pdfParse(dataBuffer);
-=======
-            const pdf = (await import('pdf-parse')).default;
             const data = await pdf(dataBuffer);
->>>>>>> 89e2df78cd170eabc4b1cd81346576b11d3d43fe
             return data.text;
         } else if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
             const { value } = await mammoth.extractRawText({ path });

@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createStudyPlan } from '@lib/ai/flows/study-plan';
 import { promises as fs } from 'fs';
@@ -6,7 +5,6 @@ import { ai } from '@lib/ai/genkit';
 import path from 'path';
 import os from 'os';
 
-// This handler will process the multipart/form-data from the client
 export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
@@ -36,15 +34,14 @@ export async function POST(req: NextRequest) {
             };
         }
 
-        const studyPlanRequest = {
+        let studyPlanRequest: any = {
             taskType,
             description,
             dueDate,
-            file: fileDetails,
         };
 
         // Execute the Genkit flow
-        const result = await createStudyPlan(studyPlanRequest);
+        const result = await ai.run('createStudyPlan', studyPlanRequest);
 
         // Clean up the temporary file if it was created
         if (fileDetails) {
@@ -56,7 +53,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error('API Route Error:', error);
         return NextResponse.json({ 
-            error: 'Failed to generate study plan.',
+            error: 'Failed to create study plan.',
             details: error.message 
         }, { status: 500 });
     }

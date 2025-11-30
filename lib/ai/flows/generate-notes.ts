@@ -1,12 +1,7 @@
-'use server';
-/**
- * @fileOverview An AI agent that generates structured notes from text.
- *
- * - generateNotes - A function that returns notes.
- */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { defineFlow } from '@genkit-ai/core';
+import { z } from 'zod';
+import { ai } from '@lib/ai/genkit';
 
 const NoteSchema = z.object({
   title: z.string().describe('The title of the note section.'),
@@ -17,44 +12,39 @@ const GenerateNotesInputSchema = z.object({
   sourceText: z.string().describe('The source text from which to generate notes.'),
   topic: z.string().optional().describe('The main topic to focus on.'),
 });
-type GenerateNotesInput = z.infer<typeof GenerateNotesInputSchema>;
 
 const GenerateNotesOutputSchema = z.object({
   notes: z.array(NoteSchema).describe('An array of generated note sections.'),
 });
-export type GenerateNotesOutput = z.infer<typeof GenerateNotesOutputSchema>;
 
-export async function generateNotes(
-  input: GenerateNotesInput
-): Promise<GenerateNotesOutput> {
-  return generateNotesFlow(input);
-}
+export const generateNotes = defineFlow(
+    {
+        name: 'generateNotes',
+        inputSchema: GenerateNotesInputSchema,
+        outputSchema: GenerateNotesOutputSchema,
+    },
+    async (input) => {
+        const { sourceText, topic } = input;
 
-const prompt = ai.definePrompt({
-  name: 'generateNotesPrompt',
-  input: { schema: GenerateNotesInputSchema },
-  output: { schema: GenerateNotesOutputSchema },
-  prompt: `You are an expert notetaker. Your task is to create a structured set of notes from the provided source text, focusing on the given topic if provided.
+        const prompt = `You are an expert notetaker. Your task is to create a structured set of notes from the provided source text, focusing on the given topic if provided.
 
 Source Text:
-{{{sourceText}}}
+${sourceText}
 
-{{#if topic}}
-Topic: {{{topic}}}
-{{/if}}
+${topic ? `Topic: ${topic}` : ''}
 
 Generate a set of notes with clear titles and content formatted in Markdown.
-`,
-});
+`;
 
-const generateNotesFlow = ai.defineFlow(
-  {
-    name: 'generateNotesFlow',
-    inputSchema: GenerateNotesInputSchema,
-    outputSchema: GenerateNotesOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    return output!;
-  }
+        const llmResponse = await ai.generate({
+            prompt: prompt,
+            model: 'gemini-1.5-flash',
+            output: {
+                format: 'json',
+                schema: GenerateNotesOutputSchema,
+            },
+        });
+
+        return llmResponse.output() || { notes: [] };
+    }
 );

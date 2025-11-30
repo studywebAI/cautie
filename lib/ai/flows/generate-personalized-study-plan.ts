@@ -1,12 +1,7 @@
-'use server';
-/**
- * @fileOverview An AI agent that generates a personalized study plan based on deadlines, learning habits, and calendar.
- *
- * - generatePersonalizedStudyPlan - A function that generates a personalized study plan.
- */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { defineFlow } from '@genkit-ai/core';
+import { z } from 'zod';
+import { ai } from '@lib/ai/genkit';
 
 const GeneratePersonalizedStudyPlanInputSchema = z.object({
   deadlines: z
@@ -23,44 +18,37 @@ const GeneratePersonalizedStudyPlanInputSchema = z.object({
       'The students calendar, including scheduled classes, appointments, and other commitments.'
     ),
 });
-type GeneratePersonalizedStudyPlanInput = z.infer<
-  typeof GeneratePersonalizedStudyPlanInputSchema
->;
 
 const GeneratePersonalizedStudyPlanOutputSchema = z.object({
   studyPlan: z.string().describe('A personalized study plan for the student.'),
 });
-type GeneratePersonalizedStudyPlanOutput = z.infer<
-  typeof GeneratePersonalizedStudyPlanOutputSchema
->;
 
-export async function generatePersonalizedStudyPlan(
-  input: GeneratePersonalizedStudyPlanInput
-): Promise<GeneratePersonalizedStudyPlanOutput> {
-  return generatePersonalizedStudyPlanFlow(input);
-}
+export const generatePersonalizedStudyPlan = defineFlow(
+    {
+        name: 'generatePersonalizedStudyPlan',
+        inputSchema: GeneratePersonalizedStudyPlanInputSchema,
+        outputSchema: GeneratePersonalizedStudyPlanOutputSchema,
+    },
+    async (input) => {
+        const { deadlines, learningHabits, calendar } = input;
 
-const prompt = ai.definePrompt({
-  name: 'generatePersonalizedStudyPlanPrompt',
-  input: {schema: GeneratePersonalizedStudyPlanInputSchema},
-  output: {schema: GeneratePersonalizedStudyPlanOutputSchema},
-  prompt: `You are an AI study assistant. You will generate a personalized study plan for the student based on their deadlines, learning habits, and calendar.
+        const prompt = `You are an AI study assistant. You will generate a personalized study plan for the student based on their deadlines, learning habits, and calendar.
 
-Deadlines: {{{deadlines}}}
-Learning Habits: {{{learningHabits}}}
-Calendar: {{{calendar}}}
+Deadlines: ${deadlines}
+Learning Habits: ${learningHabits}
+Calendar: ${calendar}
 
-Study Plan:`,
-});
+Study Plan:`;
 
-const generatePersonalizedStudyPlanFlow = ai.defineFlow(
-  {
-    name: 'generatePersonalizedStudyPlanFlow',
-    inputSchema: GeneratePersonalizedStudyPlanInputSchema,
-    outputSchema: GeneratePersonalizedStudyPlanOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
+        const llmResponse = await ai.generate({
+            prompt: prompt,
+            model: 'gemini-1.5-flash',
+            output: {
+                format: 'json',
+                schema: GeneratePersonalizedStudyPlanOutputSchema,
+            },
+        });
+
+        return llmResponse.output() || { studyPlan: '' };
+    }
 );
