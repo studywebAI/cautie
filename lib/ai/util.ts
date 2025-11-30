@@ -1,6 +1,6 @@
 
 import mammoth from 'mammoth';
-import pdf from 'pdf-parse';
+import { parse as pdf } from 'pdf-parse';
 
 // This function is designed to run on the server-side, where it can access the file system.
 export async function extractTextFromFile(file: { path: string; mimetype: string }): Promise<string> {

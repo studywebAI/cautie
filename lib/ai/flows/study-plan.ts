@@ -1,9 +1,8 @@
 
-import {defineFlow, runFlow} from 'genkit';
+import {runFlow} from 'genkit';
 import {z} from 'zod';
 import {ai} from '../genkit';
 import {extractTextFromFile} from '../util';
-import {PersonalTask} from '@/lib/types';
 
 const StudyPlanRequestSchema = z.object({
     taskType: z.enum(['test', 'homework', 'project']),
@@ -24,13 +23,13 @@ const StudyPlanResponseSchema = z.object({
     tasks: z.array(StudyPlanTaskSchema),
 });
 
-export const createStudyPlan = defineFlow(
+export const createStudyPlan = ai.defineFlow(
     {
         name: 'createStudyPlan',
         inputSchema: StudyPlanRequestSchema,
         outputSchema: StudyPlanResponseSchema,
     },
-    async (request) => {
+    async (request: z.infer<typeof StudyPlanRequestSchema>) => {
         const {taskType, description, dueDate, file} = request;
 
         let fileContent = '';
@@ -77,14 +76,14 @@ export const createStudyPlan = defineFlow(
             },
         });
 
-        const studyPlan = llmResponse.output();
+        const studyPlan = llmResponse.output;
 
         if (!studyPlan) {
             throw new Error('Failed to generate a valid study plan from the AI model.');
         }
 
         // Further validation to ensure dates are logical (optional but good practice)
-        const validatedPlan = studyPlan.tasks.filter(task => {
+        const validatedPlan = studyPlan.tasks.filter((task: z.infer<typeof StudyPlanTaskSchema>) => {
             const taskDate = new Date(task.date);
             const dueDateObj = new Date(dueDate);
             return taskDate <= dueDateObj;

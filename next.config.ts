@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': path.resolve(__dirname),
+      '@': path.join(__dirname, 'app'),
     };
     return config;
   },
