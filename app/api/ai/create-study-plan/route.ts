@@ -1,6 +1,6 @@
 
+
 import { NextRequest, NextResponse } from 'next/server';
-import { runFlow } from 'genkit';
 import { createStudyPlan } from '@lib/ai/flows/study-plan';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -11,10 +11,14 @@ export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         
-        const taskType = formData.get('taskType') as string;
+        const taskType = formData.get('taskType') as 'test' | 'homework' | 'project';
         const description = formData.get('description') as string;
         const dueDate = formData.get('dueDate') as string;
         const file = formData.get('file') as File | null;
+
+        if (!['test', 'homework', 'project'].includes(taskType)) {
+            return NextResponse.json({ error: 'Invalid task type provided.' }, { status: 400 });
+        }
 
         let fileDetails = undefined;
 
@@ -39,7 +43,7 @@ export async function POST(req: NextRequest) {
         };
 
         // Execute the Genkit flow
-        const result = await runFlow(createStudyPlan, studyPlanRequest);
+        const result = await createStudyPlan(studyPlanRequest);
 
         // Clean up the temporary file if it was created
         if (fileDetails) {
