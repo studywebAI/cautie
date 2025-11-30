@@ -11,7 +11,7 @@ import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { FlashcardViewer } from '@/components/tools/flashcard-viewer';
-import { QuizTaker } from '../../../components/tools/quiz-taker';
+import { QuizTaker } from '@/components/tools/quiz-taker';
 import { NoteViewer } from '@/components/material-viewers/note-viewer';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
