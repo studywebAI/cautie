@@ -1,6 +1,5 @@
 
 import mammoth from 'mammoth';
-import pdf from 'pdf-parse';
 
 // This function is designed to run on the server-side, where it can access the file system.
 export async function extractTextFromFile(file: { path: string; mimetype: string }): Promise<string> {
@@ -15,6 +14,7 @@ export async function extractTextFromFile(file: { path: string; mimetype: string
             // Dynamically import 'fs/promises' only when needed.
             const fs = await import('fs/promises');
             const dataBuffer = await fs.readFile(path);
+            const pdf = (await import('pdf-parse')).default;
             const data = await pdf(dataBuffer);
             return data.text;
         } else if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {

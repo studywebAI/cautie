@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': path.resolve(__dirname),
+      '@': __dirname, // Point '@' to the root directory
     };
     return config;
   },

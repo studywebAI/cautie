@@ -1,27 +1,15 @@
 
-import {defineFlow, runFlow} from 'genkit';
-import {z} from 'zod';
-import {ai} from '../genkit';
-import {extractTextFromFile} from '../util';
-import {PersonalTask} from '@/lib/types';
+import { defineFlow } from '@genkit-ai/core';
+import { z } from 'zod';
+import { ai } from '@lib/ai/genkit';
+import { extractTextFromFile } from '@lib/ai/util';
+import { StudyPlanResponseSchema, StudyPlanTaskSchema } from '@lib/types';
 
 const StudyPlanRequestSchema = z.object({
     taskType: z.enum(['test', 'homework', 'project']),
     description: z.string(),
     dueDate: z.string(), // YYYY-MM-DD
-    file: z.any().optional(), // Represents a file-like object for server-side processing
-});
-
-const StudyPlanTaskSchema = z.object({
-    title: z.string(),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format."),
-    subject: z.string(),
-    description: z.string(),
-    is_completed: z.boolean(),
-});
-
-const StudyPlanResponseSchema = z.object({
-    tasks: z.array(StudyPlanTaskSchema),
+    file: z.any().optional(),
 });
 
 export const createStudyPlan = defineFlow(
@@ -31,7 +19,7 @@ export const createStudyPlan = defineFlow(
         outputSchema: StudyPlanResponseSchema,
     },
     async (request) => {
-        const {taskType, description, dueDate, file} = request;
+        const { taskType, description, dueDate, file } = request;
 
         let fileContent = '';
         if (file) {
@@ -39,7 +27,6 @@ export const createStudyPlan = defineFlow(
                 fileContent = await extractTextFromFile(file);
             } catch (error) {
                 console.error('Error extracting text from file:', error);
-                // Decide if you want to throw or just continue without file content
                 fileContent = 'Error reading file content.';
             }
         }
@@ -69,7 +56,7 @@ export const createStudyPlan = defineFlow(
         `;
 
         const llmResponse = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: 'gemini-1.5-flash',
             prompt: prompt,
             output: {
                 format: 'json',
@@ -77,13 +64,12 @@ export const createStudyPlan = defineFlow(
             },
         });
 
-        const studyPlan = llmResponse.output();
+        const studyPlan = llmResponse.output;
 
         if (!studyPlan) {
             throw new Error('Failed to generate a valid study plan from the AI model.');
         }
 
-        // Further validation to ensure dates are logical (optional but good practice)
         const validatedPlan = studyPlan.tasks.filter(task => {
             const taskDate = new Date(task.date);
             const dueDateObj = new Date(dueDate);
