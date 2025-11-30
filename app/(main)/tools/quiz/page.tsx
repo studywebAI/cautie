@@ -13,7 +13,7 @@ import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon, Swords, BookCheck,
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { QuizTaker, QuizMode } from '@/components/tools/quiz-taker';
+import { QuizTaker, QuizMode } from '../../../components/tools/quiz-taker';
 import { AppContext } from '@/contexts/app-context';
 import type { Quiz } from '@/lib/types';
 import { QuizDuel } from '@/components/tools/quiz-duel';
