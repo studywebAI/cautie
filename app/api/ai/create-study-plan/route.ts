@@ -1,8 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createStudyPlan } from '@lib/ai/flows/study-plan';
-import { ai } from '@lib/ai/genkit';
 import { promises as fs } from 'fs';
+import { ai } from '@lib/ai/genkit';
 import path from 'path';
 import os from 'os';
 
@@ -11,10 +11,15 @@ export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         
-        const taskType = formData.get('taskType') as string;
+        const taskTypeRaw = formData.get('taskType');
         const description = formData.get('description') as string;
         const dueDate = formData.get('dueDate') as string;
         const file = formData.get('file') as File | null;
+
+        if (typeof taskTypeRaw !== 'string' || !['test', 'homework', 'project'].includes(taskTypeRaw)) {
+            return NextResponse.json({ error: 'Invalid taskType provided.' }, { status: 400 });
+        }
+        const taskType = taskTypeRaw as "test" | "homework" | "project";
 
         let fileDetails = undefined;
 
@@ -39,7 +44,7 @@ export async function POST(req: NextRequest) {
         };
 
         // Execute the Genkit flow
-        const result = await ai.run('createStudyPlan', studyPlanRequest);
+        const result = await createStudyPlan(studyPlanRequest);
 
         // Clean up the temporary file if it was created
         if (fileDetails) {

@@ -1,6 +1,5 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { runFlow } from 'genkit';
 import { generateTitle } from '@lib/ai/flows/title-generator';
 
 export async function POST(req: NextRequest) {
@@ -12,7 +11,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Text is required' }, { status: 400 });
         }
 
-        const result = await runFlow(generateTitle, { text });
+        const result = await generateTitle({ text });
 
         return NextResponse.json(result, { status: 200 });
 
