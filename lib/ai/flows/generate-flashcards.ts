@@ -1,3 +1,5 @@
+'use server';
+
 import { z } from 'zod';
 import { ai } from '@lib/ai/genkit';
 import { FlashcardSchema } from '@/lib/types';
