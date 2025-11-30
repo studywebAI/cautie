@@ -1,5 +1,5 @@
 
-import {defineFlow} from 'genkit';
+import {flow} from 'genkit';
 import {z} from 'zod';
 import {ai} from '../genkit';
 
@@ -11,7 +11,7 @@ const TitleResponseSchema = z.object({
     title: z.string(),
 });
 
-export const generateTitle = defineFlow(
+export const generateTitle = flow(
     {
         name: 'generateTitle',
         inputSchema: TitleRequestSchema,
