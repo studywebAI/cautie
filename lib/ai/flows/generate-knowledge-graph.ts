@@ -1,5 +1,3 @@
-
-import { defineFlow } from '@genkit-ai/core';
 import { z } from 'zod';
 import { ai } from '@lib/ai/genkit';
 
@@ -17,13 +15,13 @@ const GenerateKnowledgeGraphOutputSchema = z.object({
   concepts: z.array(ConceptSchema).describe('An array of key concepts extracted from the text.'),
 });
 
-export const generateKnowledgeGraph = defineFlow(
+export const generateKnowledgeGraph = ai.defineFlow(
     {
         name: 'generateKnowledgeGraph',
         inputSchema: GenerateKnowledgeGraphInputSchema,
         outputSchema: GenerateKnowledgeGraphOutputSchema,
     },
-    async (input) => {
+    async (input: z.infer<typeof GenerateKnowledgeGraphInputSchema>) => {
         const { sourceText } = input;
 
         const prompt = `You are an AI that specializes in semantic analysis and knowledge extraction. Your task is to identify the most important concepts from the provided text and represent them as a simple list.
@@ -43,6 +41,6 @@ ${sourceText}
             },
         });
 
-        return llmResponse.output() || { concepts: [] };
+        return llmResponse.output || { concepts: [] };
     }
 );

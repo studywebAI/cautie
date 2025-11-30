@@ -31,7 +31,36 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        fs: false,
+        tls: false,
+        net: false,
+        http2: false,
+        dns: false,
+        async_hooks: false,
+        dgram: false,
+        child_process: false,
+        buffer: false, // Add buffer
+        events: false, // Add events
+        https: false, // Add https
+        perf_hooks: false, // Add perf_hooks
+        worker_threads: false, // Add worker_threads
+        'stream/web': false, // Add stream/web
+      };
+    }
+
+    // Handle 'node:' prefixed imports
+    config.plugins.push(
+      new (require('webpack').NormalModuleReplacementPlugin)(
+        /^node:/,
+        (resource: any) => {
+          resource.request = resource.request.replace(/^node:/, '');
+        }
+      )
+    );
+
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname, 'app'),

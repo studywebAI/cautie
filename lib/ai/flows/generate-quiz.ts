@@ -1,8 +1,6 @@
-
-import { defineFlow } from '@genkit-ai/core';
 import { z } from 'zod';
 import { ai } from '@lib/ai/genkit';
-import { QuizSchema } from '@lib/types';
+import { QuizSchema } from '@/lib/types';
 
 const GenerateQuizInputSchema = z.object({
   sourceText: z.string().describe('The source text from which to generate the quiz.'),
@@ -10,13 +8,13 @@ const GenerateQuizInputSchema = z.object({
   existingQuestionIds: z.array(z.string()).optional().describe('An array of question IDs that should not be regenerated.'),
 });
 
-export const generateQuiz = defineFlow(
+export const generateQuiz = ai.defineFlow(
     {
         name: 'generateQuiz',
         inputSchema: GenerateQuizInputSchema,
         outputSchema: QuizSchema,
     },
-    async (input) => {
+    async (input: z.infer<typeof GenerateQuizInputSchema>) => {
         const { sourceText, questionCount, existingQuestionIds } = input;
 
         const prompt = `You are an expert in creating educational content. Your task is to generate a multiple-choice quiz from the provided source text.
@@ -40,7 +38,7 @@ ${sourceText}
             },
         });
 
-        const quiz = llmResponse.output();
+        const quiz = llmResponse.output;
 
         if (!quiz) {
             throw new Error("Failed to generate quiz");

@@ -1,21 +1,19 @@
-
-import { defineFlow } from '@genkit-ai/core';
 import { z } from 'zod';
 import { ai } from '@lib/ai/genkit';
-import { McqQuestionSchema, McqQuestion } from '@lib/types';
+import { McqQuestionSchema, McqQuestion } from '@/lib/types';
 
 const GenerateMultipleChoiceFromFlashcardInputSchema = z.object({
   front: z.string().describe("The front of the flashcard (the term or prompt)."),
   back: z.string().describe("The back of the flashcard (the definition or answer)."),
 });
 
-export const generateMultipleChoiceFromFlashcard = defineFlow(
+export const generateMultipleChoiceFromFlashcard = ai.defineFlow(
     {
         name: 'generateMultipleChoiceFromFlashcard',
         inputSchema: GenerateMultipleChoiceFromFlashcardInputSchema,
         outputSchema: McqQuestionSchema,
     },
-    async (input) => {
+    async (input: z.infer<typeof GenerateMultipleChoiceFromFlashcardInputSchema>) => {
         const { front, back } = input;
 
         const prompt = `You are an expert in creating educational content. Your task is to generate a single multiple-choice question based on a flashcard.
@@ -43,7 +41,7 @@ Your task:
             },
         });
 
-        const question = llmResponse.output();
+        const question = llmResponse.output;
 
         if (!question) {
             throw new Error("Failed to generate multiple choice question");

@@ -1,8 +1,6 @@
-
-import { defineFlow } from '@genkit-ai/core';
 import { z } from 'zod';
 import { ai } from '@lib/ai/genkit';
-import { FlashcardSchema } from '@lib/types';
+import { FlashcardSchema } from '@/lib/types';
 
 const GenerateFlashcardsInputSchema = z.object({
   sourceText: z.string().describe('The source text from which to generate flashcards.'),
@@ -14,13 +12,13 @@ const GenerateFlashcardsOutputSchema = z.object({
   flashcards: z.array(FlashcardSchema).describe('An array of generated flashcards.'),
 });
 
-export const generateFlashcards = defineFlow(
+export const generateFlashcards = ai.defineFlow(
     {
         name: 'generateFlashcards',
         inputSchema: GenerateFlashcardsInputSchema,
         outputSchema: GenerateFlashcardsOutputSchema,
     },
-    async (input) => {
+    async (input: z.infer<typeof GenerateFlashcardsInputSchema>) => {
         const { sourceText, count, existingFlashcardIds } = input;
 
         const prompt = `You are an expert in creating effective learning materials. Your task is to generate a set of flashcards based on the provided source text. Create exactly ${count} flashcards.
@@ -52,6 +50,6 @@ ${sourceText}
             },
         });
 
-        return llmResponse.output() || { flashcards: [] };
+        return llmResponse.output || { flashcards: [] };
     }
 );
