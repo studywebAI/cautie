@@ -1,4 +1,3 @@
-
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -8,80 +7,98 @@ import type { Database } from '@/lib/supabase/database.types'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get: (name: string) => cookies().get(name)?.value,
+      },
+    }
+  );
   
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    // For guests, return an empty array. The client will use local storage.
+  const { searchParams } = new URL(request.url);
+  const guestId = searchParams.get('guestId');
+
+  if (!session && !guestId) {
     return NextResponse.json([]);
   }
-  
+
   // Get classes the user owns
-   const { data: ownedClasses, error: ownedError } = await supabase
-    .from('classes')
-    .select()
-    .eq('owner_id', session.user.id);
-  
-  if (ownedError) {
-    return NextResponse.json({ error: ownedError.message }, { status: 500 });
-  }
-
-  // Get IDs of classes the user is a member of
-  const { data: memberClassRelations, error: memberError } = await supabase
-    .from('class_members')
-    .select('class_id')
-    .eq('user_id', session.user.id);
-
-  if (memberError) {
-     return NextResponse.json({ error: memberError.message }, { status: 500 });
-  }
-
-  const memberClassIds = memberClassRelations.map(r => r.class_id);
-
-  // Get full data for classes the user is a member of
-  let memberClasses: any[] = [];
-  if (memberClassIds.length > 0) {
+  let ownedClasses: any[] = [];
+  if (session) {
     const { data, error } = await supabase
-        .from('classes')
-        .select()
-        .in('id', memberClassIds);
-    if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    memberClasses = data || [];
+      .from('classes')
+      .select('*')
+      .eq('owner_id', session.user.id);
+    
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    ownedClasses = data;
+  } else if (guestId) {
+    const { data, error } = await supabase
+      .from('classes')
+      .select('*')
+      .eq('guest_id', guestId);
+    
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    ownedClasses = data;
   }
-  
+
+  let memberClasses: any[] = [];
+  if (session) {
+    const { data: memberClassesData, error: memberError } = await supabase
+      .from('class_members')
+      .select('classes(*)')
+      .eq('member_id', session.user.id);
+    
+    if (memberError) return NextResponse.json({ error: memberError.message }, { status: 500 });
+    
+    memberClasses = memberClassesData?.map(member => member.classes) || [];
+  }
+
   const allClasses = [...ownedClasses, ...memberClasses];
-  // Remove duplicates in case a user is somehow a member of their own class
-  const uniqueClasses = Array.from(new Set(allClasses.map(c => c.id)))
-    .map(id => allClasses.find(c => c.id === id));
-
-
+  const uniqueClasses = Array.from(new Map(allClasses.map(c => [c.id, c])).values());
+  
   return NextResponse.json(uniqueClasses);
 }
 
 export async function POST(request: Request) {
-  const { name, description } = await request.json();
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
+  const { name, description, guestId } = await request.json();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookies().get(name)?.value;
+        },
+      },
+    }
+  );
   
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (!user && !guestId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Cast to correct insert type
+  const insertData: Database['public']['Tables']['classes']['Insert'] = {
+    name, 
+    description,
+    owner_id: user?.id || null,
+    guest_id: guestId || null,
+    owner_type: user ? 'user' : 'guest'
+  };
+  
   const { data, error } = await supabase
     .from('classes')
-    .insert([
-      { name, description, owner_id: user.id },
-    ])
+    .insert([insertData])
     .select()
     .single();
 
   if (error) {
-    console.error('Error creating class:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
