@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent that explains why a quiz answer is correct or incorrect.
@@ -31,20 +32,18 @@ const prompt = ai.definePrompt({
   name: 'explainAnswerPrompt',
   input: { schema: ExplainAnswerInputSchema },
   output: { schema: ExplainAnswerOutputSchema },
-  prompt: `You are a helpful study assistant. A student has just answered a quiz question. Your task is to provide a concise explanation.
+  prompt: `You are a helpful study assistant. A student has just answered a quiz question. Your task is to provide a comprehensive explanation.
 
 Question: "{{{question}}}"
 The correct answer is: "{{{correctAnswer}}}"
 
 {{#if isCorrect}}
 The user chose "{{{selectedAnswer}}}", which is the correct answer.
-Briefly explain why this answer is correct.
+Provide a clear, friendly, and comprehensive explanation for why this answer is correct. Suggest strategies or concepts that could lead to this correct answer.
 {{else}}
 The user chose "{{{selectedAnswer}}}", which is incorrect.
-Briefly explain why the user's answer is wrong and why the correct answer is right.
+Provide a clear, friendly, and comprehensive explanation for why the user's answer is wrong, why the correct answer is right, and suggest strategies or concepts that could lead to the correct answer. Ensure accuracy and avoid generalizations.
 {{/if}}
-
-Keep the explanation clear, friendly, and under 50 words.
 `,
 });
 

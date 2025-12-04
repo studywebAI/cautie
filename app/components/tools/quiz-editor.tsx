@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useContext } from 'react';
@@ -13,6 +14,7 @@ import { Loader2, Trash2, ArrowLeft, Play, Undo2, BookCheck, Wand2, Plus } from 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatePresence, motion } from 'framer-motion';
 import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
+import { suggestAnswers } from '@/ai/flows/suggest-answers'; // New import
 import type { Quiz, QuizQuestion, QuizOption } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '../ui/form';
@@ -39,13 +41,16 @@ type QuizEditorProps = {
   onStartQuiz: (finalQuiz: Quiz) => void;
   onBack: () => void;
   isAssignmentContext?: boolean;
+  onCreateForAssignment: (finalQuiz: Quiz) => void; // Added this line
 };
 
-export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignmentContext = false }: QuizEditorProps) {
+export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignmentContext = false, onCreateForAssignment }: QuizEditorProps) {
   const [currentQuiz, setCurrentQuiz] = useState<Quiz>(quiz);
   const [isLoading, setIsLoading] = useState(false);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [lastDeleted, setLastDeleted] = useState<{ question: QuizQuestion; index: number } | null>(null);
+  const [aiSuggestedOptions, setAiSuggestedOptions] = useState<QuizOption[] | null>(null); // New state for AI suggestions
+  const [showAnswers, setShowAnswers] = useState(false); // New state to toggle answer visibility, default to false
   const { toast } = useToast();
   const router = useRouter();
   const appContext = useContext(AppContext);
@@ -60,33 +65,81 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
     },
   });
 
-  const { fields } = useFieldArray({
+  const { fields, update, replace } = useFieldArray({
     control: form.control,
     name: "options"
   });
 
   const handleAddQuestionWithAI = async () => {
     setIsAddingQuestion(true);
+    setAiSuggestedOptions(null); // Clear previous suggestions
     try {
-      const newQuestion = await generateSingleQuestion({
-        sourceText: sourceText,
-        difficulty: 5,
-        existingQuestionIds: currentQuiz.questions.map(q => q.id),
-      });
-      setCurrentQuiz(prevQuiz => ({
-        ...prevQuiz,
-        questions: [...prevQuiz.questions, newQuestion],
-      }));
+      const questionText = form.getValues("question");
+
+      if (questionText.trim()) {
+        // If question text is provided, suggest answers
+        const response = await suggestAnswers({
+          question: questionText,
+          sourceText: sourceText,
+        });
+        setAiSuggestedOptions(response.suggestedOptions);
+      } else {
+        // If no question text, generate a full question
+        const newQuestion = await generateSingleQuestion({
+          sourceText: sourceText,
+          difficulty: 5,
+          existingQuestionIds: currentQuiz.questions.map(q => q.id),
+        });
+        setCurrentQuiz(prevQuiz => ({
+          ...prevQuiz,
+          questions: [...prevQuiz.questions, newQuestion],
+        }));
+      }
     } catch (error) {
-      console.error("Failed to add question:", error);
+      console.error("Failed to add question or suggest answers:", error);
       toast({
-        variant: 'destructive',
-        title: 'Failed to Add Question',
-        description: 'The AI could not generate a new question. Please try again.',
+        variant: "destructive",
+        title: "AI Suggestion Failed",
+        description: "The AI could not generate a suggestion. Please try again.",
       });
     } finally {
       setIsAddingQuestion(false);
     }
+  };
+
+  const handleAcceptSuggestedOption = (acceptedOption: QuizOption, index: number) => {
+    const currentOptions = form.getValues("options");
+    const newOptions = [...currentOptions];
+    
+    // Find the first empty option slot or replace the one at the index if it exists
+    let targetIndex = newOptions.findIndex(opt => opt.text.trim() === '');
+    if (targetIndex === -1 || targetIndex > 3) { // Ensure we don't go beyond default 4 options if no empty slot found
+      targetIndex = index; // Fallback to replacing by suggestion index
+    }
+
+    if (newOptions[targetIndex]) {
+      update(targetIndex, { text: acceptedOption.text });
+    } else {
+      // If there are less than 4 options, append
+      if (newOptions.length < 4) {
+        replace([...newOptions, { text: acceptedOption.text }]);
+      } else {
+        // If all 4 options are filled and no empty slot, replace the one at targetIndex
+        update(targetIndex, { text: acceptedOption.text });
+      }
+    }
+
+    // Set correct answer if this is the correct option
+    if (acceptedOption.isCorrect) {
+      form.setValue("correctOptionIndex", String(targetIndex));
+    }
+
+    // Remove accepted option from suggested list
+    setAiSuggestedOptions(prev => prev ? prev.filter(opt => opt.id !== acceptedOption.id) : null);
+  };
+
+  const handleRejectSuggestedOption = (indexToRemove: number) => {
+    setAiSuggestedOptions(prev => prev ? prev.filter((_, index) => index !== indexToRemove) : null);
   };
 
   const handleAddManualQuestion = (data: ManualQuestionFormValues) => {
@@ -248,8 +301,8 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
                     <p className="font-semibold">{index + 1}. {q.question}</p>
                     <ul className="mt-2 space-y-1 text-sm text-muted-foreground list-disc pl-5">
                       {q.options.map(opt => (
-                        <li key={opt.id} className={opt.isCorrect ? 'font-medium text-primary' : ''}>
-                          {opt.text} {opt.isCorrect && '(Correct)'}
+                        <li key={opt.id} className={opt.isCorrect && showAnswers ? 'font-medium text-primary' : ''}>
+                          {opt.text} {opt.isCorrect && showAnswers && '(Correct)'}
                         </li>
                       ))}
                     </ul>
@@ -317,10 +370,44 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
                       )}
                     />
                     
+                    {aiSuggestedOptions && aiSuggestedOptions.length > 0 && (
+                      <div className="space-y-4 rounded-md border p-4 bg-blue-50/50 dark:bg-blue-950/20">
+                        <h4 className="font-semibold text-blue-700 dark:text-blue-300">AI Suggested Options:</h4>
+                        <ul className="space-y-2">
+                          {aiSuggestedOptions.map((opt, index) => (
+                            <li key={opt.id} className="flex items-center justify-between p-2 rounded-md bg-white dark:bg-gray-800 shadow-sm">
+                              <span className={`flex-1 ${opt.isCorrect ? 'font-medium text-green-700 dark:text-green-300' : ''}`}>
+                                {opt.text} {opt.isCorrect && <span className="text-xs text-green-600 dark:text-green-400">(Correct)</span>}
+                              </span>
+                              <div className="flex gap-2 ml-4">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+                                  onClick={() => handleAcceptSuggestedOption(opt, index)}
+                                >
+                                  ✓
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+                                  onClick={() => handleRejectSuggestedOption(index)}
+                                >
+                                  ✕
+                                </Button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="text-sm text-muted-foreground">Review AI suggestions and accept or reject them. Accepted options will fill the form fields.</p>
+                      </div>
+                    )}
+
                     <div className="flex justify-end gap-2">
                         <Button type="button" onClick={handleAddQuestionWithAI} variant="outline" disabled={isAddingQuestion}>
                             {isAddingQuestion ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                            Suggest with AI
+                            {form.getValues("question").trim() ? "Suggest Answers with AI" : "Suggest Full Question with AI"}
                         </Button>
                         <Button type="submit">
                             <Plus className="mr-2 h-4 w-4" />
@@ -336,10 +423,15 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
       </div>
 
       <CardFooter className="flex justify-between bg-muted/50 py-3 border-t">
-        <Button variant="outline" onClick={onBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Setup
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={onBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Setup
+          </Button>
+          <Button variant="secondary" onClick={() => setShowAnswers(prev => !prev)}>
+            {showAnswers ? "Hide Answers" : "Show Answers"}
+          </Button>
+        </div>
         <Button onClick={handlePrimaryAction} disabled={currentQuiz.questions.length === 0 || isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PrimaryButtonIcon className="mr-2 h-4 w-4" />}
             {isLoading ? 'Creating...' : primaryButtonText}

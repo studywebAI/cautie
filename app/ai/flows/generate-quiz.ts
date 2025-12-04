@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent that generates a multiple-choice quiz from source text.
@@ -30,7 +31,7 @@ const prompt = ai.definePrompt({
   output: { schema: QuizSchema },
   prompt: `You are an expert in creating educational content. Your task is to generate a multiple-choice quiz from the provided source text.
 
-The quiz should have a relevant title and a brief description.
+The quiz should have a concise and relevant title (without phrases like "a comprehensive quiz") and a brief description.
 Create exactly {{{questionCount}}} questions.
 Each question must have 3 or 4 answer options.
 Exactly one option for each question must be correct.
