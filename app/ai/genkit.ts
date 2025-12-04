@@ -1,13 +1,13 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 
-const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_2;
+const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY_2;
 
 export const ai = genkit({
-  plugins: [googleAI({ 
-    project: 'study-web-app-426213', 
-    location: 'us-central1',
-    apiKey: geminiApiKey,
-  })],
+  plugins: [
+    googleAI({ 
+      apiKey: geminiApiKey,
+    }),
+  ],
   model: 'googleai/gemini-1.5-flash',
 });
