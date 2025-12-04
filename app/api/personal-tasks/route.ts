@@ -1,16 +1,29 @@
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
+import { NextResponse } from "next/server"
 
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
+import type { Database } from "@/lib/supabase/database.types"
 
-import type { Database } from '@/lib/supabase/database.types'
-
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 
 // GET all personal tasks for the logged-in user
 export async function GET(request: Request) {
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
+  const cookieStore = await cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get: (name: string) => cookieStore.get(name)?.value,
+        set: (name: string, value: string, options: any) => {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove: (name: string, options: any) => {
+          cookieStore.set({ name, value: "", ...options });
+        },
+      },
+    }
+  );
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
@@ -19,12 +32,12 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await supabase
-    .from('personal_tasks')
+    .from("personal_tasks")
     .select()
-    .eq('user_id', session.user.id);
+    .eq("user_id", session.user.id);
 
   if (error) {
-    console.error('Error fetching personal tasks:', error);
+    console.error("Error fetching personal tasks:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -34,17 +47,31 @@ export async function GET(request: Request) {
 // POST a new personal task
 export async function POST(request: Request) {
   const { title, description, date, subject } = await request.json();
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
+  const cookieStore = await cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get: (name: string) => cookieStore.get(name)?.value,
+        set: (name: string, value: string, options: any) => {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove: (name: string, options: any) => {
+          cookieStore.set({ name, value: "", ...options });
+        },
+      },
+    }
+  );
   
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { data, error } = await supabase
-    .from('personal_tasks')
+    .from("personal_tasks")
     .insert([
       { title, description, date, subject, user_id: user.id },
     ])
@@ -52,7 +79,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    console.error('Error creating personal task:', error);
+    console.error("Error creating personal task:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
