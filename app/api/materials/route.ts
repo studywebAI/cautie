@@ -1,8 +1,8 @@
-
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import type { Database } from '@/lib/supabase/database.types'
+import type { Database, Json } from '@/lib/supabase/database.types'
+import { CookieOptions } from '@supabase/ssr' // Correct import for CookieOptions
 import { generateKnowledgeGraph } from '@/ai/flows/generate-knowledge-graph'
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +17,17 @@ export async function GET(request: Request) {
   }
 
   const cookieStore = cookies();
-  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+    {
+      cookies: {
+        get: (name: string) => (cookieStore as any).get(name)?.value,
+        set: (name: string, value: string, options: CookieOptions) => (cookieStore as any).set(name, value, options),
+        remove: (name: string, options: CookieOptions) => (cookieStore as any).set(name, '', options),
+      },
+    }
+  );
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
@@ -36,13 +46,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
   }
 
+  // Type narrowing to ensure classData has owner_id when not null or error
+  const ownerId = classData.owner_id; 
+
   const { data: memberData, error: memberError } = await supabase
     .from('class_members')
     .select()
     .eq('class_id', classId)
     .eq('user_id', session.user.id);
     
-  if (classData.owner_id !== session.user.id && (!memberData || memberData.length === 0)) {
+  if (ownerId !== session.user.id && (!memberData || memberData.length === 0)) {
      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -64,7 +77,17 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const { title, class_id, type, notes_content, content, source_text_for_concepts } = await request.json();
   const cookieStore = cookies();
-  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+    {
+      cookies: {
+        get: (name: string) => (cookieStore as any).get(name)?.value,
+        set: (name: string, value: string, options: CookieOptions) => (cookieStore as any).set(name, value, options),
+        remove: (name: string, options: CookieOptions) => (cookieStore as any).set(name, '', options),
+      },
+    }
+  );
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -78,7 +101,10 @@ export async function POST(request: Request) {
     .eq('id', class_id)
     .single();
 
-  if (classCheckError || !classData || classData.owner_id !== user.id) {
+  // Type narrowing for owner_id before access
+  const classOwnerId = classData?.owner_id; 
+
+  if (classCheckError || !classData || classOwnerId !== user.id) {
      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -88,7 +114,7 @@ export async function POST(request: Request) {
   if (type === 'NOTE' && notes_content) {
     const { data: note, error: noteError } = await supabase
       .from('notes')
-      .insert({ title, content: notes_content })
+      .insert({ title, content: notes_content, owner_type: 'user', user_id: user.id } as any) // Temporary cast
       .select()
       .single();
 
@@ -99,14 +125,14 @@ export async function POST(request: Request) {
   }
   
   // Generate concepts from the provided source text
-  let concepts = [];
+  let concepts: Json[] = []; // Explicitly typed as Json[]
   if (source_text_for_concepts) {
     try {
       const graph = await generateKnowledgeGraph({ sourceText: source_text_for_concepts });
       concepts = graph.concepts;
     } catch (aiError) {
-      console.error("AI concept generation failed:", aiError);
-      return NextResponse.json({ error: 'AI concept generation failed' }, { status: 500 });
+      console.error('AI concept generation failed:', JSON.stringify(aiError, null, 2));
+      return NextResponse.json({ error: 'AI concept generation failed: ' + JSON.stringify(aiError) }, { status: 500 });
     }
   }
 
@@ -119,8 +145,10 @@ export async function POST(request: Request) {
       type,
       content_id: noteId,
       content: content || null, // Store quiz/flashcard JSON
-      concepts: concepts,
-    })
+      concepts,
+      owner_type: 'user', // Added owner_type
+      user_id: user.id, // Added user_id
+    } as any) // Temporary cast
     .select()
     .single();
 
