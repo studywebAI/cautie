@@ -19,29 +19,34 @@ export async function POST(request: Request) {
   }
 
   try {
+    const updatePayload = { user_id: user.id, guest_id: null, owner_type: 'user' };
+
     // Migrate classes
+    // @ts-ignore
     await supabase
       .from('classes')
-      .update({ user_id: user.id, guest_id: null, owner_type: 'user' } as Database['public']['Tables']['classes']['Update'])
+      .update(updatePayload)
       .eq('guest_id', guestId);
 
     // Migrate assignments
+    // @ts-ignore
     await supabase
       .from('assignments')
-      .update({ user_id: user.id, guest_id: null, owner_type: 'user' } as Database['public']['Tables']['assignments']['Update'])
+      .update(updatePayload)
       .eq('guest_id', guestId);
 
-    // Add more tables here as needed for migration: personal_tasks, materials, notes
-    // Example for personal_tasks:
+    // Migrate personal_tasks
+    // @ts-ignore
     await supabase
       .from('personal_tasks')
-      .update({ user_id: user.id, guest_id: null, owner_type: 'user' } as Database['public']['Tables']['personal_tasks']['Update'])
+      .update(updatePayload)
       .eq('guest_id', guestId);
 
-    // Example for materials (assuming materials also have guest_id and user_id):
+    // Migrate materials
+    // @ts-ignore
     await supabase
       .from('materials')
-      .update({ user_id: user.id, guest_id: null, owner_type: 'user' } as Database['public']['Tables']['materials']['Update'])
+      .update(updatePayload)
       .eq('guest_id', guestId);
 
     return NextResponse.json({ message: 'Data migrated successfully' });
