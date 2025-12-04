@@ -54,7 +54,13 @@ const generateNotesFlow = ai.defineFlow(
     outputSchema: GenerateNotesOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
-    return output!;
+    try {
+      const { output } = await prompt(input);
+      return output!;
+    } catch (error) {
+      console.error("Error generating notes from AI:", error);
+      // Return a default empty structure or rethrow a custom error
+      return { notes: [] };
+    }
   }
 );
