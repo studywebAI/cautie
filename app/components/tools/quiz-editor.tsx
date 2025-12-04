@@ -302,7 +302,10 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
                     <ul className="mt-2 space-y-1 text-sm text-muted-foreground list-disc pl-5">
                       {q.options.map(opt => (
                         <li key={opt.id} className={opt.isCorrect && showAnswers ? 'font-medium text-primary' : ''}>
-                          {opt.text} {opt.isCorrect && showAnswers && '(Correct)'}
+                          {opt.text} 
+                          {showAnswers && opt.isCorrect && (
+                            <span className="ml-2 text-green-600 dark:text-green-400">✓</span>
+                          )}
                         </li>
                       ))}
                     </ul>

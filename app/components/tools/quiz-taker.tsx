@@ -374,6 +374,8 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
     const [difficulty, setDifficulty] = useState(5); // Start at medium difficulty
     const [isGeneratingNext, setIsGeneratingNext] = useState(false);
 
+    // Note: Duel mode is implemented separately in QuizDuel component
+
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const questionTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -564,6 +566,10 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         }
     };
         
+    const [followUpQuestion, setFollowUpQuestion] = useState('');
+    const [followUpConversation, setFollowUpConversation] = useState<{role: 'user' | 'assistant', content: string}[]>([]);
+    const [isFollowUpLoading, setIsFollowUpLoading] = useState(false);
+
     const handleGetExplanation = async () => {
         const selectedOptionId = answers[question.id];
         const correctOption = question.options.find(o => o.isCorrect);
@@ -571,6 +577,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         
         setIsExplanationLoading(true);
         setExplanation(null);
+        setFollowUpConversation([]);
         try {
             const selectedAnswer = question.options.find(o => o.id === selectedOptionId)?.text || '';
             const result = await explainAnswer({
@@ -580,6 +587,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                 isCorrect: isCorrect,
             });
             setExplanation(result.explanation);
+            setFollowUpConversation([{role: 'assistant', content: result.explanation}]);
         } catch (error) {
             toast({
                 variant: 'destructive',
@@ -588,6 +596,33 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             })
         } finally {
             setIsExplanationLoading(false);
+        }
+    }
+
+    const handleFollowUp = async () => {
+        if (!followUpQuestion.trim()) return;
+        
+        setIsFollowUpLoading(true);
+        try {
+            setFollowUpConversation(prev => [...prev, {role: 'user', content: followUpQuestion}]);
+            
+            const response = await explainAnswer({
+                question: `${question.question}\n\nFollow-up: ${followUpQuestion}`,
+                selectedAnswer: '',
+                correctAnswer: question.options.find(o => o.isCorrect)?.text || '',
+                isCorrect: false
+            });
+
+            setFollowUpConversation(prev => [...prev, {role: 'assistant', content: response.explanation}]);
+            setFollowUpQuestion('');
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Failed to get response to your follow-up question'
+            });
+        } finally {
+            setIsFollowUpLoading(false);
         }
     }
 
@@ -682,7 +717,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="font-headline">{modeDetails[mode].title}: {quiz.title}</CardTitle>
+                        <CardTitle className="font-headline">{modeDetails[mode].title}: {quiz.title.replace("a comprehensive quiz", "")}</CardTitle>
                         <CardDescription>{modeDetails[mode].description}</CardDescription>
                     </div>
                    {renderHeaderInfo()}
@@ -738,15 +773,38 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                                             {isExplanationLoading ? 'Generating...' : 'Explain it to me'}
                                         </Button>
                                     )}
-                                        {explanation && (
-                                            <Alert className="border-blue-500/50 text-blue-500 dark:text-blue-400 [&>svg]:text-blue-500 dark:[&>svg]:text-blue-400">
-                                                <Lightbulb className="h-4 w-4" />
-                                                <AlertTitle>Explanation</AlertTitle>
-                                                <AlertDescription>
-                                                    {explanation}
-                                                </AlertDescription>
-                                            </Alert>
-                                        )}
+                                        <div className="space-y-4">
+                                            {followUpConversation.map((msg, idx) => (
+                                                <Card key={idx} className={msg.role === 'user' ? 'ml-auto bg-blue-50 dark:bg-blue-900/30 max-w-[85%]' : 'max-w-[90%]'}>
+                                                    <CardContent className="p-4">
+                                                        <div className="flex items-start gap-2">
+                                                            {msg.role === 'assistant' && <Lightbulb className="h-5 w-5 text-blue-500 dark:text-blue-300 mt-1 flex-shrink-0" />}
+                                                            <div className="space-y-2">
+                                                                {msg.content.split('\n').map((line, i) => (
+                                                                    <p key={i} className="text-sm">{line}</p>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                            <div className="flex gap-2">
+                                                <Textarea
+                                                    placeholder="Ask a follow-up question..."
+                                                    value={followUpQuestion}
+                                                    onChange={(e) => setFollowUpQuestion(e.target.value)}
+                                                    className="flex-1"
+                                                    disabled={isFollowUpLoading}
+                                                />
+                                                <Button
+                                                    onClick={handleFollowUp}
+                                                    disabled={isFollowUpLoading || !followUpQuestion.trim()}
+                                                >
+                                                    {isFollowUpLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                                    Ask
+                                                </Button>
+                                            </div>
+                                        </div>
                                         {mode === 'survival' && isPenaltyLoading && (
                                             <Alert variant="destructive">
                                                 <ShieldAlert className="h-4 w-4" />

@@ -32,18 +32,30 @@ const prompt = ai.definePrompt({
   name: 'explainAnswerPrompt',
   input: { schema: ExplainAnswerInputSchema },
   output: { schema: ExplainAnswerOutputSchema },
-  prompt: `You are a helpful study assistant. A student has just answered a quiz question. Your task is to provide a comprehensive explanation.
+  prompt: `You are an expert educational tutor. When a student answers a quiz question, provide a detailed, structured explanation to enhance their understanding.
 
 Question: "{{{question}}}"
-The correct answer is: "{{{correctAnswer}}}"
+Correct Answer: "{{{correctAnswer}}}"
+Student's Answer: "{{{selectedAnswer}}}"
 
 {{#if isCorrect}}
-The user chose "{{{selectedAnswer}}}", which is the correct answer.
-Provide a clear, friendly, and comprehensive explanation for why this answer is correct. Suggest strategies or concepts that could lead to this correct answer.
+**Analysis of Correct Answer:**
+1. **Why It's Right:** Explain the reasoning behind the correct answer, connecting it to core concepts.
+2. **Key Concepts:** Highlight 2-3 fundamental ideas or principles that support this answer.
+3. **Study Tips:** Suggest study strategies to reinforce this knowledge.
+4. **Real-World Example:** Provide a practical example or analogy to solidify understanding.
+
 {{else}}
-The user chose "{{{selectedAnswer}}}", which is incorrect.
-Provide a clear, friendly, and comprehensive explanation for why the user's answer is wrong, why the correct answer is right, and suggest strategies or concepts that could lead to the correct answer. Ensure accuracy and avoid generalizations.
+**Comprehensive Explanation:**
+1. **Error Analysis:** Diagnose why the selected answer is incorrect - common misconceptions? Misinterpretation? 
+2. **Correct Reasoning:** Break down the logical steps to arrive at the correct answer.
+3. **Contrast:** Explicitly compare the incorrect vs correct reasoning.
+4. **Key Concepts:** Identify 2-3 fundamental ideas needed to understand this question.
+5. **Study Plan:** Recommend specific resources or practice methods to address gaps.
+6. **Example Scenario:** Provide a practical example demonstrating the correct approach.
+
 {{/if}}
+**Final Summary:** Concisely restate the main takeaway in 1-2 sentences.
 `,
 });
 
