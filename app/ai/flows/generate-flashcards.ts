@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent that generates flashcards from a given text.
@@ -31,27 +32,7 @@ const prompt = ai.definePrompt({
   name: 'generateFlashcardsPrompt',
   input: { schema: GenerateFlashcardsInputSchema },
   output: { schema: GenerateFlashcardsOutputSchema },
-  prompt: `You are an expert in creating effective learning materials. Your task is to generate a set of flashcards based on the provided source text. Create exactly {{{count}}} flashcards.
-
-For each flashcard, you must provide:
-1.  **id**: a unique, short, kebab-case string based on the front of the card.
-2.  **front**: A key term or a question.
-3.  **back**: The corresponding definition or answer.
-4.  **cloze**: A "fill-in-the-blank" sentence based on the definition where the word(s) from the 'back' are replaced with "____". This sentence should provide enough context to guess the missing word.
-
-{{#if existingFlashcardIds}}
-Do not generate flashcards with front text that is identical or very similar to the text from this list: {{{existingFlashcardIds}}}.
-{{/if}}
-
-Example:
-- id: "mitochondria"
-- front: "Mitochondria"
-- back: "powerhouse of the cell"
-- cloze: "The mitochondria is often called the ____."
-
-Source Text:
-{{{sourceText}}}
-`,
+  prompt: `You are an expert in creating effective learning materials. Your task is to generate a set of flashcards based on the provided source text. Create exactly {{{count}}} flashcards.\n\nFor each flashcard, you must provide:\n1.  **id**: a unique, short, kebab-case string based on the front of the card.\n2.  **front**: A key term or a question.\n3.  **back**: The corresponding definition or answer.\n4.  **cloze**: A "fill-in-the-blank" sentence based on the definition where the word(s) from the 'back' are replaced with "____". This sentence should provide enough context to guess the missing word.\n\n{{#if existingFlashcardIds}}\nDo not generate flashcards with front text that is identical or very similar to the text from this list: {{{existingFlashcardIds}}}.\n{{/if}}\n\nExample:\n- id: "mitochondria"\n- front: "Mitochondria"\n- back: "powerhouse of the cell"\n- cloze: "The mitochondria is often called the ____."\n\nSource Text:\n{{{sourceText}}}\n`,
 });
 
 const generateFlashcardsFlow = ai.defineFlow(
@@ -61,7 +42,12 @@ const generateFlashcardsFlow = ai.defineFlow(
     outputSchema: GenerateFlashcardsOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
-    return output!;
+    try {
+      const { output } = await prompt(input);
+      return output!;
+    } catch (error) {
+      console.error("Error generating flashcards from AI:", error);
+      return { flashcards: [] };
+    }
   }
 );
