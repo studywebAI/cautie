@@ -26,27 +26,42 @@ export async function GET(request: Request) {
   );
 
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    // For guests, return an empty array. The client will use local storage.
+  const { searchParams } = new URL(request.url);
+  const guestId = searchParams.get("guestId");
+
+  if (!session && !guestId) {
     return NextResponse.json([]);
   }
 
-  const { data, error } = await supabase
-    .from("personal_tasks")
-    .select()
-    .eq("user_id", session.user.id);
-
-  if (error) {
-    console.error("Error fetching personal tasks:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  let tasks: any[] = [];
+  if (session) {
+    const { data, error } = await supabase
+      .from("personal_tasks")
+      .select()
+      .eq("user_id", session.user.id as "user_id");
+    if (error) {
+      console.error("Error fetching personal tasks for user:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    tasks = data;
+  } else if (guestId) {
+    const { data, error } = await supabase
+      .from("personal_tasks")
+      .select()
+      .eq("guest_id", guestId as "guest_id");
+    if (error) {
+      console.error("Error fetching personal tasks for guest:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    tasks = data;
   }
 
-  return NextResponse.json(data)
+  return NextResponse.json(tasks);
 }
 
 // POST a new personal task
 export async function POST(request: Request) {
-  const { title, description, date, subject } = await request.json();
+  const { title, description, date, subject, guestId } = await request.json();
   const cookieStore = await cookies();
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -66,15 +81,23 @@ export async function POST(request: Request) {
   
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (!user && !guestId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const insertData: Database["public"]["Tables"]["personal_tasks"]["Insert"] = {
+    title,
+    description,
+    date,
+    subject,
+    user_id: user?.id || null,
+    guest_id: guestId || null,
+    owner_type: user ? "user" : "guest"
+  };
+
   const { data, error } = await supabase
     .from("personal_tasks")
-    .insert([
-      { title, description, date, subject, user_id: user.id },
-    ])
+    .insert([insertData])
     .select()
     .single();
 
