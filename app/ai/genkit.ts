@@ -9,5 +9,5 @@ export const ai = genkit({
     location: 'us-central1',
     apiKey: geminiApiKey,
   })],
-  model: 'googleai/gemini-1.5-flash',
+  model: googleAI.model('gemini-2.5-flash-lite'),
 });
