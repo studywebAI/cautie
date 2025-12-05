@@ -1,12 +1,14 @@
+
 'use client';
 
 import { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
 import type { SessionRecapData } from '@/lib/types';
 import type { Tables } from '@/lib/supabase/database.types';
-import type { Session } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/client'; // Import Supabase client
 import type { Student, MaterialReference } from '@/lib/teacher-types';
 import { getDictionary } from '@/lib/get-dictionary';
-import type { Dictionary } from '@/lib/get-dictionary';
+import type { Dictionary, Locale } from '@/lib/get-dictionary'; // Import Locale type
 
 
 export type UserRole = 'student' | 'teacher';
@@ -17,8 +19,8 @@ export type PersonalTask = Tables<'personal_tasks'>;
 export type AppContextType = {
   session: Session | null;
   isLoading: boolean;
-  language: string;
-  setLanguage: (language: string) => void;
+  language: Locale; // Use Locale type
+  setLanguage: (language: Locale) => void; // Use Locale type
   dictionary: Dictionary;
   role: UserRole;
   setRole: (role: UserRole) => void;
@@ -53,17 +55,17 @@ const getFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
         if (item === null) return defaultValue;
         // For non-string types, parse JSON. For strings, just return the item.
         if (typeof defaultValue === 'string') {
-            return item as unknown as T;
+            return item as T;
         }
-        return JSON.parse(item);
+        return JSON.parse(item) as T;
     } catch (error) {
         // If parsing fails, it's likely a plain string that shouldn't have been parsed.
         // This is a recovery mechanism from the previous bug.
         const item = window.localStorage.getItem(key);
         if (item) {
-          return item as unknown as T;
+          return item as T;
         }
-        console.error(`Error reading from localStorage key “${key}”:`, error);
+        console.error(`Error reading from localStorage key "${key}":`, error);
         return defaultValue;
     }
 };
@@ -74,7 +76,7 @@ const saveToLocalStorage = <T,>(key: string, value: T) => {
         const itemToSave = typeof value === 'string' ? value : JSON.stringify(value);
         window.localStorage.setItem(key, itemToSave);
     } catch (error) {
-        console.error(`Error saving to localStorage key “${key}”:`, error);
+        console.error(`Error saving to localStorage key "${key}":`, error);
     }
 };
 
@@ -83,7 +85,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  const [language, setLanguageState] = useState('en');
+  const [language, setLanguageState] = useState<Locale>('en'); // Initialized with full type
   const [dictionary, setDictionary] = useState<Dictionary>(() => getDictionary(language));
   const [role, setRoleState] = useState<UserRole>('student');
   const [highContrast, setHighContrastState] = useState(false);
@@ -101,6 +103,8 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   // Track previous session state to detect login
   const [prevSession, setPrevSession] = useState<Session | null>(session);
 
+  const supabase = createClient(); // Initialize Supabase client
+
   const syncLocalDataToSupabase = useCallback(async () => {
     console.log("Starting data sync to Supabase...");
     const localClasses = getFromLocalStorage<ClassInfo[]>('studyweb-local-classes', []);
@@ -115,7 +119,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       // Sync classes
-      const syncedClasses = await Promise.all(localClasses.map(async (cls) => {
+      const syncedClasses = await Promise.all(localClasses.map(async (cls: ClassInfo) => { // Explicitly type cls
         const response = await fetch('/api/classes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -132,7 +136,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       const classIdMap = new Map(syncedClasses.map(c => [c.localId, c.remoteId]));
 
       // Sync assignments, using the new class IDs
-      await Promise.all(localAssignments.map(async (asn) => {
+      await Promise.all(localAssignments.map(async (asn: ClassAssignment) => { // Explicitly type asn
         const remoteClassId = classIdMap.get(asn.class_id);
         if (!remoteClassId) {
           console.warn(`Skipping assignment "${asn.title}" because its class was not synced.`);
@@ -152,7 +156,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       console.log("Synced assignments.");
 
       // Sync personal tasks
-      await Promise.all(localPersonalTasks.map(async (task) => {
+      await Promise.all(localPersonalTasks.map(async (task: PersonalTask) => { // Explicitly type task
         const response = await fetch('/api/personal-tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -182,7 +186,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const fetchData = useCallback(async () => {
       setIsLoading(true);
       if (session) {
-          // User is logged in
+          // User is logged in, fetch from Supabase
           try {
               const [classesRes, assignmentsRes, personalTasksRes] = await Promise.all([
                   fetch('/api/classes'),
@@ -199,8 +203,26 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
               setAssignments(assignmentsData || []);
               setPersonalTasks(personalTasksData || []);
               
+              // Fetch user profile to get authoritative role
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', session.user.id)
+                .single();
+
+              if (profileError) {
+                console.error('Error fetching profile role:', profileError);
+                setRoleState('student'); // Default to student if profile fetch fails
+              } else if (profileData && profileData.role) {
+                setRoleState(profileData.role as UserRole);
+                saveToLocalStorage('studyweb-role', profileData.role);
+              } else {
+                setRoleState('student'); // Default if role is null in profile
+                saveToLocalStorage('studyweb-role', 'student');
+              }
+
               // Fetch all students for all classes owned by the teacher
-              const ownedClassIds = (classesData || []).filter((c: ClassInfo) => c.owner_id === session.user.id).map((c: ClassInfo) => c.id);
+              const ownedClassIds = (classesData as ClassInfo[] || []).filter((c: ClassInfo) => c.owner_id === session.user.id).map((c: ClassInfo) => c.id);
               if (ownedClassIds.length > 0) {
                  const studentPromises = ownedClassIds.map((id: string) => fetch(`/api/classes/${id}/members`).then(res => res.json()));
                  const studentsPerClass = await Promise.all(studentPromises);
@@ -216,6 +238,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
               setAssignments([]);
               setPersonalTasks([]);
               setStudents([]);
+              setRoleState('student'); // Default to student on overall fetch failure
           }
       } else {
           // User is a guest, fetch from localStorage
@@ -228,12 +251,15 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
                 setClasses(localClasses);
                 setAssignments(localAssignments);
                 setPersonalTasks(localPersonalTasks);
+                // For guests, always use localStorage role
+                setRoleState(getFromLocalStorage('studyweb-role', 'student'));
             } catch (error) {
                 console.error("Failed to fetch guest data:", error);
+                setRoleState('student'); // Default to student on guest data fetch failure
             }
       }
       setIsLoading(false);
-  }, [session]);
+  }, [session, supabase]); // Added supabase to dependency array
   
   useEffect(() => {
     const wasGuest = !prevSession;
@@ -364,7 +390,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   // ---- Settings and Preferences ----
   useEffect(() => {
     setLanguageState(getFromLocalStorage('studyweb-language', 'en'));
-    setRoleState(getFromLocalStorage('studyweb-role', 'student'));
+    // Removed initial setRoleState from localStorage here as it will be set from Supabase profile on login
     
     const hc = getFromLocalStorage('studyweb-high-contrast', false);
     setHighContrastState(hc);
@@ -379,16 +405,36 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     if(rm) document.body.setAttribute('data-reduced-motion', 'true');
   }, []);
   
-  const setLanguage = (newLanguage: string) => {
+  const setLanguage = (newLanguage: Locale) => { // Updated type
     setLanguageState(newLanguage);
     saveToLocalStorage('studyweb-language', newLanguage);
     const newDict = getDictionary(newLanguage);
     setDictionary(newDict);
   };
   
-  const setRole = (newRole: UserRole) => {
+  const setRole = async (newRole: UserRole) => {
     setRoleState(newRole);
     saveToLocalStorage('studyweb-role', newRole);
+
+    if (session?.user?.id) {
+      try {
+        const response = await fetch('/api/user/role', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: session.user.id, newRole }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update role in Supabase');
+        }
+        // Optionally re-fetch profile data to ensure consistency, or trust the response
+      } catch (error) {
+        console.error('Error updating Supabase role:', error);
+        // Revert client-side role if Supabase update fails
+        setRoleState(getFromLocalStorage('studyweb-role', 'student')); 
+        // Consider a toast notification for the user
+      }
+    }
   };
   
   const setHighContrast = (enabled: boolean) => {
