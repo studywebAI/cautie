@@ -85,7 +85,8 @@ function QuizPageContent() {
     if (sourceTextFromParams && !isAssignmentContext) {
       handleGenerate(sourceTextFromParams);
     }
-  }, [sourceTextFromParams, handleGenerate, isAssignmentContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceTextFromParams, handleGenerate]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -245,7 +246,7 @@ function QuizPageContent() {
                          <p className="text-sm text-muted-foreground">Processing file...</p>
                     </div>
                 ) : (
-                    <>
+                    <> 
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                             <UploadCloud className="w-10 h-10 mb-3 text-muted-foreground" />
                             <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
@@ -300,24 +301,17 @@ function QuizPageContent() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="question-count">Number of Questions</Label>
-                 <Select 
-                    value={String(questionCount)} 
-                    onValueChange={(value) => setQuestionCount(Number(value))}
+                <Input
+                    id="question-count"
+                    type="number"
+                    value={questionCount}
+                    onChange={(e) => setQuestionCount(Number(e.target.value))}
+                    min={1} 
+                    max={50} 
+                    placeholder="Enter number of questions"
                     disabled={quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel' || quizMode === 'boss-fight'}
-                 >
-                  <SelectTrigger id="question-count">
-                    <SelectValue placeholder="Select number of questions" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 Questions</SelectItem>
-                    <SelectItem value="7">7 Questions</SelectItem>
-                    <SelectItem value="10">10 Questions</SelectItem>
-                    <SelectItem value="15">15 Questions</SelectItem>
-                    <SelectItem value="25">25 Questions (Short Exam)</SelectItem>
-                    <SelectItem value="50">50 Questions (Long Exam)</SelectItem>
-                  </SelectContent>
-                </Select>
-                 {(quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel' || quizMode === 'boss-fight') && <p className="text-xs text-muted-foreground">Number of questions is managed by the AI in this mode.</p>}
+                />
+                {(quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel' || quizMode === 'boss-fight') && <p className="text-xs text-muted-foreground">Number of questions is managed by the AI in this mode.</p>}
               </div>
            </div>
            <div className="flex items-center space-x-2">
