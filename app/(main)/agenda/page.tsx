@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useContext, useMemo } from 'react';
+import { useState, useContext, useMemo, useEffect } from 'react'; // Added useEffect
 import { format, parseISO } from 'date-fns';
 import { AppContext, AppContextType, PersonalTask, ClassAssignment, useDictionary } from '@/contexts/app-context';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +13,8 @@ import { TodayPanel } from '@/components/agenda/today-panel';
 import { PlusCircle } from 'lucide-react';
 import type { AiSuggestion } from '@/lib/types';
 import Link from 'next/link';
+import { generatePersonalizedStudyPlan } from '@/ai/flows/generate-personalized-study-plan'; // New import
+import { useToast } from '@/hooks/use-toast'; // New import
 
 
 export type CalendarEvent = {
@@ -29,16 +31,19 @@ export default function AgendaPage() {
   const { dictionary } = useDictionary();
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
-  
+  const [aiSuggestion, setAiSuggestion] = useState<AiSuggestion | null>(null); // New state for AI suggestions
+  const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false); // New state for loading
+  const { toast } = useToast(); // Initialize toast
+
   const isStudent = role === 'student';
 
   const events: CalendarEvent[] = useMemo(() => {
     if (!isStudent) return [];
     
-    const assignmentEvents = (assignments || [])
-        .filter((a: ClassAssignment) => a.due_date)
-        .map((a: ClassAssignment) => {
-            const className = classes.find(c => c.id === a.class_id)?.name || 'Class';
+    const assignmentEvents = (assignments as ClassAssignment[] || []) // Type assertion
+        .filter((a) => a.due_date)
+        .map((a) => {
+            const className = (classes as { id: string; name: string }[]).find(c => c.id === a.class_id)?.name || 'Class'; // Type assertion
             const href = a.material_id ? `/material/${a.material_id}` : `/class/${a.class_id}`;
             return {
                 id: a.id,
@@ -50,7 +55,7 @@ export default function AgendaPage() {
             }
         });
 
-    const personalEvents = personalTasks.map((t: PersonalTask) => ({
+    const personalEvents = (personalTasks as PersonalTask[]).map((t) => ({
         id: t.id,
         title: t.title,
         subject: t.subject || 'Personal',
@@ -79,7 +84,46 @@ export default function AgendaPage() {
   
   const eventDays = Array.from(eventsByDate.keys()).map(dateString => parseISO(dateString));
   
-  const todaySuggestion: AiSuggestion | null = null; // Placeholder for AI suggestions
+  // Effect to generate AI suggestion
+  useEffect(() => {
+    if (!selectedDay || !isStudent || !eventsForSelectedDay.length) {
+      setAiSuggestion(null);
+      return;
+    }
+
+    const generateSuggestion = async () => {
+      setIsGeneratingSuggestion(true);
+      setAiSuggestion(null);
+
+      const relevantEvents = eventsForSelectedDay.filter(event => event.type === 'assignment' || event.type === 'personal');
+      const tasksForAI = relevantEvents.map(event => `Title: ${event.title}, Due: ${format(event.date, 'PPP')}, Type: ${event.type}`).join("\n");
+
+      if (!tasksForAI) {
+        setIsGeneratingSuggestion(false);
+        return;
+      }
+
+      try {
+        const response = await generatePersonalizedStudyPlan({
+          events: tasksForAI,
+          date: format(selectedDay, 'PPP'),
+        });
+        setAiSuggestion({ title: response.planSummary, content: response.detailedPlan });
+      } catch (error) {
+        console.error("Failed to generate study plan suggestion:", error);
+        toast({
+          variant: "destructive",
+          title: "AI Suggestion Failed",
+          description: "Could not generate a study plan. Please try again later.",
+        });
+      } finally {
+        setIsGeneratingSuggestion(false);
+      }
+    };
+
+    generateSuggestion();
+  }, [selectedDay, isStudent, eventsForSelectedDay, toast]);
+
 
   const handleTaskCreated = async (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => {
     await createPersonalTask(newTask);
@@ -153,7 +197,8 @@ export default function AgendaPage() {
            <TodayPanel 
                 selectedDay={selectedDay}
                 events={eventsForSelectedDay}
-                suggestion={todaySuggestion}
+                suggestion={aiSuggestion}
+                isGeneratingSuggestion={isGeneratingSuggestion} // Pass loading state
            />
         </div>
 
