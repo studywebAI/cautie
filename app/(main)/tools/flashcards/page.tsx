@@ -33,6 +33,7 @@ function FlashcardsPageContent() {
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [generatedCards, setGeneratedCards] = useState<Flashcard[] | null>(null);
   const [studyMode, setStudyMode] = useState<StudyMode>('flip');
+  const [flashcardCount, setFlashcardCount] = useState(10); // New state for flashcard count
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentView, setCurrentView] = useState<'setup' | 'edit' | 'study'>('setup');
   
@@ -54,7 +55,7 @@ function FlashcardsPageContent() {
     setIsLoading(true);
     setGeneratedCards(null);
     try {
-      const response = await generateFlashcards({ sourceText: text });
+      const response = await generateFlashcards({ sourceText: text, count: flashcardCount });
       setGeneratedCards(response.flashcards);
       if (isEditMode) {
         setCurrentView('edit');
@@ -72,7 +73,7 @@ function FlashcardsPageContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, isEditMode]);
+  }, [toast, isEditMode, flashcardCount]); // Added flashcardCount to dependencies
 
   useEffect(() => {
     if (sourceTextFromParams && !isAssignmentContext) {
@@ -264,7 +265,20 @@ function FlashcardsPageContent() {
                 </SelectContent>
                 </Select>
             </div>
-            <div className="flex items-center space-x-2 pt-8">
+            <div className="space-y-2">
+                <Label htmlFor="flashcard-count">Number of Flashcards</Label>
+                <Input
+                    id="flashcard-count"
+                    type="number"
+                    value={flashcardCount}
+                    onChange={(e) => setFlashcardCount(Number(e.target.value))}
+                    min={1}
+                    max={50}
+                    placeholder="Enter number of flashcards"
+                />
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
                 <Switch 
                     id="edit-mode" 
                     checked={isEditMode}
@@ -272,7 +286,6 @@ function FlashcardsPageContent() {
                 />
                 <Label htmlFor="edit-mode">Review & Edit Before Starting</Label>
            </div>
-          </div>
         </CardContent>
         <CardFooter>
           <Button onClick={handleFormSubmit} disabled={totalLoading || !sourceText}>
@@ -291,7 +304,7 @@ function FlashcardsPageContent() {
 
 export default function FlashcardsPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div>Loading...</div>}> 
             <FlashcardsPageContent />
         </Suspense>
     )
