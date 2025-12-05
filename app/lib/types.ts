@@ -36,6 +36,7 @@ export type Subject = {
 export type AiSuggestion = {
   id:string;
   title: string;
+  content: string;
   icon: "BrainCircuit" | "FileText" | "Calendar";
 };
 

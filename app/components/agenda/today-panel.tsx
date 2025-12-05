@@ -3,17 +3,19 @@
 
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BrainCircuit, BookCheck, Lightbulb } from 'lucide-react';
+import { BrainCircuit, BookCheck, Lightbulb, Loader2 } from 'lucide-react'; // Added Loader2
 import type { CalendarEvent } from '@/app/(main)/agenda/page';
 import type { AiSuggestion } from '@/lib/types';
 import { useDictionary } from '@/contexts/app-context';
 import { Button } from '../ui/button';
 import Link from 'next/link';
+import { Skeleton } from '../ui/skeleton'; // Added Skeleton
 
 type TodayPanelProps = {
   selectedDay?: Date;
   events: CalendarEvent[];
   suggestion: AiSuggestion | null;
+  isGeneratingSuggestion: boolean; // Added isGeneratingSuggestion
 };
 
 const iconMap = {
@@ -23,7 +25,7 @@ const iconMap = {
 };
 
 
-export function TodayPanel({ selectedDay, events, suggestion }: TodayPanelProps) {
+export function TodayPanel({ selectedDay, events, suggestion, isGeneratingSuggestion }: TodayPanelProps) { // Destructured isGeneratingSuggestion
   const { dictionary } = useDictionary();
 
   const renderEvent = (event: CalendarEvent) => {
@@ -72,7 +74,7 @@ export function TodayPanel({ selectedDay, events, suggestion }: TodayPanelProps)
             </CardContent>
         </Card>
         
-        {suggestion && (
+        {(isGeneratingSuggestion || suggestion) && (
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline text-lg flex items-center gap-2">
@@ -81,13 +83,25 @@ export function TodayPanel({ selectedDay, events, suggestion }: TodayPanelProps)
                     </CardTitle>
                 </CardHeader>
                  <CardContent>
-                     <Button
-                        variant="outline"
-                        className="w-full justify-start h-auto p-3 text-left bg-background hover:bg-muted"
+                    {isGeneratingSuggestion ? (
+                        <div className="flex items-center space-x-2">
+                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                            <Skeleton className="h-4 w-[200px]" />
+                        </div>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            className="w-full justify-start h-auto p-3 text-left bg-background hover:bg-muted"
                         >
-                        <BrainCircuit className="h-5 w-5 mr-3 text-primary flex-shrink-0" />
-                        <span className="flex-1 whitespace-normal">{suggestion.title}</span>
-                    </Button>
+                            <BrainCircuit className="h-5 w-5 mr-3 text-primary flex-shrink-0" />
+                            <span className="flex-1 whitespace-normal">{suggestion?.title}</span>
+                        </Button>
+                    )}
+                    {suggestion?.content && !isGeneratingSuggestion && (
+                        <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
+                            {suggestion.content}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         )}
