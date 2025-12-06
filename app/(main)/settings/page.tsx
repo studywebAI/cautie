@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useContext } from 'react';
@@ -17,7 +18,9 @@ export default function SettingsPage() {
     dyslexiaFont,
     setDyslexiaFont,
     reducedMotion,
-    setReducedMotion
+    setReducedMotion,
+    role,
+    setRole
   } = useContext(AppContext) as AppContextType;
 
   return (
@@ -46,11 +49,32 @@ export default function SettingsPage() {
               <SelectContent>
                 <SelectItem value="en">English</SelectItem>
                 <SelectItem value="nl">Nederlands (Dutch)</SelectItem>
-                <SelectItem value="fr">Français (French)</SelectItem>
-                <SelectItem value="de">Deutsch (German)</SelectItem>
-                <SelectItem value="es">Español (Spanish)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Developer Settings</CardTitle>
+          <CardDescription>
+            Temporary settings for development purposes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="role-switch">Toggle Role (Dev Only)</Label>
+              <p className='text-sm text-muted-foreground'>
+                Switch between student and teacher view. This is for development and will be removed.
+              </p>
+            </div>
+            <Switch
+              id="role-switch"
+              checked={role === 'teacher'}
+              onCheckedChange={(checked) => setRole(checked ? 'teacher' : 'student')}
+            />
           </div>
         </CardContent>
       </Card>
