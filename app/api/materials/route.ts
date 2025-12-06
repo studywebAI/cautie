@@ -6,6 +6,7 @@ import { CookieOptions } from '@supabase/ssr' // Correct import for CookieOption
 import { generateKnowledgeGraph } from '@/ai/flows/generate-knowledge-graph'
 
 export const dynamic = 'force-dynamic'
+export const runtime = "nodejs";
 
 // GET materials for a class
 export async function GET(request: Request) {
