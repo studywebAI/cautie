@@ -13,7 +13,8 @@ const ExplainAnswerInputSchema = z.object({
   question: z.string().describe('The quiz question that was asked.'),
   selectedAnswer: z.string().describe('The answer the user selected.'),
   correctAnswer: z.string().describe('The correct answer to the question.'),
-  isCorrect: z.boolean().describe('Whether the user\'s answer was correct.'),
+  isCorrect: z.boolean().describe('Whether the user\'s answer was correct.').optional(), // Made optional
+  sources: z.array(z.string()).describe('Optional array of URLs or references for the explanation.').optional(), // Made optional
 });
 type ExplainAnswerInput = z.infer<typeof ExplainAnswerInputSchema>;
 
@@ -33,7 +34,25 @@ const prompt = ai.definePrompt({
   name: 'explainAnswerPrompt',
   input: { schema: ExplainAnswerInputSchema },
   output: { schema: ExplainAnswerOutputSchema },
-  prompt: `You are an expert educational tutor. Provide accurate, factual information, and avoid making things up. When a student answers a quiz question, provide a detailed, structured explanation to enhance their understanding.\n\nQuestion: "{{{question}}}"\nCorrect Answer: "{{{correctAnswer}}}"\nStudent\'s Answer: "{{{selectedAnswer}}}"\n\n{{#if isCorrect}}\n**Analysis of Correct Answer:**\n1. **Why It\'s Right:** Explain the reasoning behind the correct answer, connecting it to core concepts.\n2. **Key Concepts:** Highlight 2-3 fundamental ideas or principles that support this answer.\n3. **Study Tips:** Suggest study strategies to reinforce this knowledge.\n4. **Real-World Example:** Provide a practical example or analogy to solidify understanding.\n\n{{else}}\n**Comprehensive Explanation:**\n1. **Error Analysis:** Diagnose why the selected answer is incorrect - common misconceptions? Misinterpretation? \n2. **Correct Reasoning:** Break down the logical steps to arrive at the correct answer.\n3. **Contrast:** Explicitly compare the incorrect vs correct reasoning.\n4. **Key Concepts:** Identify 2-3 fundamental ideas needed to understand this question.\n5. **Study Plan:** Recommend specific resources or practice methods to address gaps.\n6. **Example Scenario:** Provide a practical example demonstrating the correct approach.\n\n{{/if}}\n**Final Summary:** Concisely restate the main takeaway in 1-2 sentences.\n`,
+  prompt: `You are an expert educational tutor. Provide accurate, factual information, and avoid making things up. Focus solely on explaining the correctness or incorrectness of the answers. Do NOT include any complimentary phrases like "nice try", "almost had it", or "good job". When generating explanations, if external sources like Wikipedia have been provided, refer to them to verify and backup the explanation.
+
+Question: "{{{question}}}"
+Student\'s Answer: "{{{selectedAnswer}}}"
+Correct Answer: "{{{correctAnswer}}}"
+
+{{#if isCorrect}}
+Here\'s why your answer was correct:
+1. **Reasoning for Correctness:** Explain in detail why the student\'s selected answer is the correct one, drawing connections to core concepts.
+2. **Reinforcement:** Briefly reiterate the key concepts or principles that validate this answer.
+
+{{else}}
+Here\'s why your answer was incorrect and why the correct answer is right:
+1. **Error Analysis:** Clearly explain why the student\'s selected answer is incorrect. Point out any common misconceptions or misinterpretations that might lead to such an error.
+2. **Correct Reasoning:** Provide a thorough explanation of the logical steps and facts that lead to the correct answer.
+3. **Contrast and Clarification:** Explicitly compare the incorrect reasoning with the correct reasoning, highlighting the critical differences.
+
+{{/if}}
+`,
 });
 
 const explainAnswerFlow = ai.defineFlow(
@@ -44,6 +63,10 @@ const explainAnswerFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await prompt(input);
-    return output!;
+    // Sources will be handled by quiz-taker.tsx and passed here if available
+    return {
+      explanation: output!.explanation,
+      sources: input.sources, // Pass through sources if provided by the caller
+    };
   }
 );
