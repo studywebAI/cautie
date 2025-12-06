@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { type Flashcard } from '@/lib/types';
-import { explainAnswer } from '@/ai/flows/explain-answer';
+// import { explainAnswer } from '@/ai/flows/explain-answer'; // Removed direct import
 import { useToast } from '@/hooks/use-toast';
 import { ChevronsLeftRight, ArrowLeft, ArrowRight, RefreshCw, Lightbulb, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -102,12 +103,23 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
     setIsExplanationLoading(true);
     setExplanation(null);
     try {
-        const result = await explainAnswer({
-            question: card.front,
-            selectedAnswer: card.back, // Treat the back as the "selected" answer
-            correctAnswer: card.back,
-            isCorrect: true, // We always want the "why is this correct" explanation
+        const response = await fetch('/api/ai/handle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                flowName: 'explainAnswer',
+                input: {
+                    question: card.front,
+                    selectedAnswer: card.back, // Treat the back as the "selected" answer
+                    correctAnswer: card.back,
+                    isCorrect: true, // We always want the "why is this correct" explanation
+                },
+            }),
         });
+        if (!response.ok) {
+            throw new Error(`API call failed: ${response.statusText}`);
+        }
+        const result = await response.json();
         setExplanation(result.explanation);
     } catch (error) {
         toast({

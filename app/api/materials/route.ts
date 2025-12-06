@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { Database, Json } from '@/lib/supabase/database.types'
 import { CookieOptions } from '@supabase/ssr' // Correct import for CookieOptions
-import { generateKnowledgeGraph } from '@/ai/flows/generate-knowledge-graph'
+// import { generateKnowledgeGraph } from '@/ai/flows/generate-knowledge-graph' // Removed direct import
 
 export const dynamic = 'force-dynamic'
 export const runtime = "nodejs";
@@ -129,7 +129,18 @@ export async function POST(request: Request) {
   let concepts: Json[] = []; // Explicitly typed as Json[]
   if (source_text_for_concepts) {
     try {
-      const graph = await generateKnowledgeGraph({ sourceText: source_text_for_concepts });
+      const response = await fetch('/api/ai/handle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              flowName: 'generateKnowledgeGraph',
+              input: { sourceText: source_text_for_concepts },
+          }),
+      });
+      if (!response.ok) {
+          throw new Error(`API call failed: ${response.statusText}`);
+      }
+      const graph = await response.json();
       concepts = graph.concepts;
     } catch (aiError) {
       console.error('AI concept generation failed:', JSON.stringify(aiError, null, 2));

@@ -5,9 +5,9 @@
 import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { explainAnswer } from '@/ai/flows/explain-answer';
-import { generateQuiz } from '@/ai/flows/generate-quiz';
-import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
+// import { explainAnswer } from '@/ai/flows/explain-answer';
+// import { generateQuiz } from '@/ai/flows/generate-quiz';
+// import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, XCircle, RefreshCw, ArrowRight, Lightbulb, Timer, ShieldAlert, Trophy, Zap, Bomb, TrendingUp, BookOpen, Clock, Target, ArrowLeft, Shield } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -49,7 +49,7 @@ const modeDetails: Record<QuizMode, { title: string; description: string }> = {
     },
     speedrun: {
         title: "Speedrun Mode",
-        description: "Answer as fast as you can. Three strikes and you're out."
+        description: "Answer as fast as you can. Three strikes and you\'re out."
     },
     adaptive: {
         title: "Adaptive Mode",
@@ -210,7 +210,7 @@ function FinalResults({ quiz, answers, onRestart, mode, timeTaken = 0, setSessio
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline">Quiz Results</CardTitle>
-                <CardDescription>Here's how you did on the "{quiz.title}" quiz.</CardDescription>
+                <CardDescription>Here\'s how you did on the "{quiz.title}" quiz.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
@@ -411,11 +411,22 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             }
             setIsGeneratingNext(true);
             try {
-                const newQuestion = await generateSingleQuestion({
-                    sourceText,
-                    difficulty,
-                    existingQuestionIds: currentQuestions.map(q => q.id),
+                const response = await fetch('/api/ai/handle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        flowName: 'generateSingleQuestion',
+                        input: {
+                            sourceText,
+                            difficulty,
+                            existingQuestionIds: currentQuestions.map(q => q.id),
+                        },
+                    }),
                 });
+                if (!response.ok) {
+                    throw new Error(`API call failed: ${response.statusText}`);
+                }
+                const newQuestion = await response.json();
                 setCurrentQuestions(prev => [...prev, newQuestion]);
                 setCurrentIndex(nextIndex);
             } catch(e) {
@@ -477,7 +488,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
             questionTimerRef.current = setInterval(() => {
                 setQuestionTimeLeft(prev => {
                     if (prev <= 1) {
-                        clearInterval(questionTimerRef.current!);
+                        clearInterval(questionTimerRef.current!); 
                         toast({
                             title: "Time's up!",
                             variant: 'destructive'
@@ -580,12 +591,23 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         setFollowUpConversation([]);
         try {
             const selectedAnswer = question.options.find(o => o.id === selectedOptionId)?.text || '';
-            const result = await explainAnswer({
-                question: question.question,
-                selectedAnswer: selectedAnswer,
-                correctAnswer: correctOption.text,
-                isCorrect: isCorrect,
+            const response = await fetch('/api/ai/handle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    flowName: 'explainAnswer',
+                    input: {
+                        question: question.question,
+                        selectedAnswer: selectedAnswer,
+                        correctAnswer: correctOption.text,
+                        isCorrect: isCorrect,
+                    },
+                }),
             });
+            if (!response.ok) {
+                throw new Error(`API call failed: ${response.statusText}`);
+            }
+            const result = await response.json();
             setExplanation(result.explanation);
             setFollowUpConversation([{role: 'assistant', content: result.explanation}]);
         } catch (error) {
@@ -606,14 +628,25 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         try {
             setFollowUpConversation(prev => [...prev, {role: 'user', content: followUpQuestion}]);
             
-            const response = await explainAnswer({
-                question: `${question.question}\n\nFollow-up: ${followUpQuestion}`,
-                selectedAnswer: '',
-                correctAnswer: question.options.find(o => o.isCorrect)?.text || '',
-                isCorrect: false
+            const response = await fetch('/api/ai/handle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    flowName: 'explainAnswer',
+                    input: {
+                        question: `${question.question}\n\nFollow-up: ${followUpQuestion}`,
+                        selectedAnswer: '',
+                        correctAnswer: question.options.find(o => o.isCorrect)?.text || '',
+                        isCorrect: false
+                    },
+                }),
             });
+            if (!response.ok) {
+                throw new Error(`API call failed: ${response.statusText}`);
+            }
+            const result = await response.json();
 
-            setFollowUpConversation(prev => [...prev, {role: 'assistant', content: response.explanation}]);
+            setFollowUpConversation(prev => [...prev, {role: 'assistant', content: result.explanation}]);
             setFollowUpQuestion('');
         } catch (error) {
             toast({
@@ -635,11 +668,22 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
         });
         try {
             const existingIds = currentQuestions.map(q => q.id);
-            const penaltyQuiz = await generateQuiz({
-                sourceText,
-                questionCount: SURVIVAL_PENALTY_COUNT,
-                existingQuestionIds: existingIds
+            const response = await fetch('/api/ai/handle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    flowName: 'generateQuiz',
+                    input: {
+                        sourceText,
+                        questionCount: SURVIVAL_PENALTY_COUNT,
+                        existingQuestionIds: existingIds
+                    },
+                }),
             });
+            if (!response.ok) {
+                throw new Error(`API call failed: ${response.statusText}`);
+            }
+            const penaltyQuiz = await response.json();
             setCurrentQuestions(prev => [...prev, ...penaltyQuiz.questions]);
         } catch(e) {
              toast({
@@ -789,7 +833,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                                                 </Card>
                                             ))}
                                             <div className="flex gap-2">
-                                                <Textarea
+                                                <textarea
                                                     placeholder="Ask a follow-up question..."
                                                     value={followUpQuestion}
                                                     onChange={(e) => setFollowUpQuestion(e.target.value)}

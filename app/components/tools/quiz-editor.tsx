@@ -13,8 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, ArrowLeft, Play, Undo2, BookCheck, Wand2, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatePresence, motion } from 'framer-motion';
-import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
-import { suggestAnswers } from '@/ai/flows/suggest-answers'; // New import
+// import { generateSingleQuestion } from '@/ai/flows/generate-single-question';
+// import { suggestAnswers } from '@/ai/flows/suggest-answers';
 import type { Quiz, QuizQuestion, QuizOption } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '../ui/form';
@@ -78,18 +78,40 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
 
       if (questionText.trim()) {
         // If question text is provided, suggest answers
-        const response = await suggestAnswers({
-          question: questionText,
-          sourceText: sourceText,
+        const response = await fetch('/api/ai/handle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                flowName: 'suggestAnswers',
+                input: {
+                    question: questionText,
+                    sourceText: sourceText,
+                },
+            }),
         });
-        setAiSuggestedOptions(response.suggestedOptions);
+        if (!response.ok) {
+            throw new Error(`API call failed: ${response.statusText}`);
+        }
+        const result = await response.json();
+        setAiSuggestedOptions(result.suggestedOptions);
       } else {
         // If no question text, generate a full question
-        const newQuestion = await generateSingleQuestion({
-          sourceText: sourceText,
-          difficulty: 5,
-          existingQuestionIds: currentQuiz.questions.map(q => q.id),
+        const response = await fetch('/api/ai/handle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                flowName: 'generateSingleQuestion',
+                input: {
+                    sourceText: sourceText,
+                    difficulty: 5,
+                    existingQuestionIds: currentQuiz.questions.map(q => q.id),
+                },
+            }),
         });
+        if (!response.ok) {
+            throw new Error(`API call failed: ${response.statusText}`);
+        }
+        const newQuestion = await response.json();
         setCurrentQuiz(prevQuiz => ({
           ...prevQuiz,
           questions: [...prevQuiz.questions, newQuestion],
@@ -240,7 +262,7 @@ export function QuizEditor({ quiz, sourceText, onStartQuiz, onBack, isAssignment
 
         toast({
             title: 'Assignment Created!',
-            description: `"${currentQuiz.title}" has been saved and assigned to the class.`,
+            description: `"${currentQuiz.title}" has been saved and assigned to the class.`, 
         });
 
         router.push(`/class/${classId}`);

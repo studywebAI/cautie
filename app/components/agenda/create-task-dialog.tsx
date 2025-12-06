@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { PersonalTask } from '@/contexts/app-context';
 import { Switch } from '../ui/switch';
 import { Separator } from '../ui/separator';
-import { generateStudyPlanFromTask } from '@/ai/flows/generate-study-plan-from-task';
+// import { generateStudyPlanFromTask } from '@/ai/flows/generate-study-plan-from-task'; // Removed direct import
 
 
 type CreateTaskDialogProps = {
@@ -60,11 +60,22 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
 
     if (useAiHelper) {
         try {
-            const plan = await generateStudyPlanFromTask({
-                taskTitle: title,
-                taskDueDate: format(date, 'yyyy-MM-dd'),
-                todayDate: format(new Date(), 'yyyy-MM-dd'),
+            const response = await fetch('/api/ai/handle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    flowName: 'generateStudyPlanFromTask',
+                    input: {
+                        taskTitle: title,
+                        taskDueDate: format(date, 'yyyy-MM-dd'),
+                        todayDate: format(new Date(), 'yyyy-MM-dd'),
+                    },
+                }),
             });
+            if (!response.ok) {
+                throw new Error(`API call failed: ${response.statusText}`);
+            }
+            const plan = await response.json();
 
             for (const subTask of plan.subTasks) {
                 await onTaskCreated({

@@ -13,7 +13,7 @@ import { TodayPanel } from '@/components/agenda/today-panel';
 import { PlusCircle, BookCheck } from 'lucide-react';
 import type { AiSuggestion } from '@/lib/types';
 import Link from 'next/link';
-import { generatePersonalizedStudyPlan } from '@/ai/flows/generate-personalized-study-plan';
+// import { generatePersonalizedStudyPlan } from '@/ai/flows/generate-personalized-study-plan'; // Removed direct import
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -125,12 +125,23 @@ export default function AgendaPage() {
       }
 
       try {
-        const response = await generatePersonalizedStudyPlan({
-          deadlines: tasksForAI,
-          learningHabits: "The student prefers to study in the evenings and focuses on one subject at a time.",
-          calendar: "The student's calendar includes classes from 9 AM to 3 PM on weekdays, and weekends are free.",
+        const response = await fetch('/api/ai/handle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                flowName: 'generatePersonalizedStudyPlan',
+                input: {
+                    deadlines: tasksForAI,
+                    learningHabits: "The student prefers to study in the evenings and focuses on one subject at a time.",
+                    calendar: "The student's calendar includes classes from 9 AM to 3 PM on weekdays, and weekends are free.",
+                },
+            }),
         });
-        setAiSuggestion({ id: 'ai-plan', title: response.studyPlan, content: response.studyPlan, icon: 'BrainCircuit' });
+        if (!response.ok) {
+            throw new Error(`API call failed: ${response.statusText}`);
+        }
+        const result = await response.json();
+        setAiSuggestion({ id: 'ai-plan', title: result.studyPlan, content: result.studyPlan, icon: 'BrainCircuit' });
       } catch (error) {
         console.error("Failed to generate study plan suggestion:", error);
         toast({

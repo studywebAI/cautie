@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { type Flashcard } from '@/lib/types';
-import { generateMultipleChoiceFromFlashcard, type McqQuestion } from '@/ai/flows/generate-multiple-choice-from-flashcard';
+import { type Flashcard, type McqQuestion } from '@/lib/types'; // Import McqQuestion from types
+// import { generateMultipleChoiceFromFlashcard, type McqQuestion } from '@/ai/flows/generate-multiple-choice-from-flashcard'; // Removed direct import
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -28,10 +29,21 @@ export function MultipleChoiceView({ card, onAnswered }: MultipleChoiceViewProps
       setIsAnswered(false);
       setSelectedOptionId(null);
       try {
-        const result = await generateMultipleChoiceFromFlashcard({
-          front: card.front,
-          back: card.back,
+        const response = await fetch('/api/ai/handle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                flowName: 'generateMultipleChoiceFromFlashcard',
+                input: {
+                    front: card.front,
+                    back: card.back,
+                },
+            }),
         });
+        if (!response.ok) {
+            throw new Error(`API call failed: ${response.statusText}`);
+        }
+        const result = await response.json();
         setMcq(result);
       } catch (error) {
         console.error('Failed to generate multiple choice question', error);
@@ -76,7 +88,7 @@ export function MultipleChoiceView({ card, onAnswered }: MultipleChoiceViewProps
       <p className="font-semibold mb-4 text-lg text-center">{mcq.question}</p>
       <RadioGroup onValueChange={handleSelectOption} value={selectedOptionId || ''} disabled={isAnswered}>
         <div className="space-y-3">
-          {mcq.options.map((opt) => {
+          {mcq.options.map((opt: { id: string; text: string }) => { // Explicitly type opt
             const isTheCorrectAnswer = mcq.correctOptionId === opt.id;
             const isSelected = selectedOptionId === opt.id;
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useContext } from 'react';
@@ -9,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, ArrowLeft, Play, Undo2, BookCheck, Wand2, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AnimatePresence, motion } from 'framer-motion';
-import { generateSingleFlashcard } from '@/ai/flows/generate-single-flashcard';
+// import { generateSingleFlashcard } from '@/ai/flows/generate-single-flashcard'; // Removed direct import
 import type { Flashcard } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
@@ -40,10 +39,21 @@ export function FlashcardEditor({ cards, sourceText, onStartStudy, onBack, isAss
   const handleAddCardWithAI = async () => {
     setIsAddingCard(true);
     try {
-      const newCard = await generateSingleFlashcard({
-        sourceText: sourceText,
-        existingFlashcardIds: currentCards.map(c => c.front),
+      const response = await fetch('/api/ai/handle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flowName: 'generateSingleFlashcard',
+          input: {
+            sourceText: sourceText,
+            existingFlashcardIds: currentCards.map(c => c.front),
+          },
+        }),
       });
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.statusText}`);
+      }
+      const newCard = await response.json();
       setCurrentCards(prevCards => [...prevCards, newCard]);
     } catch (error) {
       console.error("Failed to add flashcard:", error);
