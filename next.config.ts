@@ -27,13 +27,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    serverComponentsExternalPackages: [
-      'express',
-      'import-in-the-middle',
-      'require-in-the-middle',
-    ],
-  },
+  serverExternalPackages: [
+    'express',
+    'import-in-the-middle',
+    'require-in-the-middle',
+  ],
 };
 
 export default nextConfig;
