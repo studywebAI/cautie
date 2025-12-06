@@ -33,6 +33,7 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+  turbopack: {}, // Added turbopack config to silence the error
 };
 
 export default nextConfig;
