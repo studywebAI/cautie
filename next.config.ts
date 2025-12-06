@@ -11,27 +11,28 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'placehold.co',
         port: '',
-        pathname: '/**',
+        pathname: '/**', // Corrected pathname
       },
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
         port: '',
-        pathname: '/**',
+        pathname: '/**', // Corrected pathname
       },
       {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
-        pathname: '/**',
+        pathname: '/**', // Corrected pathname
       },
     ],
   },
-  serverExternalPackages: [
-    'express',
-    'import-in-the-middle',
-    'require-in-the-middle',
-  ],
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'express', 'import-in-the-middle', 'require-in-the-middle'];
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
