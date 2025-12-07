@@ -6,7 +6,7 @@
  * - generateFlashcards - A function that creates flashcards.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getGoogleAIModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { FlashcardSchema } from '@/lib/types';
 
@@ -30,6 +30,7 @@ export async function generateFlashcards(
 
 const prompt = ai.definePrompt({
   name: 'generateFlashcardsPrompt',
+  model: getGoogleAIModel() as any,
   input: { schema: GenerateFlashcardsInputSchema },
   output: { schema: GenerateFlashcardsOutputSchema },
   prompt: `You are an expert in creating effective learning materials.

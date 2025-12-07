@@ -8,7 +8,7 @@
  * @exports   provideAiPoweredAnalyticsTeacher - The function to trigger the flow.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, getGoogleAIModel} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ProvideAiPoweredAnalyticsTeacherInputSchema = z.object({
@@ -29,6 +29,7 @@ export async function provideAiPoweredAnalyticsTeacher(input: ProvideAiPoweredAn
 
 const provideAiPoweredAnalyticsTeacherPrompt = ai.definePrompt({
   name: 'provideAiPoweredAnalyticsTeacherPrompt',
+  model: getGoogleAIModel() as any,
   input: {
     schema: ProvideAiPoweredAnalyticsTeacherInputSchema,
   },

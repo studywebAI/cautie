@@ -5,7 +5,7 @@
  * - generateStudyPlanFromTask - A function that generates a study plan for a single task.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getGoogleAIModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { format } from 'date-fns';
 
@@ -34,6 +34,7 @@ export async function generateStudyPlanFromTask(
 
 const prompt = ai.definePrompt({
   name: 'generateStudyPlanFromTaskPrompt',
+  model: getGoogleAIModel() as any,
   input: { schema: GenerateStudyPlanFromTaskInputSchema },
   output: { schema: GenerateStudyPlanFromTaskOutputSchema },
   prompt: `You are an expert academic planner. A student has a single large task and needs a simple, actionable study plan to prepare for it.

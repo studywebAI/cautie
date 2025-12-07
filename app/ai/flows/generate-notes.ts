@@ -5,7 +5,7 @@
  * - generateNotes - A function that returns notes.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getGoogleAIModel } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const NoteSchema = z.object({
@@ -32,6 +32,7 @@ export async function generateNotes(
 
 const prompt = ai.definePrompt({
   name: 'generateNotesPrompt',
+  model: getGoogleAIModel() as any,
   input: { schema: GenerateNotesInputSchema },
   output: { schema: GenerateNotesOutputSchema },
   prompt: `You are an expert notetaker. Your task is to create a structured set of notes from the provided source text, focusing on the given topic if provided.

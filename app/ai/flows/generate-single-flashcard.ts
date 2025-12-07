@@ -6,7 +6,7 @@
  * - generateSingleFlashcard - A function that creates one flashcard.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getGoogleAIModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { FlashcardSchema, type Flashcard } from '@/lib/types';
 
@@ -26,6 +26,7 @@ export async function generateSingleFlashcard(
 
 const prompt = ai.definePrompt({
   name: 'generateSingleFlashcardPrompt',
+  model: getGoogleAIModel() as any,
   input: { schema: GenerateSingleFlashcardInputSchema },
   output: { schema: FlashcardSchema },
   prompt: `You are an expert in creating effective learning materials.

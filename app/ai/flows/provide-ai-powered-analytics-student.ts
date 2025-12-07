@@ -5,7 +5,7 @@
  * - provideAiPoweredAnalytics - A function that returns learning analytics and tailored study suggestions.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, getGoogleAIModel} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ProvideAiPoweredAnalyticsInputSchema = z.object({
@@ -29,6 +29,7 @@ export async function provideAiPoweredAnalytics(
 
 const prompt = ai.definePrompt({
   name: 'provideAiPoweredAnalyticsPrompt',
+  model: getGoogleAIModel() as any,
   input: {schema: ProvideAiPoweredAnalyticsInputSchema},
   output: {schema: ProvideAiPoweredAnalyticsOutputSchema},
   prompt: `You are an AI learning assistant that provides personalized analytics to students based on their learning history.

@@ -1,7 +1,7 @@
 
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { ai, getGoogleAIModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { QuizOptionSchema } from '@/lib/types';
 
@@ -24,6 +24,7 @@ export async function suggestAnswers(
 
 const prompt = ai.definePrompt({
   name: 'suggestAnswersPrompt',
+  model: getGoogleAIModel() as any,
   input: { schema: SuggestAnswersInputSchema },
   output: { schema: SuggestAnswersOutputSchema },
   prompt: `You are an expert in creating educational content. A user has provided a quiz question and the source text from which the quiz is being generated. Your task is to suggest 3 or 4 multiple-choice answer options for this question. Exactly one option must be correct. Ensure the options are plausible and relevant to the source text. Provide an 'id' (a, b, c, d), 'text', and 'isCorrect' boolean for each option.

@@ -5,7 +5,7 @@
  * - processMaterial - Analyzes content and provides a summary and suggested actions.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, getGoogleAIModel} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ProcessMaterialInputSchema = z.object({
@@ -39,6 +39,7 @@ export async function processMaterial(input: ProcessMaterialInput): Promise<Proc
 
 const prompt = ai.definePrompt({
   name: 'processMaterialPrompt',
+  model: getGoogleAIModel() as any,
   input: {schema: ProcessMaterialInputSchema},
   output: {schema: ProcessMaterialOutputSchema},
   prompt: `You are an expert learning assistant. Your first task is to extract all text from the provided material. Then, analyze the extracted text. Your analysis should result in a summary and suggestions for relevant learning activities.

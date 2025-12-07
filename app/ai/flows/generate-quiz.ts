@@ -5,7 +5,7 @@
  * - generateQuiz - A function that creates a quiz.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getGoogleAIModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { QuizSchema, type Quiz } from '@/lib/types';
 
@@ -26,6 +26,7 @@ export async function generateQuiz(
 
 const prompt = ai.definePrompt({
   name: 'generateQuizPrompt',
+  model: getGoogleAIModel() as any,
   input: { schema: GenerateQuizInputSchema },
   output: { schema: QuizSchema },
   prompt: `You are an expert in creating educational content.

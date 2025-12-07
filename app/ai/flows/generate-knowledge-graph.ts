@@ -5,7 +5,7 @@
  * - generateKnowledgeGraph - A function that returns a list of concepts.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getGoogleAIModel } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const ConceptSchema = z.object({
@@ -32,6 +32,7 @@ export async function generateKnowledgeGraph(
 
 const prompt = ai.definePrompt({
   name: 'generateKnowledgeGraphPrompt',
+  model: getGoogleAIModel() as any,
   input: { schema: GenerateKnowledgeGraphInputSchema },
   output: { schema: GenerateKnowledgeGraphOutputSchema },
   prompt: `You are an AI that specializes in semantic analysis and knowledge extraction. Your task is to identify the most important concepts from the provided text and represent them as a simple list.

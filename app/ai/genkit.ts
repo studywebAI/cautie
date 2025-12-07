@@ -1,6 +1,32 @@
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 
+// Export the model reference so flows can use it
+let googleAIPluginInstance: ReturnType<typeof googleAI> | null = null;
+
+// Get or create the plugin instance (shared between getGoogleAIModel and initializeAI)
+const getOrCreatePlugin = (): ReturnType<typeof googleAI> => {
+  if (!googleAIPluginInstance) {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_2;
+    if (!apiKey) {
+      throw new Error('Missing GEMINI_API_KEY environment variable');
+    }
+    googleAIPluginInstance = googleAI({ apiKey });
+  }
+  return googleAIPluginInstance;
+};
+
+export const getGoogleAIModel = () => {
+  const plugin = getOrCreatePlugin();
+  try {
+    const model = plugin.model('gemini-1.5-flash');
+    return model;
+  } catch (error) {
+    console.error('Error getting model:', error);
+    throw error;
+  }
+};
+
 // Get API key from environment variables
 const getApiKey = (): string => {
   // For Vercel, these will be available at build time and runtime
@@ -34,12 +60,8 @@ const initializeAI = (): ReturnType<typeof genkit> => {
   }
   
   try {
-    const apiKey = getApiKey();
-    
-    const plugin = googleAI({
-      apiKey,
-      // Add any additional Google AI configuration here
-    });
+    // Use the shared plugin instance
+    const plugin = getOrCreatePlugin();
     
     aiInstance = genkit({
       plugins: [plugin],

@@ -7,7 +7,7 @@
  * - McqQuestion - The return type for the function (the question object).
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getGoogleAIModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { McqQuestionSchema } from '@/lib/types';
 import type { McqQuestion } from '@/lib/types';
@@ -28,6 +28,7 @@ export async function generateMultipleChoiceFromFlashcard(
 
 const prompt = ai.definePrompt({
   name: 'generateMcqFromFlashcardPrompt',
+  model: getGoogleAIModel() as any,
   input: { schema: GenerateMultipleChoiceFromFlashcardInputSchema },
   output: { schema: McqQuestionSchema },
   prompt: `You are an expert in creating educational content. Your task is to generate a single multiple-choice question based on a flashcard.

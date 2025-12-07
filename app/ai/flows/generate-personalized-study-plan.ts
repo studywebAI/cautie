@@ -5,7 +5,7 @@
  * - generatePersonalizedStudyPlan - A function that generates a personalized study plan.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, getGoogleAIModel} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GeneratePersonalizedStudyPlanInputSchema = z.object({
@@ -42,6 +42,7 @@ export async function generatePersonalizedStudyPlan(
 
 const prompt = ai.definePrompt({
   name: 'generatePersonalizedStudyPlanPrompt',
+  model: getGoogleAIModel() as any,
   input: {schema: GeneratePersonalizedStudyPlanInputSchema},
   output: {schema: GeneratePersonalizedStudyPlanOutputSchema},
   prompt: `You are an AI study assistant. You will generate a personalized study plan for the student based on their deadlines, learning habits, and calendar.

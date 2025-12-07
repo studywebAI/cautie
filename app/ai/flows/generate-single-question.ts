@@ -6,7 +6,7 @@
  * - generateSingleQuestion - A function that creates one question.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getGoogleAIModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { QuizQuestionSchema, type QuizQuestion } from '@/lib/types';
 
@@ -26,6 +26,7 @@ export async function generateSingleQuestion(
 
 const prompt = ai.definePrompt({
   name: 'generateSingleQuestionPrompt',
+  model: getGoogleAIModel() as any, // Type assertion to fix type error
   input: { schema: GenerateSingleQuestionInputSchema },
   output: { schema: QuizQuestionSchema },
   prompt: `You are an expert in creating educational content.

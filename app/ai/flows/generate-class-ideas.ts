@@ -5,7 +5,7 @@
  * - generateClassIdeas - A function that returns a list of class ideas.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getGoogleAIModel } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const ClassIdeaSchema = z.object({
@@ -33,6 +33,7 @@ export async function generateClassIdeas(
 
 const prompt = ai.definePrompt({
   name: 'generateClassIdeasPrompt',
+  model: getGoogleAIModel() as any,
   input: { schema: GenerateClassIdeasInputSchema },
   output: { schema: GenerateClassIdeasOutputSchema },
   prompt: `You are an AI curriculum designer helping a teacher. Your task is to brainstorm engaging class ideas based on a subject.

@@ -5,7 +5,7 @@
  * - generateQuizDuelData - Generates data for a quiz duel.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getGoogleAIModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { QuizQuestionSchema } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -46,6 +46,7 @@ export async function generateQuizDuelData(input: GenerateQuizDuelDataInput): Pr
 
 const prompt = ai.definePrompt({
   name: 'generateQuizDuelDataPrompt',
+  model: getGoogleAIModel() as any,
   input: { schema: GenerateQuizDuelDataInputSchema },
   output: { schema: QuizDuelDataSchema },
   prompt: `You are an AI game master. Your task is to generate the data for a 1v1 quiz duel based on the provided text.

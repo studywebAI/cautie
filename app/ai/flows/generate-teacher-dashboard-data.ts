@@ -5,7 +5,7 @@
  * - generateTeacherDashboardData - A function that returns class overviews.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, getGoogleAIModel} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ClassInfoSchema = z.object({
@@ -40,6 +40,7 @@ export async function generateTeacherDashboardData(
 
 const prompt = ai.definePrompt({
   name: 'generateTeacherDashboardDataPrompt',
+  model: getGoogleAIModel() as any,
   input: {schema: GenerateTeacherDashboardDataInputSchema},
   output: {schema: GenerateTeacherDashboardDataOutputSchema},
   prompt: `You are an AI assistant for a teacher named {{{teacherName}}}. You need to generate a realistic and coherent set of data for their dashboard. The teacher is currently teaching the following classes: {{{classNames}}}.
