@@ -27,7 +27,7 @@ export const getGoogleAIModel = () => {
   }
 };
 
-// Get API key from environment variables
+// Get API key from environment variables,aaasdasd
 const getApiKey = (): string => {
   // For Vercel, these will be available at build time and runtime
   const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_2;
