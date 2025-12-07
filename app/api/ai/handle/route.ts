@@ -53,6 +53,18 @@ export async function POST(req: Request) {
     const result = await flowFunction(input);
     return Response.json(result);
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    // Better error handling - ensure we always return a valid error message
+    const errorMessage = error?.message || error?.toString() || 'An unknown error occurred';
+    console.error('AI flow error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: errorMessage,
+        ...(process.env.NODE_ENV === 'development' && { stack: error?.stack })
+      }), 
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   }
 }

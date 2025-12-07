@@ -53,10 +53,28 @@ const getAI = () => {
 
 // Export the AI instance with lazy initialization
 // Using a Proxy to make it work transparently with existing code
+// This ensures initialization only happens when ai is actually used, not when the module is imported
 export const ai = new Proxy({} as ReturnType<typeof initializeAI>, {
   get(_target, prop) {
     const instance = getAI();
     const value = (instance as any)[prop];
-    return typeof value === 'function' ? value.bind(instance) : value;
+    // Bind functions to preserve 'this' context
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    return value;
+  },
+  // Handle other Proxy traps that might be needed
+  has(_target, prop) {
+    const instance = getAI();
+    return prop in instance;
+  },
+  ownKeys(_target) {
+    const instance = getAI();
+    return Reflect.ownKeys(instance);
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    const instance = getAI();
+    return Reflect.getOwnPropertyDescriptor(instance, prop);
   }
 });
