@@ -88,46 +88,109 @@ function QuizPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceTextFromParams, handleGenerate]);
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const SUPPORTED_FILE_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'image/jpeg', 'image/png'];
+
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !appContext) return;
+    if (!file) return;
 
-    setUploadedFile(file);
+    // Reset previous state
+    setUploadedFile(null);
     setSourceText('');
     setGeneratedQuiz(null);
-    setIsProcessingFile(true);
 
-    if (file.type.startsWith('image/')) {
-        setFileType('image');
-    } else {
-        setFileType('file');
+    // Validate file type
+    if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
+      toast({
+        variant: 'destructive',
+        title: 'Unsupported File Type',
+        description: `Please upload a supported file type: PDF, DOCX, TXT, JPG, or PNG.`,
+      });
+      return;
     }
 
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        variant: 'destructive',
+        title: 'File Too Large',
+        description: `File size should not exceed ${MAX_FILE_SIZE / (1024 * 1024)}MB.`,
+      });
+      return;
+    }
+
+    setUploadedFile(file);
+    
+    if (file.type.startsWith('image/')) {
+      setFileType('image');
+    } else {
+      setFileType('file');
+    }
+
+    setIsProcessingFile(true);
+
     const reader = new FileReader();
+    
     reader.onload = async (e) => {
-        const dataUri = e.target?.result as string;
-        try {
-            const response = await processMaterial({
-                fileDataUri: dataUri,
-                language: appContext.language,
-            });
-            setSourceText(response.analysis.sourceText);
-            toast({
-                title: 'File Processed',
-                description: 'The content has been extracted. You can now generate a quiz.',
-            });
-        } catch (error) {
-            console.error('Error processing file:', error);
-            toast({
-                variant: 'destructive',
-                title: 'File Processing Failed',
-                description: 'The AI could not extract content from the file. Please try a different file or paste the text manually.',
-            });
-        } finally {
-            setIsProcessingFile(false);
+      const dataUri = e.target?.result as string;
+      try {
+        const response = await processMaterial({
+          fileDataUri: dataUri,
+          language: appContext?.language || 'en',
+        });
+        
+        if (response?.analysis?.sourceText) {
+          setSourceText(response.analysis.sourceText);
+          toast({
+            title: 'File Processed Successfully',
+            description: `Successfully extracted text from ${file.name}. You can now generate a quiz.`,
+          });
+        } else {
+          throw new Error('No text content could be extracted from the file.');
         }
+      } catch (error: any) {
+        console.error('Error processing file:', error);
+        
+        let errorMessage = 'The AI could not extract content from the file. ';
+        if (error.message.includes('API key')) {
+          errorMessage = 'Invalid or missing API key. Please check your configuration.';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Request timed out. The file might be too large or the server is busy.';
+        }
+        
+        toast({
+          variant: 'destructive',
+          title: 'File Processing Failed',
+          description: errorMessage + ' Please try a different file or paste the text manually.',
+        });
+      } finally {
+        setIsProcessingFile(false);
+      }
     };
-    reader.readAsDataURL(file);
+
+    reader.onerror = () => {
+      toast({
+        variant: 'destructive',
+        title: 'File Read Error',
+        description: 'Failed to read the file. The file might be corrupted or in an unsupported format.',
+      });
+      setIsProcessingFile(false);
+    };
+
+    try {
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error reading file:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error Reading File',
+        description: 'An error occurred while reading the file. Please try again.',
+      });
+      setIsProcessingFile(false);
+    }
   };
   
   const clearFile = () => {
