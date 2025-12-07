@@ -19,7 +19,7 @@ const getApiKey = (): string => {
 };
 
 // Initialize AI with error handling
-export const initializeAI = () => {
+const initializeAI = () => {
   try {
     const apiKey = getApiKey();
     return genkit({
@@ -40,5 +40,23 @@ export const initializeAI = () => {
   }
 };
 
-// Export the initialized AI instance
-export const ai = initializeAI();
+// Lazy initialization - only initialize when actually accessed
+let aiInstance: ReturnType<typeof initializeAI> | null = null;
+
+// Get the AI instance, initializing it on first access
+const getAI = () => {
+  if (!aiInstance) {
+    aiInstance = initializeAI();
+  }
+  return aiInstance;
+};
+
+// Export the AI instance with lazy initialization
+// Using a Proxy to make it work transparently with existing code
+export const ai = new Proxy({} as ReturnType<typeof initializeAI>, {
+  get(_target, prop) {
+    const instance = getAI();
+    const value = (instance as any)[prop];
+    return typeof value === 'function' ? value.bind(instance) : value;
+  }
+});
