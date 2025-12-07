@@ -35,15 +35,14 @@ const initializeAI = (): ReturnType<typeof genkit> => {
   
   try {
     const apiKey = getApiKey();
-    const googleAIPlugin = googleAI({
+    
+    const plugin = googleAI({
       apiKey,
       // Add any additional Google AI configuration here
     });
     
     aiInstance = genkit({
-      plugins: [googleAIPlugin],
-      // Use the latest stable model by default
-      defaultModel: googleAIPlugin.model('gemini-1.5-flash'),
+      plugins: [plugin],
       // Enable debugging in development
       debug: process.env.NODE_ENV === 'development',
     });
@@ -80,22 +79,13 @@ const createDummyAI = () => {
 // This ensures initialization only happens when ai is actually used, not when the module is imported
 export const ai = new Proxy(createDummyAI(), {
   get(_target, prop) {
-    try {
-      const instance = getAI();
-      const value = (instance as any)[prop];
-      // Bind functions to preserve 'this' context
-      if (typeof value === 'function') {
-        return value.bind(instance);
-      }
-      return value;
-    } catch (error) {
-      // If initialization fails, we need to handle it gracefully
-      // For definePrompt and defineFlow, we'll throw the error so it's caught by the route handler
-      if (prop === 'definePrompt' || prop === 'defineFlow') {
-        throw error;
-      }
-      throw error;
+    const instance = getAI();
+    const value = (instance as any)[prop];
+    // Bind functions to preserve 'this' context
+    if (typeof value === 'function') {
+      return value.bind(instance);
     }
+    return value;
   },
   // Handle other Proxy traps that might be needed
   has(_target, prop) {

@@ -25,23 +25,74 @@ export async function POST(req: Request) {
     const { flowName, input } = await req.json();
 
     if (!flowName || typeof flowName !== 'string') {
-      return new Response(JSON.stringify({ error: 'Missing or invalid flowName' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'Missing or invalid flowName' }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const flowLoader = flowMap[flowName];
 
     if (!flowLoader) {
-      return new Response(JSON.stringify({ error: `Flow with name ${flowName} not found` }), { status: 404 });
+      return new Response(JSON.stringify({ error: `Flow with name ${flowName} not found` }), { 
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Dynamically load the flow function - this prevents module-level initialization
-    const flowFunction = await flowLoader();
-    const result = await flowFunction(input);
-    return Response.json(result);
+    let flowFunction;
+    try {
+      flowFunction = await flowLoader();
+    } catch (importError: any) {
+      console.error('Failed to import flow:', importError);
+      return new Response(
+        JSON.stringify({ 
+          error: `Failed to load flow: ${importError?.message || 'Unknown error'}`,
+          ...(process.env.NODE_ENV === 'development' && { stack: importError?.stack })
+        }), 
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    if (typeof flowFunction !== 'function') {
+      return new Response(
+        JSON.stringify({ error: 'Flow function is not a valid function' }), 
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Execute the flow function
+    let result;
+    try {
+      result = await flowFunction(input);
+    } catch (execError: any) {
+      console.error('Flow execution error:', execError);
+      return new Response(
+        JSON.stringify({ 
+          error: execError?.message || 'Flow execution failed',
+          ...(process.env.NODE_ENV === 'development' && { stack: execError?.stack })
+        }), 
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    return Response.json(result, {
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error: any) {
-    // Better error handling - ensure we always return a valid error message
+    // Catch-all error handler
     const errorMessage = error?.message || error?.toString() || 'An unknown error occurred';
-    console.error('AI flow error:', error);
+    console.error('AI API route error:', error);
     return new Response(
       JSON.stringify({ 
         error: errorMessage,
