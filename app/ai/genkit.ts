@@ -35,15 +35,15 @@ const initializeAI = (): ReturnType<typeof genkit> => {
   
   try {
     const apiKey = getApiKey();
+    const googleAIPlugin = googleAI({
+      apiKey,
+      // Add any additional Google AI configuration here
+    });
+    
     aiInstance = genkit({
-      plugins: [
-        googleAI({
-          apiKey,
-          // Add any additional Google AI configuration here
-        })
-      ],
+      plugins: [googleAIPlugin],
       // Use the latest stable model by default
-      model: googleAI.model('gemini-1.5-flash'),
+      defaultModel: googleAIPlugin.model('gemini-1.5-flash'),
       // Enable debugging in development
       debug: process.env.NODE_ENV === 'development',
     });
