@@ -11,19 +11,19 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'placehold.co',
         port: '',
-        pathname: '/**', // Corrected pathname
+        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
         port: '',
-        pathname: '/**', // Corrected pathname
+        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
-        pathname: '/**', // Corrected pathname
+        pathname: '/**',
       },
     ],
   },
@@ -33,7 +33,6 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
-  turbopack: {}, // Added turbopack config to silence the error
 };
 
 export default nextConfig;
