@@ -26,7 +26,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { generateNotes } from '@/ai/flows/generate-notes';
+// Removed direct import - using API route instead
 import Link from 'next/link';
 
 const iconMap = {
@@ -61,7 +61,18 @@ function CreateNoteDialog({ isOpen, setIsOpen, classId }: CreateNoteDialogProps)
     
     setIsLoading(true);
     try {
-      const aiNotes = await generateNotes({ sourceText });
+      const apiResponse = await fetch('/api/ai/handle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flowName: 'generateNotes',
+          input: { sourceText },
+        }),
+      });
+      if (!apiResponse.ok) {
+        throw new Error(`API call failed: ${apiResponse.statusText}`);
+      }
+      const aiNotes = await apiResponse.json();
       
       const response = await fetch('/api/materials', {
         method: 'POST',

@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { generateFlashcards } from '@/ai/flows/generate-flashcards';
-import { processMaterial } from '@/ai/flows/process-material';
+// Removed direct imports - using API route instead
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon, BookCheck } from 'lucide-react';
 import { FlashcardViewer, StudyMode } from '@/components/tools/flashcard-viewer';
@@ -55,7 +54,18 @@ function FlashcardsPageContent() {
     setIsLoading(true);
     setGeneratedCards(null);
     try {
-      const response = await generateFlashcards({ sourceText: text, count: flashcardCount });
+      const apiResponse = await fetch('/api/ai/handle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flowName: 'generateFlashcards',
+          input: { sourceText: text, count: flashcardCount },
+        }),
+      });
+      if (!apiResponse.ok) {
+        throw new Error(`API call failed: ${apiResponse.statusText}`);
+      }
+      const response = await apiResponse.json();
       setGeneratedCards(response.flashcards);
       if (isEditMode) {
         setCurrentView('edit');
@@ -101,10 +111,21 @@ function FlashcardsPageContent() {
     reader.onload = async (e) => {
         const dataUri = e.target?.result as string;
         try {
-            const response = await processMaterial({
-                fileDataUri: dataUri,
-                language: appContext.language,
+            const apiResponse = await fetch('/api/ai/handle', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                flowName: 'processMaterial',
+                input: {
+                  fileDataUri: dataUri,
+                  language: appContext.language,
+                },
+              }),
             });
+            if (!apiResponse.ok) {
+              throw new Error(`API call failed: ${apiResponse.statusText}`);
+            }
+            const response = await apiResponse.json();
             setSourceText(response.analysis.sourceText);
              toast({
                 title: 'File Processed',

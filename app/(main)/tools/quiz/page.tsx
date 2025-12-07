@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { generateQuiz } from '@/ai/flows/generate-quiz';
-import { processMaterial } from '@/ai/flows/process-material';
+// Removed direct imports - using API route instead
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, UploadCloud, FileText, ImageIcon, Swords, BookCheck, Shield } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -60,7 +59,18 @@ function QuizPageContent() {
         setCurrentView('duel');
       } else {
         const count = (quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'boss-fight') ? 1 : questionCount;
-        const response = await generateQuiz({ sourceText: text, questionCount: count });
+        const apiResponse = await fetch('/api/ai/handle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            flowName: 'generateQuiz',
+            input: { sourceText: text, questionCount: count },
+          }),
+        });
+        if (!apiResponse.ok) {
+          throw new Error(`API call failed: ${apiResponse.statusText}`);
+        }
+        const response = await apiResponse.json();
         setGeneratedQuiz(response);
         if (isEditMode) {
           setCurrentView('edit');
@@ -135,10 +145,21 @@ function QuizPageContent() {
     reader.onload = async (e) => {
       const dataUri = e.target?.result as string;
       try {
-        const response = await processMaterial({
-          fileDataUri: dataUri,
-          language: appContext?.language || 'en',
+        const apiResponse = await fetch('/api/ai/handle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            flowName: 'processMaterial',
+            input: {
+              fileDataUri: dataUri,
+              language: appContext?.language || 'en',
+            },
+          }),
         });
+        if (!apiResponse.ok) {
+          throw new Error(`API call failed: ${apiResponse.statusText}`);
+        }
+        const response = await apiResponse.json();
         
         if (response?.analysis?.sourceText) {
           setSourceText(response.analysis.sourceText);

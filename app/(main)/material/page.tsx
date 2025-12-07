@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UploadCloud, FileText, ImageIcon, Loader2, BrainCircuit, BookCopy } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { processMaterial, ProcessMaterialOutput } from '@/ai/flows/process-material';
+// Removed direct import - using API route instead
+import type { ProcessMaterialOutput } from '@/ai/flows/process-material';
 import { useToast } from '@/hooks/use-toast';
 import { AppContext, useDictionary } from '@/contexts/app-context';
 
@@ -65,11 +66,22 @@ function MaterialPageContent() {
       if (!appContext) {
         throw new Error("AppContext not available");
       }
-      const response = await processMaterial({
-        text: inputText || undefined,
-        fileDataUri: fileDataUri || undefined,
-        language: appContext.language,
+      const apiResponse = await fetch('/api/ai/handle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flowName: 'processMaterial',
+          input: {
+            text: inputText || undefined,
+            fileDataUri: fileDataUri || undefined,
+            language: appContext.language,
+          },
+        }),
       });
+      if (!apiResponse.ok) {
+        throw new Error(`API call failed: ${apiResponse.statusText}`);
+      }
+      const response = await apiResponse.json();
       setResult(response);
     } catch (error) {
       console.error('Error processing material:', error);

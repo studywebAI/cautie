@@ -19,10 +19,23 @@ const getApiKey = (): string => {
 };
 
 // Initialize AI with error handling
-const initializeAI = () => {
+let initError: Error | null = null;
+let aiInstance: ReturnType<typeof genkit> | null = null;
+
+const initializeAI = (): ReturnType<typeof genkit> => {
+  // If we already have an instance, return it
+  if (aiInstance) {
+    return aiInstance;
+  }
+  
+  // If we previously failed to initialize, throw the cached error
+  if (initError) {
+    throw initError;
+  }
+  
   try {
     const apiKey = getApiKey();
-    return genkit({
+    aiInstance = genkit({
       plugins: [
         googleAI({
           apiKey,
@@ -34,47 +47,79 @@ const initializeAI = () => {
       // Enable debugging in development
       debug: process.env.NODE_ENV === 'development',
     });
+    return aiInstance;
   } catch (error) {
-    console.error('Failed to initialize AI:', error);
-    throw error; // Re-throw to prevent silent failures
+    initError = error instanceof Error ? error : new Error(String(error));
+    console.error('Failed to initialize AI:', initError);
+    throw initError;
   }
 };
 
-// Lazy initialization - only initialize when actually accessed
-let aiInstance: ReturnType<typeof initializeAI> | null = null;
-
 // Get the AI instance, initializing it on first access
-const getAI = () => {
-  if (!aiInstance) {
-    aiInstance = initializeAI();
-  }
-  return aiInstance;
+const getAI = (): ReturnType<typeof genkit> => {
+  return initializeAI();
+};
+
+// Create a dummy object that matches the genkit API structure for type safety
+// This allows the module to load without errors, even if initialization fails
+const createDummyAI = () => {
+  return {
+    definePrompt: (...args: any[]) => {
+      const instance = getAI();
+      return instance.definePrompt(...args);
+    },
+    defineFlow: (...args: any[]) => {
+      const instance = getAI();
+      return instance.defineFlow(...args);
+    },
+  } as any;
 };
 
 // Export the AI instance with lazy initialization
 // Using a Proxy to make it work transparently with existing code
 // This ensures initialization only happens when ai is actually used, not when the module is imported
-export const ai = new Proxy({} as ReturnType<typeof initializeAI>, {
+export const ai = new Proxy(createDummyAI(), {
   get(_target, prop) {
-    const instance = getAI();
-    const value = (instance as any)[prop];
-    // Bind functions to preserve 'this' context
-    if (typeof value === 'function') {
-      return value.bind(instance);
+    try {
+      const instance = getAI();
+      const value = (instance as any)[prop];
+      // Bind functions to preserve 'this' context
+      if (typeof value === 'function') {
+        return value.bind(instance);
+      }
+      return value;
+    } catch (error) {
+      // If initialization fails, we need to handle it gracefully
+      // For definePrompt and defineFlow, we'll throw the error so it's caught by the route handler
+      if (prop === 'definePrompt' || prop === 'defineFlow') {
+        throw error;
+      }
+      throw error;
     }
-    return value;
   },
   // Handle other Proxy traps that might be needed
   has(_target, prop) {
-    const instance = getAI();
-    return prop in instance;
+    try {
+      const instance = getAI();
+      return prop in instance;
+    } catch {
+      return false;
+    }
   },
   ownKeys(_target) {
-    const instance = getAI();
-    return Reflect.ownKeys(instance);
+    try {
+      const instance = getAI();
+      return Reflect.ownKeys(instance);
+    } catch {
+      return [];
+    }
   },
   getOwnPropertyDescriptor(_target, prop) {
-    const instance = getAI();
-    return Reflect.getOwnPropertyDescriptor(instance, prop);
+    try {
+      const instance = getAI();
+      return Reflect.getOwnPropertyDescriptor(instance, prop);
+    } catch {
+      return undefined;
+    }
   }
-});
+}) as ReturnType<typeof genkit>;

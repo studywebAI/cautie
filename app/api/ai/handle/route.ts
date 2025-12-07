@@ -1,39 +1,23 @@
-import { suggestAnswers } from "@/ai/flows/suggest-answers";
-import { provideAiPoweredAnalyticsTeacher } from "@/ai/flows/provide-ai-powered-analytics-teacher";
-import { provideAiPoweredAnalytics } from "@/ai/flows/provide-ai-powered-analytics-student";
-import { processMaterial } from "@/ai/flows/process-material";
-import { generateTeacherDashboardData } from "@/ai/flows/generate-teacher-dashboard-data";
-import { generateStudyPlanFromTask } from "@/ai/flows/generate-study-plan-from-task";
-import { generateSingleQuestion } from "@/ai/flows/generate-single-question";
-import { generateSingleFlashcard } from "@/ai/flows/generate-single-flashcard";
-import { generateQuiz } from "@/ai/flows/generate-quiz";
-import { generateQuizDuelData } from "@/ai/flows/generate-quiz-duel-data";
-import { generatePersonalizedStudyPlan } from "@/ai/flows/generate-personalized-study-plan";
-import { generateNotes } from "@/ai/flows/generate-notes";
-import { generateMultipleChoiceFromFlashcard } from "@/ai/flows/generate-multiple-choice-from-flashcard";
-import { generateKnowledgeGraph } from "@/ai/flows/generate-knowledge-graph";
-import { generateFlashcards } from "@/ai/flows/generate-flashcards";
-import { generateClassIdeas } from "@/ai/flows/generate-class-ideas";
-import { explainAnswer } from "@/ai/flows/explain-answer";
-
-const flowMap: Record<string, Function> = {
-  suggestAnswers: suggestAnswers,
-  provideAiPoweredAnalyticsTeacher: provideAiPoweredAnalyticsTeacher,
-  provideAiPoweredAnalyticsStudent: provideAiPoweredAnalytics,
-  processMaterial: processMaterial,
-  generateTeacherDashboardData: generateTeacherDashboardData,
-  generateStudyPlanFromTask: generateStudyPlanFromTask,
-  generateSingleQuestion: generateSingleQuestion,
-  generateSingleFlashcard: generateSingleFlashcard,
-  generateQuiz: generateQuiz,
-  generateQuizDuelData: generateQuizDuelData,
-  generatePersonalizedStudyPlan: generatePersonalizedStudyPlan,
-  generateNotes: generateNotes,
-  generateMultipleChoiceFromFlashcard: generateMultipleChoiceFromFlashcard,
-  generateKnowledgeGraph: generateKnowledgeGraph,
-  generateFlashcards: generateFlashcards,
-  generateClassIdeas: generateClassIdeas,
-  explainAnswer: explainAnswer,
+// Use dynamic imports to prevent flow files from loading at module initialization time
+// This ensures the AI initialization only happens when flows are actually called
+const flowMap: Record<string, () => Promise<Function>> = {
+  suggestAnswers: () => import("@/ai/flows/suggest-answers").then(m => m.suggestAnswers),
+  provideAiPoweredAnalyticsTeacher: () => import("@/ai/flows/provide-ai-powered-analytics-teacher").then(m => m.provideAiPoweredAnalyticsTeacher),
+  provideAiPoweredAnalyticsStudent: () => import("@/ai/flows/provide-ai-powered-analytics-student").then(m => m.provideAiPoweredAnalytics),
+  processMaterial: () => import("@/ai/flows/process-material").then(m => m.processMaterial),
+  generateTeacherDashboardData: () => import("@/ai/flows/generate-teacher-dashboard-data").then(m => m.generateTeacherDashboardData),
+  generateStudyPlanFromTask: () => import("@/ai/flows/generate-study-plan-from-task").then(m => m.generateStudyPlanFromTask),
+  generateSingleQuestion: () => import("@/ai/flows/generate-single-question").then(m => m.generateSingleQuestion),
+  generateSingleFlashcard: () => import("@/ai/flows/generate-single-flashcard").then(m => m.generateSingleFlashcard),
+  generateQuiz: () => import("@/ai/flows/generate-quiz").then(m => m.generateQuiz),
+  generateQuizDuelData: () => import("@/ai/flows/generate-quiz-duel-data").then(m => m.generateQuizDuelData),
+  generatePersonalizedStudyPlan: () => import("@/ai/flows/generate-personalized-study-plan").then(m => m.generatePersonalizedStudyPlan),
+  generateNotes: () => import("@/ai/flows/generate-notes").then(m => m.generateNotes),
+  generateMultipleChoiceFromFlashcard: () => import("@/ai/flows/generate-multiple-choice-from-flashcard").then(m => m.generateMultipleChoiceFromFlashcard),
+  generateKnowledgeGraph: () => import("@/ai/flows/generate-knowledge-graph").then(m => m.generateKnowledgeGraph),
+  generateFlashcards: () => import("@/ai/flows/generate-flashcards").then(m => m.generateFlashcards),
+  generateClassIdeas: () => import("@/ai/flows/generate-class-ideas").then(m => m.generateClassIdeas),
+  explainAnswer: () => import("@/ai/flows/explain-answer").then(m => m.explainAnswer),
 };
 
 export async function POST(req: Request) {
@@ -44,12 +28,14 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Missing or invalid flowName' }), { status: 400 });
     }
 
-    const flowFunction = flowMap[flowName];
+    const flowLoader = flowMap[flowName];
 
-    if (!flowFunction) {
+    if (!flowLoader) {
       return new Response(JSON.stringify({ error: `Flow with name ${flowName} not found` }), { status: 404 });
     }
 
+    // Dynamically load the flow function - this prevents module-level initialization
+    const flowFunction = await flowLoader();
     const result = await flowFunction(input);
     return Response.json(result);
   } catch (error: any) {

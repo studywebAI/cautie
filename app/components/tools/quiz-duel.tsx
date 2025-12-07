@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { generateQuizDuelData, QuizDuelData } from '@/ai/flows/generate-quiz-duel-data';
+// Removed direct import - using API route instead
+import type { QuizDuelData } from '@/ai/flows/generate-quiz-duel-data';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, RefreshCw, User, Check, X, Swords } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -44,12 +45,23 @@ export function QuizDuel({ sourceText, onRestart }: QuizDuelProps) {
         const fetchDuelData = async () => {
             setIsLoading(true);
             try {
-                const data = await generateQuizDuelData({
-                    sourceText,
-                    player1Name: 'You',
-                    player2Name: 'AI Opponent',
-                    questionCount: 10,
+                const apiResponse = await fetch('/api/ai/handle', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    flowName: 'generateQuizDuelData',
+                    input: {
+                      sourceText,
+                      player1Name: 'You',
+                      player2Name: 'AI Opponent',
+                      questionCount: 10,
+                    },
+                  }),
                 });
+                if (!apiResponse.ok) {
+                  throw new Error(`API call failed: ${apiResponse.statusText}`);
+                }
+                const data = await apiResponse.json();
                 setDuelData(data);
             } catch (error) {
                 console.error("Failed to generate duel data:", error);
