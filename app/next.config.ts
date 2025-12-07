@@ -37,6 +37,12 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  // Add serverComponentsExternalPackages for genkit compatibility with Next.js 16
+  serverComponentsExternalPackages: [
+    'genkit',
+    '@genkit-ai/google-genai',
+    '@genkit-ai/next',
+  ],
 };
 
 export default nextConfig;
