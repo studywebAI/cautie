@@ -7,50 +7,25 @@ let googleAIPluginInstance: ReturnType<typeof googleAI> | null = null;
 // Get or create the plugin instance (shared between getGoogleAIModel and initializeAI)
 const getOrCreatePlugin = (): ReturnType<typeof googleAI> => {
   if (!googleAIPluginInstance) {
-    const apiKey1 = process.env.GEMINI_API_KEY;
-    const apiKey2 = process.env.GEMINI_API_KEY_2;
-
-    console.log(`[Genkit Debug] Inside getOrCreatePlugin. GEMINI_API_KEY: ${apiKey1 ? 'Set' : 'Not Set'}`);
-    console.log(`[Genkit Debug] Inside getOrCreatePlugin. GEMINI_API_KEY_2: ${apiKey2 ? 'Set' : 'Not Set'}`);
-
-    const apiKey = apiKey1 || apiKey2;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('[Genkit Debug] No API key found. Throwing error.');
-      throw new Error("Missing GEMINI_API_KEY or GEMINI_API_KEY_2 environment variable");
+      throw new Error("Missing GEMINI_API_KEY environment variable");
     }
-    try {
-      googleAIPluginInstance = googleAI({ apiKey });
-      console.log('[Genkit Debug] googleAI plugin instance created successfully.');
-    } catch (pluginError) {
-      console.error('[Genkit Debug] Error creating googleAI plugin instance:', pluginError);
-      throw pluginError;
-    }
+    googleAIPluginInstance = googleAI({ apiKey });
   }
-  console.log('[Genkit Debug] Returning googleAI plugin instance.');
   return googleAIPluginInstance;
 };
 
 export const getGoogleAIModel = () => {
   const plugin = getOrCreatePlugin();
-  console.log(`[Genkit Debug] In getGoogleAIModel. Plugin is: ${plugin ? 'Set' : 'Not Set'}`);
   if (!plugin) {
-    const errorMessage = '[Genkit Error] GoogleAI plugin is not initialized in getGoogleAIModel. This indicates a problem during genkit setup or API key retrieval.';
-    console.error(errorMessage);
-    throw new Error(errorMessage);
+    throw new Error("GoogleAI plugin is not initialized.");
   }
-  try {
-    const model = plugin.model('gemini-1.5-flash');
-    console.log('[Genkit Debug] Model instance created successfully.');
-    if (!model) {
-        const errorMessage = '[Genkit Error] Model is undefined after calling plugin.model().';
-        console.error(errorMessage);
-        throw new Error(errorMessage);
-    }
-    return model;
-  } catch (error) {
-    console.error('[Genkit Debug] Error getting model or accessing model.name:', error);
-    throw error;
+  const model = plugin.model('gemini-1.5-flash');
+  if (!model) {
+      throw new Error("Gemini model returned undefined.");
   }
+  return model;
 };
 
 // Get API key from environment variables,aaasdasdS (This function is redundant and has been commented out.)
@@ -88,23 +63,18 @@ const initializeAI = (): ReturnType<typeof genkit> => {
   try {
     // Use the shared plugin instance
     const plugin = getOrCreatePlugin();
-    console.log(`[Genkit Debug] In initializeAI. Plugin is: ${plugin ? 'Set' : 'Not Set'}`);
     
     if (!plugin) {
-        const errorMessage = '[Genkit Error] Plugin is not initialized in initializeAI. This should not happen if getOrCreatePlugin succeeds.';
-        console.error(errorMessage);
-        throw new Error(errorMessage);
+        throw new Error("Plugin is not initialized in initializeAI.");
     }
 
     aiInstance = genkit({
       plugins: [plugin],
       // Removed 'debug' property as it is not a valid GenkitOptions property.
     });
-    console.log('[Genkit Debug] Genkit AI instance initialized successfully.');
     return aiInstance;
   } catch (error) {
     initError = error instanceof Error ? error : new Error(String(error));
-    console.error('[Genkit Debug] Failed to initialize AI:', initError);
     throw initError;
   }
 };
@@ -120,11 +90,11 @@ const createDummyAI = () => {
   return {
     definePrompt: (...args: any[]) => {
       const instance = getAI();
-      return instance.definePrompt(...args);
+      return instance.definePrompt(...(args as any[]));
     },
     defineFlow: (...args: any[]) => {
       const instance = getAI();
-      return instance.defineFlow(...args);
+      return instance.defineFlow(...(args as any[]));
     },
   } as any;
 };
