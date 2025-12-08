@@ -33,9 +33,19 @@ const getOrCreatePlugin = (): ReturnType<typeof googleAI> => {
 export const getGoogleAIModel = () => {
   const plugin = getOrCreatePlugin();
   console.log(`[Genkit Debug] In getGoogleAIModel. Plugin is: ${plugin ? 'Set' : 'Not Set'}`);
+  if (!plugin) {
+    const errorMessage = '[Genkit Error] GoogleAI plugin is not initialized in getGoogleAIModel. This indicates a problem during genkit setup or API key retrieval.';
+    console.error(errorMessage);
+    throw new Error(errorMessage);
+  }
   try {
     const model = plugin.model('gemini-1.5-flash');
     console.log('[Genkit Debug] Model instance created successfully.');
+    if (!model) {
+        const errorMessage = '[Genkit Error] Model is undefined after calling plugin.model().';
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+    }
     return model;
   } catch (error) {
     console.error('[Genkit Debug] Error getting model or accessing model.name:', error);
@@ -80,10 +90,15 @@ const initializeAI = (): ReturnType<typeof genkit> => {
     const plugin = getOrCreatePlugin();
     console.log(`[Genkit Debug] In initializeAI. Plugin is: ${plugin ? 'Set' : 'Not Set'}`);
     
+    if (!plugin) {
+        const errorMessage = '[Genkit Error] Plugin is not initialized in initializeAI. This should not happen if getOrCreatePlugin succeeds.';
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+    }
+
     aiInstance = genkit({
       plugins: [plugin],
-      // Enable debugging in development
-      debug: process.env.NODE_ENV === 'development',
+      // Removed 'debug' property as it is not a valid GenkitOptions property.
     });
     console.log('[Genkit Debug] Genkit AI instance initialized successfully.');
     return aiInstance;
