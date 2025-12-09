@@ -41,14 +41,7 @@ const suggestAnswersFlow = ai.defineFlow(
     outputSchema: SuggestAnswersOutputSchema,
   },
   async (input) => {
-    console.log(`[suggestAnswersFlow] Starting with input: ${JSON.stringify(input).substring(0, 100)}...`);
-    try {
-      const { output } = await prompt(input);
-      console.log(`[suggestAnswersFlow] Success: output keys: ${Object.keys(output || {})}`);
-      return output!;
-    } catch (err) {
-      console.error(`[suggestAnswersFlow] Error: ${err}`);
-      throw err;
-    }
+    const { output } = await prompt(input);
+    return output!;
   }
 );

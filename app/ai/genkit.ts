@@ -9,24 +9,12 @@ let googleAIInstance: ReturnType<typeof googleAI> | null = null;
 
 const getGoogleAI = () => {
   if (!googleAIInstance) {
-    let apiKey: string | undefined;
-    let source: string = '';
-    if (process.env.GEMINI_API_KEY) {
-      apiKey = process.env.GEMINI_API_KEY;
-      source = 'GEMINI_API_KEY';
-    } else if (process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-      apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      source = 'NEXT_PUBLIC_GEMINI_API_KEY';
-    } else if (process.env.GEMINI_API_KEY_2) {
-      apiKey = process.env.GEMINI_API_KEY_2;
-      source = 'GEMINI_API_KEY_2';
-    }
+    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY_2;
     if (!apiKey) {
         console.error("❌ Fatal Error: GEMINI_API_KEY is missing from environment variables.");
-        console.error("Checked: GEMINI_API_KEY, NEXT_PUBLIC_GEMINI_API_KEY, GEMINI_API_KEY_2");
         throw new Error("Missing GEMINI_API_KEY");
     }
-    console.log(`✅ Using API key from ${source} (length: ${apiKey.length})`);
+    // console.log("✅ GEMINI_API_KEY found (length: " + apiKey.length + ")");
     googleAIInstance = googleAI({ apiKey });
   }
   return googleAIInstance;
@@ -37,7 +25,7 @@ const getGoogleAI = () => {
 // ─────────────────────────────
 export const getGoogleAIModel = () => {
   const plugin = getGoogleAI();
-  const model = plugin.model('gemini-1.5-flash');
+  const model = plugin.model('gemini-1.5-pro');
 
   if (!model) throw new Error("Gemini model returned undefined.");
   return model;
@@ -70,8 +58,8 @@ const getAI = () => initializeAI();
 // Proxy Wrapper for Lazy Loading
 // ─────────────────────────────
 const createVirtualAI = () => ({
-  definePrompt: (...args: any[]) => getAI().definePrompt(...args),
-  defineFlow: (...args: any[]) => getAI().defineFlow(...args),
+  definePrompt: (config: any) => getAI().definePrompt(config),
+  defineFlow: (config: any) => getAI().defineFlow(config),
 });
 
 export const ai = new Proxy(createVirtualAI(), {

@@ -57,7 +57,14 @@ const generateQuizFlow = ai.defineFlow(
     outputSchema: QuizSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
-    return output!;
+    console.log(`[generateQuizFlow] Starting with sourceText length: ${input.sourceText.length}, questionCount: ${input.questionCount}`);
+    try {
+      const { output } = await prompt(input);
+      console.log(`[generateQuizFlow] Success: quiz title: ${output?.title}`);
+      return output!;
+    } catch (err) {
+      console.error(`[generateQuizFlow] Error: ${err}`);
+      throw err;
+    }
   }
 );
