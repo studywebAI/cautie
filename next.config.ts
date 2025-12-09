@@ -1,44 +1,58 @@
-import type {NextConfig} from 'next';
+// next.config.ts
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: true, // jouw keuze
   },
+
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'placehold.co',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'picsum.photos',
-        port: '',
         pathname: '/**',
       },
     ],
   },
-  // Add serverComponentsExternalPackages for genkit compatibility with Next.js 16
-  serverComponentsExternalPackages: [
-    'genkit',
-    '@genkit-ai/google-genai',
-    '@genkit-ai/next',
-  ],
+
+  experimental: {
+    // Correcte locatie in Next.js 16+
+    serverComponentsExternalPackages: [
+      'genkit',
+      '@genkit-ai/google-genai',
+      '@genkit-ai/next',
+    ],
+  },
+
   webpack: (config, { isServer }) => {
     if (isServer) {
-      config.externals = [...(config.externals || []), 'express', 'import-in-the-middle', 'require-in-the-middle'];
-      // Ensure genkit packages are externalized
-      config.externals.push('genkit', '@genkit-ai/google-genai', '@genkit-ai/next');
+      const externals = config.externals || [];
+
+      // voeg alles in één keer toe
+      const genkitExternals = [
+        'express',
+        'import-in-the-middle',
+        'require-in-the-middle',
+        'genkit',
+        '@genkit-ai/google-genai',
+        '@genkit-ai/next',
+        /^@genkit-ai\//,
+      ];
+
+      config.externals = [...externals, ...genkitExternals];
     }
+
     return config;
   },
 };
