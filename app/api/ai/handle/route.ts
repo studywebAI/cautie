@@ -6,65 +6,65 @@ const flowMap: Record<
   () => Promise<(input: any) => Promise<any> | any>
 > = {
   suggestAnswers: () =>
-    import("@/ai/flows/suggest-answers").then(m => m.suggestAnswers ?? m.default),
+    import("@/ai/flows/suggest-answers").then(m => m.suggestAnswers),
 
   provideAiPoweredAnalyticsTeacher: () =>
     import("@/ai/flows/provide-ai-powered-analytics-teacher")
-      .then(m => m.provideAiPoweredAnalyticsTeacher ?? m.default),
+      .then(m => m.provideAiPoweredAnalyticsTeacher),
 
   provideAiPoweredAnalyticsStudent: () =>
     import("@/ai/flows/provide-ai-powered-analytics-student")
-      .then(m => m.provideAiPoweredAnalyticsStudent ?? m.default),
+      .then(m => m.provideAiPoweredAnalytics),
 
   processMaterial: () =>
-    import("@/ai/flows/process-material").then(m => m.processMaterial ?? m.default),
+    import("@/ai/flows/process-material").then(m => m.processMaterial),
 
   generateTeacherDashboardData: () =>
     import("@/ai/flows/generate-teacher-dashboard-data")
-      .then(m => m.generateTeacherDashboardData ?? m.default),
+      .then(m => m.generateTeacherDashboardData),
 
   generateStudyPlanFromTask: () =>
     import("@/ai/flows/generate-study-plan-from-task")
-      .then(m => m.generateStudyPlanFromTask ?? m.default),
+      .then(m => m.generateStudyPlanFromTask),
 
   generateSingleQuestion: () =>
     import("@/ai/flows/generate-single-question")
-      .then(m => m.generateSingleQuestion ?? m.default),
+      .then(m => m.generateSingleQuestion),
 
   generateSingleFlashcard: () =>
     import("@/ai/flows/generate-single-flashcard")
-      .then(m => m.generateSingleFlashcard ?? m.default),
+      .then(m => m.generateSingleFlashcard),
 
   generateQuiz: () =>
-    import("@/ai/flows/generate-quiz").then(m => m.generateQuiz ?? m.default),
+    import("@/ai/flows/generate-quiz").then(m => m.generateQuiz),
 
   generateQuizDuelData: () =>
     import("@/ai/flows/generate-quiz-duel-data")
-      .then(m => m.generateQuizDuelData ?? m.default),
+      .then(m => m.generateQuizDuelData),
 
   generatePersonalizedStudyPlan: () =>
     import("@/ai/flows/generate-personalized-study-plan")
-      .then(m => m.generatePersonalizedStudyPlan ?? m.default),
+      .then(m => m.generatePersonalizedStudyPlan),
 
   generateNotes: () =>
-    import("@/ai/flows/generate-notes").then(m => m.generateNotes ?? m.default),
+    import("@/ai/flows/generate-notes").then(m => m.generateNotes),
 
   generateMultipleChoiceFromFlashcard: () =>
     import("@/ai/flows/generate-multiple-choice-from-flashcard")
-      .then(m => m.generateMultipleChoiceFromFlashcard ?? m.default),
+      .then(m => m.generateMultipleChoiceFromFlashcard),
 
   generateKnowledgeGraph: () =>
     import("@/ai/flows/generate-knowledge-graph")
-      .then(m => m.generateKnowledgeGraph ?? m.default),
+      .then(m => m.generateKnowledgeGraph),
 
   generateFlashcards: () =>
-    import("@/ai/flows/generate-flashcards").then(m => m.generateFlashcards ?? m.default),
+    import("@/ai/flows/generate-flashcards").then(m => m.generateFlashcards),
 
   generateClassIdeas: () =>
-    import("@/ai/flows/generate-class-ideas").then(m => m.generateClassIdeas ?? m.default),
+    import("@/ai/flows/generate-class-ideas").then(m => m.generateClassIdeas),
 
   explainAnswer: () =>
-    import("@/ai/flows/explain-answer").then(m => m.explainAnswer ?? m.default),
+    import("@/ai/flows/explain-answer").then(m => m.explainAnswer),
 };
 
 export async function POST(req: Request) {
@@ -108,10 +108,11 @@ export async function POST(req: Request) {
       const result = await flow(input);
       return Response.json(result);
     } catch (err: any) {
-      console.error("Flow execution error:", err);
+      console.error(`Flow execution error for ${flowName}:`, err.message, err.stack);
       return Response.json(
         {
           error: err?.message || "Flow execution failed",
+          flowName,
           ...(process.env.NODE_ENV === "development" && { stack: err?.stack }),
         },
         { status: 500 }
