@@ -23,9 +23,9 @@ const getGoogleAI = () => {
 // ─────────────────────────────
 // Model Getter
 // ─────────────────────────────
-export const getGoogleAIModel = () => {
+export const getGoogleAIModel = async () => {
   const plugin = getGoogleAI();
-  const model = plugin.model('gemini-2.5-flash');
+  const model = await plugin.model('gemini-1.5-flash');
 
   if (!model) throw new Error("Gemini model returned undefined.");
   return model;

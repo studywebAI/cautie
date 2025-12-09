@@ -24,12 +24,21 @@ export async function generateQuiz(
   return generateQuizFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateQuizPrompt',
-  model: getGoogleAIModel() as any,
-  input: { schema: GenerateQuizInputSchema },
-  output: { schema: QuizSchema },
-  prompt: `You are an expert in creating educational content.
+const generateQuizFlow = ai.defineFlow(
+  {
+    name: 'generateQuizFlow',
+    inputSchema: GenerateQuizInputSchema,
+    outputSchema: QuizSchema,
+  },
+  async (input) => {
+    console.log(`[generateQuizFlow] Starting with sourceText length: ${input.sourceText.length}, questionCount: ${input.questionCount}`);
+    const model = await getGoogleAIModel();
+    const prompt = ai.definePrompt({
+      name: 'generateQuizPrompt',
+      model,
+      input: { schema: GenerateQuizInputSchema },
+      output: { schema: QuizSchema },
+      prompt: `You are an expert in creating educational content.
 Crucially, all factual information in the quiz questions and answers must be accurate and verifiable. Prioritize information directly from the provided Source Text.
 If external general knowledge is incorporated, ensure it is widely accepted and, if possible, mention the source (e.g., "Wikipedia").
 Avoid making up facts or details not present in the Source Text or commonly accepted knowledge.
@@ -48,16 +57,7 @@ For each question, if you use information from an external trusted source (like 
 Source Text:
 {{{sourceText}}}
 `,
-});
-
-const generateQuizFlow = ai.defineFlow(
-  {
-    name: 'generateQuizFlow',
-    inputSchema: GenerateQuizInputSchema,
-    outputSchema: QuizSchema,
-  },
-  async (input) => {
-    console.log(`[generateQuizFlow] Starting with sourceText length: ${input.sourceText.length}, questionCount: ${input.questionCount}`);
+    });
     try {
       const { output } = await prompt(input);
       console.log(`[generateQuizFlow] Success: quiz title: ${output?.title}`);

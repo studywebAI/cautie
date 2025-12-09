@@ -37,12 +37,20 @@ export async function processMaterial(input: ProcessMaterialInput): Promise<Proc
   return processMaterialFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'processMaterialPrompt',
-  model: getGoogleAIModel() as any,
-  input: {schema: ProcessMaterialInputSchema},
-  output: {schema: ProcessMaterialOutputSchema},
-  prompt: `You are an expert learning assistant. Your first task is to extract all text from the provided material. Then, analyze the extracted text. Your analysis should result in a summary and suggestions for relevant learning activities.
+const processMaterialFlow = ai.defineFlow(
+  {
+    name: 'processMaterialFlow',
+    inputSchema: ProcessMaterialInputSchema,
+    outputSchema: ProcessMaterialOutputSchema,
+  },
+  async input => {
+    const model = await getGoogleAIModel();
+    const prompt = ai.definePrompt({
+      name: 'processMaterialPrompt',
+      model,
+      input: {schema: ProcessMaterialInputSchema},
+      output: {schema: ProcessMaterialOutputSchema},
+      prompt: `You are an expert learning assistant. Your first task is to extract all text from the provided material. Then, analyze the extracted text. Your analysis should result in a summary and suggestions for relevant learning activities.
 
 If both text and a file are provided, use the text as additional context or specific instructions for analyzing the file content.
 
@@ -69,15 +77,7 @@ File:
 {{media url=fileDataUri}}
 {{/if}}
 `,
-});
-
-const processMaterialFlow = ai.defineFlow(
-  {
-    name: 'processMaterialFlow',
-    inputSchema: ProcessMaterialInputSchema,
-    outputSchema: ProcessMaterialOutputSchema,
-  },
-  async input => {
+    });
     const {output} = await prompt(input);
     return output!;
   }
