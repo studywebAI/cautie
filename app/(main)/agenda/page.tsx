@@ -138,7 +138,15 @@ export default function AgendaPage() {
             }),
         });
         if (!response.ok) {
-            throw new Error(`API call failed: ${response.statusText}`);
+            let errorMessage = response.statusText;
+            try {
+                const errorData = await response.json();
+                if (errorData.detail) errorMessage = errorData.detail;
+                if (errorData.code === "MISSING_API_KEY") {
+                    errorMessage = "AI is not configured (Missing API Key). Please check server logs.";
+                }
+            } catch (e) { /* ignore */ }
+            throw new Error(errorMessage);
         }
         const result = await response.json();
         setAiSuggestion({ id: 'ai-plan', title: result.studyPlan, content: result.studyPlan, icon: 'BrainCircuit' });

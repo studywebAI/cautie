@@ -86,9 +86,14 @@ export async function POST(req: Request) {
       flow = await loader();
     } catch (err: any) {
       console.error("Flow import failed:", err);
+      const isMissingKey = err.message?.includes("Missing GEMINI_API_KEY");
       return Response.json(
-        { error: "Failed to import flow", detail: err?.message },
-        { status: 500 }
+        { 
+            error: isMissingKey ? "AI Configuration Missing" : "Failed to import flow", 
+            detail: err?.message,
+            code: isMissingKey ? "MISSING_API_KEY" : "INTERNAL_ERROR"
+        },
+        { status: isMissingKey ? 503 : 500 }
       );
     }
 

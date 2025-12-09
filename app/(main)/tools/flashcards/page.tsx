@@ -63,7 +63,15 @@ function FlashcardsPageContent() {
         }),
       });
       if (!apiResponse.ok) {
-        throw new Error(`API call failed: ${apiResponse.statusText}`);
+        let errorMessage = apiResponse.statusText;
+        try {
+            const errorData = await apiResponse.json();
+            if (errorData.detail) errorMessage = errorData.detail;
+            if (errorData.code === "MISSING_API_KEY") {
+                errorMessage = "AI is not configured (Missing API Key). Please check server logs.";
+            }
+        } catch (e) { /* ignore */ }
+        throw new Error(errorMessage);
       }
       const response = await apiResponse.json();
       setGeneratedCards(response.flashcards);
