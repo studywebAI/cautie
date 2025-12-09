@@ -128,3 +128,13 @@ export type SessionRecapData = {
   totalQuestions: number;
   timeTaken: number;
 };
+
+// Types for Agenda
+export type CalendarEvent = {
+  id: string;
+  title: string;
+  subject: string;
+  date: Date;
+  type: 'assignment' | 'study_plan' | 'personal';
+  href: string;
+};

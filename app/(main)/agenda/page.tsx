@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { CreateTaskDialog } from '@/components/agenda/create-task-dialog';
 import { TodayPanel } from '@/components/agenda/today-panel';
+import { WeekView } from '@/components/agenda/week-view';
 import { PlusCircle, BookCheck } from 'lucide-react';
 import type { AiSuggestion } from '@/lib/types';
 import Link from 'next/link';
@@ -17,17 +18,10 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
 
-export type CalendarEvent = {
-  id: string;
-  title: string;
-  subject: string;
-  date: Date;
-  type: 'assignment' | 'study_plan' | 'personal';
-  href: string;
-};
+import type { CalendarEvent } from '@/lib/types';
 
 export default function AgendaPage() {
-  const { assignments, classes, isLoading, role, personalTasks, createPersonalTask } = useContext(AppContext) as AppContextType;
+  const { assignments, classes, isLoading, role, personalTasks, createPersonalTask, updatePersonalTask } = useContext(AppContext) as AppContextType;
   const { dictionary } = useDictionary();
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
@@ -169,6 +163,14 @@ export default function AgendaPage() {
   const handleTaskCreated = async (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => {
     await createPersonalTask(newTask);
   };
+
+  const handleEventMove = async (eventId: string, newDate: Date) => {
+    const event = events.find(e => e.id === eventId);
+    if (event?.type === 'personal') {
+      const dateString = format(newDate, 'yyyy-MM-dd');
+      await updatePersonalTask(eventId, { date: dateString });
+    }
+  };
   
   if (isLoading) {
     return (
@@ -201,24 +203,12 @@ export default function AgendaPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start flex-1">
         <div className="md:col-span-8 lg:col-span-9">
-            <Card>
-                <CardContent className="p-0 sm:p-2">
-                    <Calendar
-                        mode="single"
-                        selected={selectedDay}
-                        onSelect={setSelectedDay}
-                        className="w-full"
-                        modifiers={{ 
-                            event: eventDays,
-                            today: new Date(),
-                        }}
-                        modifiersClassNames={{
-                            event: 'border-2 border-primary/50 rounded-full',
-                            today: 'bg-accent/20 text-accent-foreground',
-                        }}
-                    />
-                </CardContent>
-            </Card>
+            <WeekView
+              events={events}
+              selectedDay={selectedDay}
+              onDaySelect={setSelectedDay}
+              onEventMove={handleEventMove}
+            />
         </div>
 
         <div className="md:col-span-4 lg:col-span-3">

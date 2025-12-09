@@ -41,6 +41,7 @@ export type AppContextType = {
   students: Student[];
   personalTasks: PersonalTask[];
   createPersonalTask: (newTask: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => Promise<void>;
+  updatePersonalTask: (id: string, updates: Partial<PersonalTask>) => Promise<void>;
   materials: MaterialReference[];
   refetchMaterials: (classId: string) => Promise<void>;
 };
@@ -356,6 +357,24 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         saveToLocalStorage('studyweb-local-personal-tasks', updatedTasks);
      }
   };
+
+  const updatePersonalTask = async (id: string, updates: Partial<PersonalTask>) => {
+     if (session) {
+        const response = await fetch(`/api/personal-tasks/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) throw new Error('Failed to update personal task in Supabase');
+        // Update local state
+        setPersonalTasks(prev => (prev as PersonalTask[]).map((task: PersonalTask) => task.id === id ? { ...task, ...updates } as PersonalTask : task));
+     } else {
+        // Guest: update localStorage
+        const updatedTasks = personalTasks.map(task => task.id === id ? { ...task, ...updates } : task);
+        setPersonalTasks(updatedTasks);
+        saveToLocalStorage('studyweb-local-personal-tasks', updatedTasks);
+     }
+  };
   
   const refetchClasses = useCallback(async () => {
     if (session) {
@@ -487,6 +506,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     students,
     personalTasks,
     createPersonalTask,
+    updatePersonalTask,
     materials,
     refetchMaterials,
   };
