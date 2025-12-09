@@ -14,7 +14,7 @@ const getGoogleAI = () => {
         console.error("❌ Fatal Error: GEMINI_API_KEY is missing from environment variables.");
         throw new Error("Missing GEMINI_API_KEY");
     }
-    // console.log("✅ GEMINI_API_KEY found (length: " + apiKey.length + ")");
+    console.log(`✅ Using API key from ${process.env.GEMINI_API_KEY ? 'GEMINI_API_KEY' : process.env.NEXT_PUBLIC_GEMINI_API_KEY ? 'NEXT_PUBLIC_GEMINI_API_KEY' : 'GEMINI_API_KEY_2'} (length: ${apiKey.length}, starts with: ${apiKey.substring(0,4)}...)`);
     googleAIInstance = googleAI({ apiKey });
   }
   return googleAIInstance;
@@ -25,7 +25,7 @@ const getGoogleAI = () => {
 // ─────────────────────────────
 export const getGoogleAIModel = () => {
   const plugin = getGoogleAI();
-  const model = plugin.model('gemini-1.5-pro');
+  const model = plugin.model('gemini-2.5-flash-lite');
 
   if (!model) throw new Error("Gemini model returned undefined.");
   return model;
@@ -58,8 +58,8 @@ const getAI = () => initializeAI();
 // Proxy Wrapper for Lazy Loading
 // ─────────────────────────────
 const createVirtualAI = () => ({
-  definePrompt: (config: any) => getAI().definePrompt(config),
-  defineFlow: (config: any) => getAI().defineFlow(config),
+  definePrompt: (...args: any[]) => (getAI() as any).definePrompt(...args),
+  defineFlow: (...args: any[]) => (getAI() as any).defineFlow(...args),
 });
 
 export const ai = new Proxy(createVirtualAI(), {
