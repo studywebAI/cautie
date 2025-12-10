@@ -46,7 +46,7 @@ export async function generateQuizDuelData(input: GenerateQuizDuelDataInput): Pr
 
 const prompt = ai.definePrompt({
   name: 'generateQuizDuelDataPrompt',
-  model: getGoogleAIModel() as any,
+  model: 'gemini-2.5-flash',
   input: { schema: GenerateQuizDuelDataInputSchema },
   output: { schema: QuizDuelDataSchema },
   prompt: `You are an AI game master. Your task is to generate the data for a 1v1 quiz duel based on the provided text.

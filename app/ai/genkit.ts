@@ -125,15 +125,51 @@ async function getWorkingInstance(): Promise<{ instance: GenkitInstance; keyInde
 export async function getGoogleAIModel(modelName = MODEL_NAME) {
   const { instance } = await getWorkingInstance();
 
+  // Try different ways to access the model
+  let model;
+
+  // Method 1: getModel function
   const modelGetter = (instance as any).getModel;
-  if (typeof modelGetter !== 'function') {
-    throw new Error('Genkit instance does not expose a model getter (getModel).');
+  if (typeof modelGetter === 'function') {
+    try {
+      model = (modelGetter as Function).call(instance, modelName);
+      model = await Promise.resolve(model);
+    } catch (e) {
+      console.warn('getModel method failed:', e);
+    }
   }
 
-  // Call model getter; allow both sync and async forms
-  const maybeModel = (modelGetter as Function).call(instance, modelName);
-  // If it returns a promise, await it
-  return await Promise.resolve(maybeModel);
+  // Method 2: Direct model access
+  if (!model) {
+    model = (instance as any).model?.(modelName) || (instance as any)[modelName];
+    if (model) {
+      model = await Promise.resolve(model);
+    }
+  }
+
+  // Method 3: Check if model is available through plugins
+  if (!model) {
+    const plugins = (instance as any)._plugins || (instance as any).plugins;
+    if (plugins) {
+      for (const plugin of plugins) {
+        if (plugin && typeof plugin.model === 'function') {
+          try {
+            model = plugin.model(modelName);
+            model = await Promise.resolve(model);
+            break;
+          } catch (e) {
+            // Continue to next plugin
+          }
+        }
+      }
+    }
+  }
+
+  if (!model) {
+    throw new Error(`Could not access model '${modelName}' from Genkit instance.`);
+  }
+
+  return model;
 }
 
 /** --- AI facade (lightweight) --- **

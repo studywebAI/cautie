@@ -32,7 +32,7 @@ export async function generateKnowledgeGraph(
 
 const prompt = ai.definePrompt({
   name: 'generateKnowledgeGraphPrompt',
-  model: getGoogleAIModel() as any,
+  model: 'gemini-2.5-flash',
   input: { schema: GenerateKnowledgeGraphInputSchema },
   output: { schema: GenerateKnowledgeGraphOutputSchema },
   prompt: `You are an AI that specializes in semantic analysis and knowledge extraction. Your task is to identify the most important concepts from the provided text and represent them as a simple list.

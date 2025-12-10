@@ -37,10 +37,9 @@ const explainAnswerFlow = ai.defineFlow(
     outputSchema: ExplainAnswerOutputSchema,
   },
   async (input) => {
-    const model = await getGoogleAIModel();
     const prompt = ai.definePrompt({
       name: 'explainAnswerPrompt',
-      model,
+      model: 'gemini-2.5-flash',
       input: { schema: ExplainAnswerInputSchema },
       output: { schema: ExplainAnswerOutputSchema },
       prompt: `You are an expert educational tutor. Provide accurate, factual information, and avoid making things up. Focus solely on explaining the correctness or incorrectness of the answers. Do NOT include any complimentary phrases like "nice try", "almost had it", or "good job". When generating explanations, if external sources like Wikipedia have been provided, refer to them to verify and backup the explanation.

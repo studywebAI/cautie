@@ -34,7 +34,7 @@ export async function generateStudyPlanFromTask(
 
 const prompt = ai.definePrompt({
   name: 'generateStudyPlanFromTaskPrompt',
-  model: getGoogleAIModel() as any,
+  model: 'gemini-2.5-flash',
   input: { schema: GenerateStudyPlanFromTaskInputSchema },
   output: { schema: GenerateStudyPlanFromTaskOutputSchema },
   prompt: `You are an expert academic planner. A student has a single large task and needs a simple, actionable study plan to prepare for it.

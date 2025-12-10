@@ -29,7 +29,7 @@ export async function provideAiPoweredAnalyticsTeacher(input: ProvideAiPoweredAn
 
 const provideAiPoweredAnalyticsTeacherPrompt = ai.definePrompt({
   name: 'provideAiPoweredAnalyticsTeacherPrompt',
-  model: getGoogleAIModel() as any,
+  model: 'gemini-2.5-flash',
   input: {
     schema: ProvideAiPoweredAnalyticsTeacherInputSchema,
   },

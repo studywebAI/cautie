@@ -43,11 +43,9 @@ const processMaterialFlow = ai.defineFlow(
     outputSchema: ProcessMaterialOutputSchema,
   },
   async input => {
-    const model = await getGoogleAIModel();
-
     const prompt = ai.definePrompt({
       name: 'processMaterialPrompt',
-      model,
+      model: 'gemini-2.5-flash',
       input: { schema: ProcessMaterialInputSchema },
       output: { schema: ProcessMaterialOutputSchema },
       prompt: `

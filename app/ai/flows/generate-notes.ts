@@ -42,10 +42,9 @@ const generateNotesFlow = ai.defineFlow(
     outputSchema: GenerateNotesOutputSchema,
   },
   async (input) => {
-    const model = await getGoogleAIModel();
     const prompt = ai.definePrompt({
       name: 'generateNotesPrompt',
-      model,
+      model: 'gemini-2.5-flash',
       input: { schema: GenerateNotesInputSchema },
       output: { schema: GenerateNotesOutputSchema },
       prompt: `You are an expert notetaker. Your task is to create notes from the provided source text.

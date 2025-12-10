@@ -26,7 +26,7 @@ export async function generateSingleQuestion(
 
 const prompt = ai.definePrompt({
   name: 'generateSingleQuestionPrompt',
-  model: getGoogleAIModel() as any, // Type assertion to fix type error
+  model: 'gemini-2.5-flash',
   input: { schema: GenerateSingleQuestionInputSchema },
   output: { schema: QuizQuestionSchema },
   prompt: `You are an expert in creating educational content.

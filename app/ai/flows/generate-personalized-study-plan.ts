@@ -42,7 +42,7 @@ export async function generatePersonalizedStudyPlan(
 
 const prompt = ai.definePrompt({
   name: 'generatePersonalizedStudyPlanPrompt',
-  model: getGoogleAIModel() as any,
+  model: 'gemini-2.5-flash',
   input: {schema: GeneratePersonalizedStudyPlanInputSchema},
   output: {schema: GeneratePersonalizedStudyPlanOutputSchema},
   prompt: `You are an AI study assistant. You will generate a personalized study plan for the student based on their deadlines, learning habits, and calendar.

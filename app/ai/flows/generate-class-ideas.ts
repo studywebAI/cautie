@@ -33,7 +33,7 @@ export async function generateClassIdeas(
 
 const prompt = ai.definePrompt({
   name: 'generateClassIdeasPrompt',
-  model: getGoogleAIModel() as any,
+  model: 'gemini-2.5-flash',
   input: { schema: GenerateClassIdeasInputSchema },
   output: { schema: GenerateClassIdeasOutputSchema },
   prompt: `You are an AI curriculum designer helping a teacher. Your task is to brainstorm engaging class ideas based on a subject.

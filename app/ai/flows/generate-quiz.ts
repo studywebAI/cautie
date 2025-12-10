@@ -32,10 +32,9 @@ const generateQuizFlow = ai.defineFlow(
   },
   async (input) => {
     console.log(`[generateQuizFlow] Starting with sourceText length: ${input.sourceText.length}, questionCount: ${input.questionCount}`);
-    const model = await getGoogleAIModel();
     const prompt = ai.definePrompt({
       name: 'generateQuizPrompt',
-      model,
+      model: 'gemini-2.5-flash',
       input: { schema: GenerateQuizInputSchema },
       output: { schema: QuizSchema },
       prompt: `You are an expert in creating educational content.

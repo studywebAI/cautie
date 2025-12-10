@@ -29,7 +29,7 @@ export async function provideAiPoweredAnalytics(
 
 const prompt = ai.definePrompt({
   name: 'provideAiPoweredAnalyticsPrompt',
-  model: getGoogleAIModel() as any,
+  model: 'gemini-2.5-flash',
   input: {schema: ProvideAiPoweredAnalyticsInputSchema},
   output: {schema: ProvideAiPoweredAnalyticsOutputSchema},
   prompt: `You are an AI learning assistant that provides personalized analytics to students based on their learning history.

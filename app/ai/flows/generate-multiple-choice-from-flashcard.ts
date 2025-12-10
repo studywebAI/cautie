@@ -28,7 +28,7 @@ export async function generateMultipleChoiceFromFlashcard(
 
 const prompt = ai.definePrompt({
   name: 'generateMcqFromFlashcardPrompt',
-  model: getGoogleAIModel() as any,
+  model: 'gemini-2.5-flash',
   input: { schema: GenerateMultipleChoiceFromFlashcardInputSchema },
   output: { schema: McqQuestionSchema },
   prompt: `You are an expert in creating educational content. Your task is to generate a single multiple-choice question based on a flashcard.

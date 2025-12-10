@@ -35,10 +35,9 @@ const generateFlashcardsFlow = ai.defineFlow(
     outputSchema: GenerateFlashcardsOutputSchema,
   },
   async (input) => {
-    const model = await getGoogleAIModel();
     const prompt = ai.definePrompt({
       name: 'generateFlashcardsPrompt',
-      model,
+      model: 'gemini-2.5-flash',
       input: { schema: GenerateFlashcardsInputSchema },
       output: { schema: GenerateFlashcardsOutputSchema },
       prompt: `You are an expert in creating effective learning materials.

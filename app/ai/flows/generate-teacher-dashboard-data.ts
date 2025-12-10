@@ -40,7 +40,7 @@ export async function generateTeacherDashboardData(
 
 const prompt = ai.definePrompt({
   name: 'generateTeacherDashboardDataPrompt',
-  model: getGoogleAIModel() as any,
+  model: 'gemini-2.5-flash',
   input: {schema: GenerateTeacherDashboardDataInputSchema},
   output: {schema: GenerateTeacherDashboardDataOutputSchema},
   prompt: `You are an AI assistant for a teacher named {{{teacherName}}}. You need to generate a realistic and coherent set of data for their dashboard. The teacher is currently teaching the following classes: {{{classNames}}}.

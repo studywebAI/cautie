@@ -26,7 +26,7 @@ export async function generateSingleFlashcard(
 
 const prompt = ai.definePrompt({
   name: 'generateSingleFlashcardPrompt',
-  model: getGoogleAIModel() as any,
+  model: 'gemini-2.5-flash',
   input: { schema: GenerateSingleFlashcardInputSchema },
   output: { schema: FlashcardSchema },
   prompt: `You are an expert in creating effective learning materials.
