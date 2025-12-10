@@ -7,21 +7,28 @@ import { googleAI } from '@genkit-ai/google-genai';
 // ─────────────────────────────
 let googleAIInstance: ReturnType<typeof googleAI> | null = null;
 
+let currentKeyIndex = 0;
+
 const getGoogleAI = () => {
-  if (!googleAIInstance) {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY_2;
-    if (!apiKey) {
-        console.error("❌ Fatal Error: GEMINI_API_KEY is missing from environment variables.");
-        throw new Error("Missing GEMINI_API_KEY");
-    }
-    console.log(`✅ Using API key from ${process.env.GEMINI_API_KEY ? 'GEMINI_API_KEY' : process.env.NEXT_PUBLIC_GEMINI_API_KEY ? 'NEXT_PUBLIC_GEMINI_API_KEY' : 'GEMINI_API_KEY_2'} (length: ${apiKey.length}, starts with: ${apiKey.substring(0,4)}...)`);
-    googleAIInstance = googleAI({ apiKey });
+  const keys = [
+    process.env.GEMINI_API_KEY,
+    process.env.NEXT_PUBLIC_GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.NEXT_PUBLIC_GEMINI_API_KEY_2,
+  ];
+
+  const apiKey = keys[currentKeyIndex];
+  if (apiKey) {
+    console.log(`✅ Using API key ${currentKeyIndex + 1} (length: ${apiKey.length}, starts with: ${apiKey.substring(0,4)}...)`);
+    return googleAI({ apiKey });
   }
-  return googleAIInstance;
+
+  console.error(`❌ Fatal Error: GEMINI_API_KEY at index ${currentKeyIndex} not found.`);
+  throw new Error("Missing GEMINI_API_KEY");
 };
 
 // ─────────────────────────────
-// Model Getter
+// Model Getter -
 // ─────────────────────────────
 export const getGoogleAIModel = async () => {
   const plugin = getGoogleAI();
@@ -59,7 +66,24 @@ const getAI = () => initializeAI();
 // ─────────────────────────────
 const createVirtualAI = () => ({
   definePrompt: (...args: any[]) => (getAI() as any).definePrompt(...args),
-  defineFlow: (...args: any[]) => (getAI() as any).defineFlow(...args),
+  defineFlow: (name: string, schema: any, fn: any) => {
+    const wrappedFn = async (input: any) => {
+      currentKeyIndex = 0; // Reset to first key
+      const keyIndices = [0, 1, 2, 3];
+      for (const keyIndex of keyIndices) {
+        try {
+          currentKeyIndex = keyIndex;
+          return await fn(input);
+        } catch (err: any) {
+          console.error(`[${name}] Error with key ${keyIndex + 1}: ${err.message}`);
+          if (keyIndex === keyIndices.length - 1) {
+            throw err;
+          }
+        }
+      }
+    };
+    return (getAI() as any).defineFlow(name, schema, wrappedFn);
+  },
 });
 
 export const ai = new Proxy(createVirtualAI(), {
