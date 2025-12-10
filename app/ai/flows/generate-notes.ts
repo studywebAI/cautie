@@ -1,11 +1,10 @@
-'use server';
 /**
  * @fileOverview An AI agent that generates structured notes from text.
  *
  * - generateNotes - A function that returns notes.
  */
 
-import { ai, getGoogleAIModel } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const NoteSchema = z.object({
@@ -37,7 +36,7 @@ export async function generateNotes(
 
 const prompt = ai.definePrompt({
   name: 'generateNotesPrompt',
-  model: getGoogleAIModel() as any,
+  model: 'gemini-2.5-flash',
   input: { schema: GenerateNotesInputSchema },
   output: { schema: GenerateNotesOutputSchema },
   prompt: `You are an expert notetaker. Your task is to create notes from the provided source text.
