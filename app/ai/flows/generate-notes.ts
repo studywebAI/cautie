@@ -9,7 +9,7 @@ import { z } from 'genkit';
 
 const NoteSchema = z.object({
   title: z.string().describe('The title of the note section.'),
-  content: z.string().describe('The detailed content of the note in markdown format.'),
+  content: z.string().or(z.array(z.string())).describe('The detailed content of the note in plain markdown format. No diagrams, ASCII art, or visual layouts.'),
 });
 
 const GenerateNotesInputSchema = z.object({
@@ -60,7 +60,11 @@ Style: {{{style}}} (standard: clean structured notes, wordweb: mind map style wi
 Highlight titles with colors using HTML <span style="background-color: lightblue;">Title</span> for light blue highlighting. Highlight important parts with <span style="background-color: lightblue;">important text</span>.
 {{/if}}
 
-Generate notes with clear titles and content formatted in markdown. Mix clean notes with short explanatory text. Use # for headings, - for lists, **bold** for emphasis, etc. Split into different sections.
+Output the result as a JSON object with the structure: { "notes": [ { "title": "Section Title", "content": "Markdown formatted content" } ] }
+
+Generate structured notes from the source text. Create multiple sections with clear titles and detailed markdown content. Adapt the style to {{{style}}} if specified. Include explanatory text and examples where appropriate.
+
+IMPORTANT: NEVER generate diagrams or visual layouts. ONLY return plain markdown text inside the content fields. DO NOT generate ASCII art, boxes, diagrams, flowcharts, shapes, or arrows. DO NOT include HTML unless highlightTitles is true. Keep all content as simple text.
 `,
 });
 

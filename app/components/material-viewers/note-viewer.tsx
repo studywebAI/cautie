@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 type NoteSection = {
   title: string;
-  content: string;
+  content: string | string[];
 };
 
 type NoteViewerProps = {
@@ -25,7 +25,7 @@ export function NoteViewer({ notes }: NoteViewerProps) {
                 {notes.map((note, index) => (
                     <div key={index} className="mb-8">
                         <h2>{note.title}</h2>
-                        <div dangerouslySetInnerHTML={{ __html: marked(note.content) as string }} />
+                        <div dangerouslySetInnerHTML={{ __html: marked(Array.isArray(note.content) ? note.content.join('\n') : note.content) as string }} />
                     </div>
                 ))}
             </div>
