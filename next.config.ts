@@ -26,33 +26,16 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  experimental: {
-    // Correcte locatie in Next.js 16+
-    serverComponentsExternalPackages: [
-      'genkit',
-      '@genkit-ai/google-genai',
-      '@genkit-ai/next',
-    ],
-  },
+  serverExternalPackages: [
+    'genkit',
+    '@genkit-ai/google-genai',
+  ],
 
   webpack: (config, { isServer }) => {
     if (isServer) {
-      const externals = config.externals || [];
-
-      // voeg alles in één keer toe
-      const genkitExternals = [
-        'express',
-        'import-in-the-middle',
-        'require-in-the-middle',
-        'genkit',
-        '@genkit-ai/google-genai',
-        '@genkit-ai/next',
-        /^@genkit-ai\//,
-      ];
-
-      config.externals = [...externals, ...genkitExternals];
+      config.externals = config.externals || [];
+      config.externals.push('genkit', '@genkit-ai/google-genai');
     }
-
     return config;
   },
 };

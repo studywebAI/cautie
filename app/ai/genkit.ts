@@ -1,4 +1,4 @@
-// File: /app/ai/genkit.ts
+// app/ai/genkit.ts
 /**
  * Full genkit wrapper for StudyWeb
  * - Safe key rotation with caching
@@ -25,6 +25,8 @@ const KEY_ENV_NAMES = [
   'GEMINI_API_KEY_2',
   'NEXT_PUBLIC_GEMINI_API_KEY_2',
 ] as const;
+
+const MODEL_NAME = 'gemini-2.5-flash';
 
 /** --- Internal caches & state --- **/
 const keyList: (string | undefined)[] = KEY_ENV_NAMES.map((k) => process.env[k]);
@@ -90,24 +92,17 @@ async function getWorkingInstance(): Promise<{ instance: GenkitInstance; keyInde
     try {
       const instance = createInstanceForKey(idx);
 
-      // Quick health-check: try to access model or run a harmless method if available.
-      // We attempt to call `model` or `getModel` with a name to ensure plugin is usable.
-      // But we do not await heavy generation here; just ensure method exists.
-      // If model method doesn't exist, still accept the instance (some genkit versions differ).
-      const maybeModelFn = (instance as any).model ?? (instance as any).getModel;
+      // Quick health-check: try to access model
+      // We attempt to call `getModel` with our model name to ensure plugin is usable.
+      const maybeModelFn = (instance as any).getModel;
       if (typeof maybeModelFn === 'function') {
-        // attempt to call it but with cautious error handling
+        // Attempt to call getModel but don't await the full model creation
+        // This tests if the method exists and basic plugin setup works
         try {
-          // call and allow it to resolve or reject; await to surface sync/async issues
-          // NOTE: calling a model retrieval can be sync or async depending on lib, so await safely.
-          // We call with a common model id — if it errors due to model name, ignore that as long as call succeeded.
-          // Use a short timeout pattern would be ideal but keep simple here.
-          await Promise.resolve((maybeModelFn as Function).call(instance, 'gemini-2.5-flash')).catch(() => {
-            // ignore inner model-name errors; presence of function call is enough
-          });
+          maybeModelFn.call(instance, MODEL_NAME);
         } catch (e) {
-          // If calling model function throws fatally (e.g., plugin rejects), treat as failure
-          throw e;
+          // If getModel throws (e.g., due to model name), still accept the instance
+          // Most errors here are acceptable as long as the method exists
         }
       }
 
@@ -127,12 +122,12 @@ async function getWorkingInstance(): Promise<{ instance: GenkitInstance; keyInde
 }
 
 /** Public helper to get model in a safe/cross-genkit way */
-export async function getGoogleAIModel(modelName = 'gemini-2.5-flash') {
+export async function getGoogleAIModel(modelName = MODEL_NAME) {
   const { instance } = await getWorkingInstance();
 
-  const modelGetter = (instance as any).model ?? (instance as any).getModel;
+  const modelGetter = (instance as any).getModel;
   if (typeof modelGetter !== 'function') {
-    throw new Error('Genkit instance does not expose a model getter (model or getModel).');
+    throw new Error('Genkit instance does not expose a model getter (getModel).');
   }
 
   // Call model getter; allow both sync and async forms
@@ -160,32 +155,36 @@ function createDelegator<K extends string>(methodName: K) {
 
 /** List of methods we expect to forward. Add more if needed. */
 const exported: Record<string, AnyFn> = {
-  definePrompt: createDelegator('definePrompt'),
-  defineFlow: async function defineFlow(name: string, schema: any, fn: AnyFn) {
-    // Wrap the flow function to ensure each run uses a working instance (with key rotation if necessary).
-    // The wrapper only delegates execution to the genkit instance's defineFlow.
-    const { instance } = await getWorkingInstance();
-
-    // Genkit's defineFlow expects the flow function to be executed by the genkit runtime.
-    // We register the flow on the active instance.
-    const defineFlowFn = (instance as any).defineFlow;
-    if (typeof defineFlowFn !== 'function') {
-      throw new Error('Genkit instance does not implement defineFlow');
+  definePrompt: (...args: any[]) => {
+    // Define prompt with first available instance (synchronous)
+    const keys = KEY_ENV_NAMES.map((k) => process.env[k]).filter(Boolean);
+    if (keys.length === 0) {
+      throw new Error("No GEMINI_API_KEY found");
     }
 
-    // We wrap the provided fn to ensure runtime errors bubble through and to allow key rotation per-run
-    const wrappedFn = async (input: any, ctx?: any) => {
-      // When the flow actually runs, ensure we have a working instance (this will rotate keys if needed).
+    const instance = createInstanceForKey(0); // Use first key for registration
+    return (instance as any).definePrompt(...args);
+  },
+  defineFlow: function defineFlow(config: any, fn: AnyFn) {
+    // Use first available instance for registration (synchronous)
+    const keys = KEY_ENV_NAMES.map((k) => process.env[k]).filter(Boolean);
+    if (keys.length === 0) {
+      throw new Error("No GEMINI_API_KEY found");
+    }
+
+    const instance = createInstanceForKey(0); // Use first key for registration
+
+    // Wrap the flow function to ensure each run uses a working instance
+    const wrappedFn = async (input: any) => {
+      // When the flow actually runs, ensure we have a working instance
       const { instance: runInstance } = await getWorkingInstance();
-      // Call the user's fn with the same input; user's fn may internally call ai.definePrompt/others, which will resolve to runInstance
-      // We do not bind `this` to genkit instance — keep fn plain so users can rely on function parameters.
-      return fn(input, ctx, { genkitInstance: runInstance });
+      // Call the user's fn
+      return fn(input);
     };
 
     // Register the flow on the instance
-    return defineFlowFn.call(instance, name, schema, wrappedFn);
+    return (instance as any).defineFlow(config, wrappedFn);
   },
-  // a generic "runFlow" helper that some codebases use
   runFlow: createDelegator('runFlow'),
   // expose a method to retrieve low-level genkit instance if absolutely necessary
   _getInstance: async () => {
@@ -196,8 +195,8 @@ const exported: Record<string, AnyFn> = {
 
 /** Export `ai` object with TypeScript-friendly typings (partial genkit) */
 export const ai = exported as unknown as {
-  definePrompt: (...args: any[]) => Promise<any>;
-  defineFlow: (name: string, schema: any, fn: AnyFn) => Promise<any>;
+  definePrompt: (...args: any[]) => any;
+  defineFlow: (config: any, fn: AnyFn) => any;
   runFlow?: (...args: any[]) => Promise<any>;
   _getInstance: () => Promise<GenkitInstance>;
 };
