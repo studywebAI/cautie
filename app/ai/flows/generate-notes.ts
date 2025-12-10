@@ -70,7 +70,7 @@ Style: {{{style}}}
 {{#eq style "outline"}}Create a hierarchical outline with roman numerals, letters, and numbers{{/eq}}
 {{#eq style "summary"}}Provide a concise summary highlighting key points only{{/eq}}
 {{#eq style "cornell"}}Use Cornell method: left column for cues/questions, right for notes, bottom for summary{{/eq}}
-{{#eq style "mindmap"}}Create a mind map structure. Format as: **Central Topic:** [topic]\n\n**Branches:**\n- Branch 1: subtopic1, subtopic2\n- Branch 2: subtopic3{{/eq}}
+{{#eq style "mindmap"}}Output as JSON: {"type": "mindmap", "central": "Main Topic", "branches": [{"topic": "Branch 1", "subs": ["sub1", "sub2"]}, {"topic": "Branch 2", "subs": ["sub3"]}]}{{/eq}}
 {{#eq style "flowchart"}}Describe a flowchart with steps and decision points{{/eq}}
 {{#eq style "timeline"}}Organize information chronologically{{/eq}}
 {{#eq style "chart"}}Present data in chart/table format{{/eq}}
