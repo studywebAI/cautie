@@ -18,7 +18,7 @@ const GenerateNotesInputSchema = z.object({
   imageDataUri: z.string().optional().describe('Base64 data URI of an image to analyze as context.'),
   topic: z.string().optional().describe('The main topic to focus on.'),
   length: z.string().optional().describe('The desired length of the notes: short, medium, long.'),
-  style: z.string().optional().describe('The style of notes: standard, wordweb, structured, bullet-points, outline, summary.'),
+  style: z.string().optional().describe('The style of notes: standard, wordweb, structured, bullet-points, outline, summary, cornell, mindmap, flowchart, timeline, chart, boxing, sentence, mapping, pattern, qa, tchart, venndiagram, conceptmap, fishbone, decisiontree, swot, pestel, kanban.'),
   highlightTitles: z.boolean().optional().describe('Whether to highlight titles with colors.'),
   fontFamily: z.string().optional().describe('The font family to use: default, serif, sans-serif, monospace.'),
 });
@@ -54,7 +54,7 @@ Length: {{{length}}} (short: brief overview, medium: balanced, long: detailed)
 {{/if}}
 
 {{#if style}}
-Style: {{{style}}} (standard: clean structured notes, wordweb: mind map style with connections, structured: with sections, bullet-points: lists, outline: hierarchical, summary: concise)
+Style: {{{style}}} (standard: clean structured notes, wordweb: mind map style with connections, structured: with sections, bullet-points: lists, outline: hierarchical, summary: concise, cornell: divided sections for cues/main/summary, mindmap: radial diagram, flowchart: process diagrams, timeline: chronological, chart: charts and diagrams, boxing: grouped boxes, sentence: complete sentences, mapping: visual connections, pattern: themes and patterns, qa: question-answer pairs, tchart: two-column comparison, venndiagram: overlapping circles, conceptmap: nodes with arrows, fishbone: cause-effect, decisiontree: branching paths, swot: strengths/weaknesses/opportunities/threats, pestel: political/economic/social/technological/environmental/legal, kanban: task columns)
 {{/if}}
 
 {{#if highlightTitles}}
