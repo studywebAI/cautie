@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview An AI agent that generates structured notes from text.
  *
