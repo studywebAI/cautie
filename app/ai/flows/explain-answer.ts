@@ -30,12 +30,20 @@ export async function explainAnswer(
   return explainAnswerFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'explainAnswerPrompt',
-  model: getGoogleAIModel() as any,
-  input: { schema: ExplainAnswerInputSchema },
-  output: { schema: ExplainAnswerOutputSchema },
-  prompt: `You are an expert educational tutor. Provide accurate, factual information, and avoid making things up. Focus solely on explaining the correctness or incorrectness of the answers. Do NOT include any complimentary phrases like "nice try", "almost had it", or "good job". When generating explanations, if external sources like Wikipedia have been provided, refer to them to verify and backup the explanation.
+const explainAnswerFlow = ai.defineFlow(
+  {
+    name: 'explainAnswerFlow',
+    inputSchema: ExplainAnswerInputSchema,
+    outputSchema: ExplainAnswerOutputSchema,
+  },
+  async (input) => {
+    const model = await getGoogleAIModel();
+    const prompt = ai.definePrompt({
+      name: 'explainAnswerPrompt',
+      model,
+      input: { schema: ExplainAnswerInputSchema },
+      output: { schema: ExplainAnswerOutputSchema },
+      prompt: `You are an expert educational tutor. Provide accurate, factual information, and avoid making things up. Focus solely on explaining the correctness or incorrectness of the answers. Do NOT include any complimentary phrases like "nice try", "almost had it", or "good job". When generating explanations, if external sources like Wikipedia have been provided, refer to them to verify and backup the explanation.
 
 Question: "{{{question}}}"
 Student\'s Answer: "{{{selectedAnswer}}}"
@@ -54,15 +62,7 @@ Here\'s why your answer was incorrect and why the correct answer is right:
 
 {{/if}}
 `,
-});
-
-const explainAnswerFlow = ai.defineFlow(
-  {
-    name: 'explainAnswerFlow',
-    inputSchema: ExplainAnswerInputSchema,
-    outputSchema: ExplainAnswerOutputSchema,
-  },
-  async (input) => {
+    });
     const { output } = await prompt(input);
     // Sources will be handled by quiz-taker.tsx and passed here if available
     return {
