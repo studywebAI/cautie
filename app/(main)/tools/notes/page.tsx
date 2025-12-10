@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -327,6 +327,8 @@ function NotesPageContent() {
 
 export default function NotesPage() {
   return (
-    <NotesPageContent />
+    <Suspense fallback={<div>Loading...</div>}>
+      <NotesPageContent />
+    </Suspense>
   );
 }
