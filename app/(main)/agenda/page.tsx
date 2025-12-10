@@ -38,15 +38,15 @@ export default function AgendaPage() {
 
     if (isStudent) {
       const studentAssignmentEvents = (assignments || [])
-        .filter((a: ClassAssignment) => a.due_date)
-        .map((a: ClassAssignment) => {
-            const className = (classes || []).find((c: ClassInfo) => c.id === a.class_id)?.name || 'Class';
-            const href = a.material_id ? `/material/${a.material_id}` : `/class/${a.class_id}`;
+        .filter((assignment: ClassAssignment) => assignment.due_date)
+        .map((assignment: ClassAssignment) => {
+            const className = (classes || []).find((c: ClassInfo) => c.id === assignment.class_id)?.name || 'Class';
+            const href = assignment.material_id ? `/material/${assignment.material_id}` : `/class/${assignment.class_id}`;
             return {
-                id: a.id,
-                title: a.title,
+                id: assignment.id,
+                title: assignment.title,
                 subject: className,
-                date: parseISO(a.due_date!),
+                date: parseISO(assignment.due_date!),
                 type: 'assignment' as const,
                 href: href,
             }
@@ -64,15 +64,15 @@ export default function AgendaPage() {
       allEvents = [...studentAssignmentEvents, ...personalEvents];
     } else { // Teacher view
         const teacherAssignmentEvents = (assignments || [])
-            .filter((a: ClassAssignment) => a.due_date && (classes || []).some((c: ClassInfo) => c.id === a.class_id)) 
-            .map((a: ClassAssignment) => {
-                const className = (classes || []).find((c: ClassInfo) => c.id === a.class_id)?.name || 'Class';
-                const href = a.material_id ? `/material/${a.material_id}` : `/class/${a.class_id}`;
+            .filter((assignment: ClassAssignment) => assignment.due_date && (classes || []).some((c: ClassInfo) => c.id === assignment.class_id))
+            .map((assignment: ClassAssignment) => {
+                const className = (classes || []).find((c: ClassInfo) => c.id === assignment.class_id)?.name || 'Class';
+                const href = assignment.material_id ? `/material/${assignment.material_id}` : `/class/${assignment.class_id}`;
                 return {
-                    id: a.id,
-                    title: a.title,
+                    id: assignment.id,
+                    title: assignment.title,
                     subject: className,
-                    date: parseISO(a.due_date!),
+                    date: parseISO(assignment.due_date!),
                     type: 'assignment' as const,
                     href: href,
                 }
