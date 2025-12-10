@@ -28,12 +28,20 @@ export async function generateFlashcards(
   return generateFlashcardsFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateFlashcardsPrompt',
-  model: getGoogleAIModel() as any,
-  input: { schema: GenerateFlashcardsInputSchema },
-  output: { schema: GenerateFlashcardsOutputSchema },
-  prompt: `You are an expert in creating effective learning materials.
+const generateFlashcardsFlow = ai.defineFlow(
+  {
+    name: 'generateFlashcardsFlow',
+    inputSchema: GenerateFlashcardsInputSchema,
+    outputSchema: GenerateFlashcardsOutputSchema,
+  },
+  async (input) => {
+    const model = await getGoogleAIModel();
+    const prompt = ai.definePrompt({
+      name: 'generateFlashcardsPrompt',
+      model,
+      input: { schema: GenerateFlashcardsInputSchema },
+      output: { schema: GenerateFlashcardsOutputSchema },
+      prompt: `You are an expert in creating effective learning materials.
 Crucially, all factual information in the flashcards must be accurate and verifiable. Prioritize information directly from the provided Source Text.
 If external general knowledge is incorporated, ensure it is widely accepted and, if possible, mention the source (e.g., "Wikipedia").
 Avoid making up facts or details not present in the Source Text or commonly accepted knowledge.
@@ -60,15 +68,7 @@ Example:
 Source Text:
 {{{sourceText}}}
 `,
-});
-
-const generateFlashcardsFlow = ai.defineFlow(
-  {
-    name: 'generateFlashcardsFlow',
-    inputSchema: GenerateFlashcardsInputSchema,
-    outputSchema: GenerateFlashcardsOutputSchema,
-  },
-  async (input) => {
+    });
     const { output } = await prompt(input);
     return output!;
   }

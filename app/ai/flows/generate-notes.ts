@@ -35,12 +35,20 @@ export async function generateNotes(
   return generateNotesFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateNotesPrompt',
-  model: getGoogleAIModel() as any,
-  input: { schema: GenerateNotesInputSchema },
-  output: { schema: GenerateNotesOutputSchema },
-  prompt: `You are an expert notetaker. Your task is to create notes from the provided source text.
+const generateNotesFlow = ai.defineFlow(
+  {
+    name: 'generateNotesFlow',
+    inputSchema: GenerateNotesInputSchema,
+    outputSchema: GenerateNotesOutputSchema,
+  },
+  async (input) => {
+    const model = await getGoogleAIModel();
+    const prompt = ai.definePrompt({
+      name: 'generateNotesPrompt',
+      model,
+      input: { schema: GenerateNotesInputSchema },
+      output: { schema: GenerateNotesOutputSchema },
+      prompt: `You are an expert notetaker. Your task is to create notes from the provided source text.
 
 Source Text:
 {{{sourceText}}}
@@ -67,15 +75,7 @@ Generate structured notes from the source text. Create multiple sections with cl
 
 IMPORTANT: NEVER generate diagrams or visual layouts. ONLY return plain markdown text inside the content fields. DO NOT generate ASCII art, boxes, diagrams, flowcharts, shapes, or arrows. DO NOT include HTML unless highlightTitles is true. Keep all content as simple text.
 `,
-});
-
-const generateNotesFlow = ai.defineFlow(
-  {
-    name: 'generateNotesFlow',
-    inputSchema: GenerateNotesInputSchema,
-    outputSchema: GenerateNotesOutputSchema,
-  },
-  async (input) => {
+    });
     const { output } = await prompt(input);
     return output!;
   }
