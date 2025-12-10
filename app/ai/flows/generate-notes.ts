@@ -62,7 +62,31 @@ Length: {{{length}}} (short: brief overview, medium: balanced, long: detailed)
 {{/if}}
 
 {{#if style}}
-Style: {{{style}}} (standard: clean structured notes, wordweb: mind map style with connections, structured: with sections, bullet-points: lists, outline: hierarchical, summary: concise, cornell: divided sections for cues/main/summary, mindmap: radial diagram, flowchart: process diagrams, timeline: chronological, chart: charts and diagrams, boxing: grouped boxes, sentence: complete sentences, mapping: visual connections, pattern: themes and patterns, qa: question-answer pairs, tchart: two-column comparison, venndiagram: overlapping circles, conceptmap: nodes with arrows, fishbone: cause-effect, decisiontree: branching paths, swot: strengths/weaknesses/opportunities/threats, pestel: political/economic/social/technological/environmental/legal, kanban: task columns)
+Style: {{{style}}}
+{{#eq style "standard"}}Create clean, structured notes with clear headings and organized content{{/eq}}
+{{#eq style "wordweb"}}Create a word web with central concepts connected to related terms and explanations{{/eq}}
+{{#eq style "structured"}}Organize content into clear sections with subsections and bullet points{{/eq}}
+{{#eq style "bullet-points"}}Use hierarchical bullet points with main points and subpoints{{/eq}}
+{{#eq style "outline"}}Create a hierarchical outline with roman numerals, letters, and numbers{{/eq}}
+{{#eq style "summary"}}Provide a concise summary highlighting key points only{{/eq}}
+{{#eq style "cornell"}}Use Cornell method: left column for cues/questions, right for notes, bottom for summary{{/eq}}
+{{#eq style "mindmap"}}Create a mind map structure. Format as: **Central Topic:** [topic]\n\n**Branches:**\n- Branch 1: subtopic1, subtopic2\n- Branch 2: subtopic3{{/eq}}
+{{#eq style "flowchart"}}Describe a flowchart with steps and decision points{{/eq}}
+{{#eq style "timeline"}}Organize information chronologically{{/eq}}
+{{#eq style "chart"}}Present data in chart/table format{{/eq}}
+{{#eq style "boxing"}}Group related concepts in separate boxes or sections{{/eq}}
+{{#eq style "sentence"}}Write complete sentences explaining each concept{{/eq}}
+{{#eq style "mapping"}}Create visual concept mappings with connections{{/eq}}
+{{#eq style "pattern"}}Identify and explain patterns and themes{{/eq}}
+{{#eq style "qa"}}Format as questions and answers{{/eq}}
+{{#eq style "tchart"}}Use T-chart format with two columns for comparison{{/eq}}
+{{#eq style "venndiagram"}}Describe overlapping concepts in Venn diagram format{{/eq}}
+{{#eq style "conceptmap"}}Create concept map with nodes and connecting relationships{{/eq}}
+{{#eq style "fishbone"}}Use fishbone diagram to show cause and effect{{/eq}}
+{{#eq style "decisiontree"}}Create decision tree with branches and outcomes{{/eq}}
+{{#eq style "swot"}}Present SWOT analysis: Strengths, Weaknesses, Opportunities, Threats{{/eq}}
+{{#eq style "pestel"}}Analyze using PESTEL framework: Political, Economic, Social, Technological, Environmental, Legal{{/eq}}
+{{#eq style "kanban"}}Organize into Kanban columns: To Do, In Progress, Done{{/eq}}
 {{/if}}
 
 {{#if highlightTitles}}
@@ -73,7 +97,7 @@ Output the result as a JSON object with the structure: { "notes": [ { "title": "
 
 Generate structured notes from the source text. Create multiple sections with clear titles and detailed markdown content. Adapt the style to {{{style}}} if specified. Include explanatory text and examples where appropriate.
 
-IMPORTANT: NEVER generate diagrams or visual layouts. ONLY return plain markdown text inside the content fields. DO NOT generate ASCII art, boxes, diagrams, flowcharts, shapes, or arrows. DO NOT include HTML unless highlightTitles is true. Keep all content as simple text.
+IMPORTANT: For visual styles (mindmap, flowchart, conceptmap, etc.), you may use simple ASCII art or text-based diagrams to represent the structure. For all other styles, keep content as plain markdown text. DO NOT include HTML unless highlightTitles is true.
 `,
     });
     const { output } = await prompt(input);
