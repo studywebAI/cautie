@@ -45,6 +45,7 @@ export function AppSidebar() {
   const toolsMenuItems = [
     { href: '/tools/quiz', label: dictionary.sidebar.tools.quizGenerator, icon: BrainCircuit },
     { href: '/tools/flashcards', label: dictionary.sidebar.tools.flashcardMaker, icon: Copy },
+    { href: '/tools/notes', label: 'Notes', icon: FileSignature },
   ]
 
   return (

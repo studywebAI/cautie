@@ -8,8 +8,8 @@
     "settings": "Settings",
     "tools": {
       "title": "AI Tools",
-      "quizGenerator": "Quiz Generator",
-      "flashcardMaker": "Flashcard Maker",
+      "quizGenerator": "Test",
+      "flashcardMaker": "Flashcards",
       "materialProcessor": "Process Material"
     }
   },
