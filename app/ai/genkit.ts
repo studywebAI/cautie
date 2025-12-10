@@ -28,7 +28,7 @@ const getGoogleAI = () => {
 };
 
 // ─────────────────────────────
-// Model Getter -
+// Model Getter  -
 // ─────────────────────────────
 export const getGoogleAIModel = async () => {
   const plugin = getGoogleAI();
