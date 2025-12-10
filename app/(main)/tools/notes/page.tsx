@@ -94,6 +94,19 @@ function NotesPageContent() {
       setFileType('file');
     }
 
+    // Check cache first
+    const cacheKey = `studyweb-file-${file.name}-${file.size}-${file.lastModified}`;
+    const cachedText = sessionStorage.getItem(cacheKey);
+    if (cachedText) {
+      setSourceText(cachedText);
+      setIsProcessingFile(false);
+      toast({
+        title: 'File Loaded from Cache',
+        description: 'The content was previously extracted. You can now generate notes.',
+      });
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async (e) => {
       const dataUri = e.target?.result as string;
@@ -113,7 +126,10 @@ function NotesPageContent() {
           throw new Error(`API call failed: ${apiResponse.statusText}`);
         }
         const response = await apiResponse.json();
-        setSourceText(response.analysis.sourceText);
+        const extractedText = response.analysis.sourceText;
+        setSourceText(extractedText);
+        // Cache the extracted text
+        sessionStorage.setItem(cacheKey, extractedText);
         toast({
           title: 'File Processed',
           description: 'The content has been extracted. You can now generate notes.',
@@ -211,7 +227,9 @@ function NotesPageContent() {
                 {isProcessingFile ? (
                   <div className="flex flex-col items-center justify-center">
                     <Loader2 className="w-10 h-10 mb-3 text-primary animate-spin" />
-                    <p className="text-sm text-muted-foreground">Processing file...</p>
+                    <p className="text-sm text-muted-foreground">
+                      {fileType === 'image' ? 'Performing OCR on image...' : 'Extracting text from document...'}
+                    </p>
                   </div>
                 ) : (
                   <>
@@ -226,7 +244,15 @@ function NotesPageContent() {
               </label>
               {uploadedFile && (
                 <div className="flex items-center gap-2 p-2 rounded-md bg-background border">
-                  {fileType === 'image' ? <ImageIcon className="h-5 w-5 text-primary" /> : <FileText className="h-5 w-5 text-primary" />}
+                  {fileType === 'image' ? (
+                    <img
+                      src={URL.createObjectURL(uploadedFile)}
+                      alt="Preview"
+                      className="h-8 w-8 object-cover rounded"
+                    />
+                  ) : (
+                    <FileText className="h-5 w-5 text-primary" />
+                  )}
                   <span className="text-sm font-medium truncate">{uploadedFile.name}</span>
                   <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={clearFile} disabled={totalLoading}>
                     <span className="sr-only">Remove</span>

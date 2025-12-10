@@ -115,6 +115,19 @@ function FlashcardsPageContent() {
         setFileType('file');
     }
 
+    // Check cache first
+    const cacheKey = `studyweb-file-${file.name}-${file.size}-${file.lastModified}`;
+    const cachedText = sessionStorage.getItem(cacheKey);
+    if (cachedText) {
+      setSourceText(cachedText);
+      setIsProcessingFile(false);
+      toast({
+        title: 'File Loaded from Cache',
+        description: 'The content was previously extracted. You can now generate flashcards.',
+      });
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async (e) => {
         const dataUri = e.target?.result as string;
@@ -134,8 +147,11 @@ function FlashcardsPageContent() {
               throw new Error(`API call failed: ${apiResponse.statusText}`);
             }
             const response = await apiResponse.json();
-            setSourceText(response.analysis.sourceText);
-             toast({
+            const extractedText = response.analysis.sourceText;
+            setSourceText(extractedText);
+            // Cache the extracted text
+            sessionStorage.setItem(cacheKey, extractedText);
+            toast({
                 title: 'File Processed',
                 description: 'The content has been extracted. You can now generate flashcards.',
             });
@@ -244,7 +260,9 @@ function FlashcardsPageContent() {
                 {isProcessingFile ? (
                     <div className="flex flex-col items-center justify-center">
                          <Loader2 className="w-10 h-10 mb-3 text-primary animate-spin" />
-                         <p className="text-sm text-muted-foreground">Processing file...</p>
+                         <p className="text-sm text-muted-foreground">
+                           {fileType === 'image' ? 'Performing OCR on image...' : 'Extracting text from document...'}
+                         </p>
                     </div>
                 ) : (
                     <>
