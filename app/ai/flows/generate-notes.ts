@@ -15,7 +15,12 @@ const NoteSchema = z.object({
 
 const GenerateNotesInputSchema = z.object({
   sourceText: z.string().describe('The source text from which to generate notes.'),
+  imageDataUri: z.string().optional().describe('Base64 data URI of an image to analyze as context.'),
   topic: z.string().optional().describe('The main topic to focus on.'),
+  length: z.string().optional().describe('The desired length of the notes: short, medium, long.'),
+  style: z.string().optional().describe('The style of notes: standard, wordweb, structured, bullet-points, outline, summary.'),
+  highlightTitles: z.boolean().optional().describe('Whether to highlight titles with colors.'),
+  fontFamily: z.string().optional().describe('The font family to use: default, serif, sans-serif, monospace.'),
 });
 type GenerateNotesInput = z.infer<typeof GenerateNotesInputSchema>;
 
@@ -35,7 +40,7 @@ const prompt = ai.definePrompt({
   model: getGoogleAIModel() as any,
   input: { schema: GenerateNotesInputSchema },
   output: { schema: GenerateNotesOutputSchema },
-  prompt: `You are an expert notetaker. Your task is to create a structured set of notes from the provided source text, focusing on the given topic if provided.
+  prompt: `You are an expert notetaker. Your task is to create notes from the provided source text.
 
 Source Text:
 {{{sourceText}}}
@@ -44,7 +49,19 @@ Source Text:
 Topic: {{{topic}}}
 {{/if}}
 
-Generate a set of notes with clear titles and content formatted in Markdown.
+{{#if length}}
+Length: {{{length}}} (short: brief overview, medium: balanced, long: detailed)
+{{/if}}
+
+{{#if style}}
+Style: {{{style}}} (standard: clean structured notes, wordweb: mind map style with connections, structured: with sections, bullet-points: lists, outline: hierarchical, summary: concise)
+{{/if}}
+
+{{#if highlightTitles}}
+Highlight titles with colors using HTML <span style="background-color: lightblue;">Title</span> for light blue highlighting. Highlight important parts with <span style="background-color: lightblue;">important text</span>.
+{{/if}}
+
+Generate notes with clear titles and content formatted in HTML. Mix clean notes with short explanatory text. Use <h2> for titles, <p> for paragraphs, etc. Split into different parts.
 `,
 });
 
