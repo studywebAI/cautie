@@ -5,7 +5,7 @@
  * - generateKnowledgeGraph - A function that returns a list of concepts.
  */
 
-import { ai, getGoogleAIModel } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const ConceptSchema = z.object({

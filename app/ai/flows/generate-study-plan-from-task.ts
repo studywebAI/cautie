@@ -5,7 +5,7 @@
  * - generateStudyPlanFromTask - A function that generates a study plan for a single task.
  */
 
-import { ai, getGoogleAIModel } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { format } from 'date-fns';
 

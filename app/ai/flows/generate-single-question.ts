@@ -6,7 +6,7 @@
  * - generateSingleQuestion - A function that creates one question.
  */
 
-import { ai, getGoogleAIModel } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { QuizQuestionSchema, type QuizQuestion } from '@/lib/types';
 

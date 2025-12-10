@@ -3,7 +3,7 @@
  * @fileOverview Processes user-provided material (text or file) and suggests learning activities.
  */
 
-import { ai, getGoogleAIModel } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const ProcessMaterialInputSchema = z.object({

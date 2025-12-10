@@ -5,7 +5,7 @@
  * - provideAiPoweredAnalytics - A function that returns learning analytics and tailored study suggestions.
  */
 
-import {ai, getGoogleAIModel} from '@/ai/genkit';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ProvideAiPoweredAnalyticsInputSchema = z.object({

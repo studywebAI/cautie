@@ -5,7 +5,7 @@
  * - generateNotes - A function that returns notes.
  */
 
-import { ai, getGoogleAIModel } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const NoteSchema = z.object({

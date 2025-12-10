@@ -5,7 +5,7 @@
  * - generateQuizDuelData - Generates data for a quiz duel.
  */
 
-import { ai, getGoogleAIModel } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { QuizQuestionSchema } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';

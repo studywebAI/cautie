@@ -5,7 +5,7 @@
  * - generatePersonalizedStudyPlan - A function that generates a personalized study plan.
  */
 
-import {ai, getGoogleAIModel} from '@/ai/genkit';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GeneratePersonalizedStudyPlanInputSchema = z.object({

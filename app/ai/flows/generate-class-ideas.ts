@@ -5,7 +5,7 @@
  * - generateClassIdeas - A function that returns a list of class ideas.
  */
 
-import { ai, getGoogleAIModel } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const ClassIdeaSchema = z.object({

@@ -7,7 +7,7 @@
  * - McqQuestion - The return type for the function (the question object).
  */
 
-import { ai, getGoogleAIModel } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { McqQuestionSchema } from '@/lib/types';
 import type { McqQuestion } from '@/lib/types';
