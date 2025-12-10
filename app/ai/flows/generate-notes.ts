@@ -10,7 +10,7 @@ import { z } from 'genkit';
 
 const NoteSchema = z.object({
   title: z.string().describe('The title of the note section.'),
-  content: z.string().or(z.array(z.string())).describe('The detailed content of the note in plain markdown format. No diagrams, ASCII art, or visual layouts.'),
+  content: z.string().or(z.array(z.string())).describe('The detailed content. For visual styles, use structured markdown format. For text styles, use markdown format.'),
 });
 
 const GenerateNotesInputSchema = z.object({
@@ -62,7 +62,89 @@ Length: {{{length}}} (short: brief overview, medium: balanced, long: detailed)
 {{/if}}
 
 {{#if style}}
-Style: {{{style}}} (standard: clean structured notes, wordweb: mind map style with connections, structured: with sections, bullet-points: lists, outline: hierarchical, summary: concise, cornell: divided sections for cues/main/summary, mindmap: radial diagram, flowchart: process diagrams, timeline: chronological, chart: charts and diagrams, boxing: grouped boxes, sentence: complete sentences, mapping: visual connections, pattern: themes and patterns, qa: question-answer pairs, tchart: two-column comparison, venndiagram: overlapping circles, conceptmap: nodes with arrows, fishbone: cause-effect, decisiontree: branching paths, swot: strengths/weaknesses/opportunities/threats, pestel: political/economic/social/technological/environmental/legal, kanban: task columns)
+Style: {{{style}}}
+{{#eq style "mindmap"}}Create a mind map structure using hierarchical markdown:
+**Main Subject:** [Central Topic]
+**Branch 1:** [First main branch]
+- Branch 1-1: [Sub-branch]
+- Branch 1-2: [Sub-branch]
+**Branch 2:** [Second main branch]
+- Branch 2-1: [Sub-branch]{{/eq}}
+{{#eq style "flowchart"}}Create a flowchart using step-by-step format:
+**Start:** [Starting point]
+**Step 1:** [First process] → [Next step]
+**Decision:** [Question?]
+- Yes → [Outcome A]
+- No → [Outcome B]
+**End:** [Ending point]{{/eq}}
+{{#eq style "timeline"}}Create a timeline using chronological format:
+**2023-01-01:** Event 1 - Description
+**2023-02-01:** Event 2 - Description
+**2023-03-01:** Event 3 - Description{{/eq}}
+{{#eq style "chart"}}Create a chart using data format:
+**Chart Type:** bar
+**Data:**
+- Label A: 10
+- Label B: 20
+- Label C: 30{{/eq}}
+{{#eq style "venndiagram"}}Create a Venn diagram using set format:
+**Set A:** [Label A]
+- Item 1
+- Item 2
+**Set B:** [Label B]
+- Item 2
+- Item 3
+**Overlap:**
+- Item 2{{/eq}}
+{{#eq style "conceptmap"}}Create a concept map using node format:
+**Node 1:** Concept A
+**Node 2:** Concept B
+**Node 3:** Concept C
+**Connection 1-2:** relates to
+**Connection 2-3:** connects with{{/eq}}
+{{#eq style "fishbone"}}Create a fishbone diagram using cause format:
+**Main Problem:** [Problem statement]
+**Category 1:** [Cause category]
+- Cause 1-1
+- Cause 1-2
+**Category 2:** [Cause category]
+- Cause 2-1{{/eq}}
+{{#eq style "decisiontree"}}Create a decision tree using branching format:
+**Decision:** [Question?]
+├── Yes → [Outcome A]
+└── No → [Outcome B]{{/eq}}
+{{#eq style "swot"}}Create a SWOT analysis using quadrant format:
+**Strengths:**
+- Strength 1
+- Strength 2
+**Weaknesses:**
+- Weakness 1
+**Opportunities:**
+- Opportunity 1
+**Threats:**
+- Threat 1{{/eq}}
+{{#eq style "pestel"}}Create a PESTEL analysis using factor format:
+**Political:**
+- Factor 1
+- Factor 2
+**Economic:**
+- Factor 1
+**Social:**
+- Factor 1
+**Technological:**
+- Factor 1
+**Environmental:**
+- Factor 1
+**Legal:**
+- Factor 1{{/eq}}
+{{#eq style "kanban"}}Create a Kanban board using column format:
+**To Do:**
+- Task 1
+- Task 2
+**In Progress:**
+- Task 3
+**Done:**
+- Task 4{{/eq}}
 {{/if}}
 
 {{#if highlightTitles}}
@@ -73,7 +155,10 @@ Output the result as a JSON object with the structure: { "notes": [ { "title": "
 
 Generate structured notes from the source text. Create multiple sections with clear titles and detailed markdown content. Adapt the style to {{{style}}} if specified. Include explanatory text and examples where appropriate.
 
-IMPORTANT: NEVER generate diagrams or visual layouts. ONLY return plain markdown text inside the content fields. DO NOT generate ASCII art, boxes, diagrams, flowcharts, shapes, or arrows. DO NOT include HTML unless highlightTitles is true. Keep all content as simple text.
+IMPORTANT:
+- For visual styles (mindmap, flowchart, timeline, chart, venndiagram, conceptmap, fishbone, decisiontree, swot, pestel, kanban), use the structured markdown format specified above.
+- For text styles (standard, wordweb, structured, bullet-points, outline, summary, cornell, boxing, sentence, mapping, pattern, qa, tchart), use plain markdown text.
+- DO NOT include HTML unless highlightTitles is true.
 `,
     });
     const { output } = await prompt(input);
