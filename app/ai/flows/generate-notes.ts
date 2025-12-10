@@ -61,7 +61,7 @@ Style: {{{style}}} (standard: clean structured notes, wordweb: mind map style wi
 Highlight titles with colors using HTML <span style="background-color: lightblue;">Title</span> for light blue highlighting. Highlight important parts with <span style="background-color: lightblue;">important text</span>.
 {{/if}}
 
-Generate notes with clear titles and content formatted in HTML. Mix clean notes with short explanatory text. Use <h2> for titles, <p> for paragraphs, etc. Split into different parts.
+Generate notes with clear titles and content formatted in markdown. Mix clean notes with short explanatory text. Use # for headings, - for lists, **bold** for emphasis, etc. Split into different sections.
 `,
 });
 
