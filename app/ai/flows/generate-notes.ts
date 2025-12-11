@@ -82,7 +82,7 @@ IMPORTANT: For visual styles (mindmap, flowchart, timeline, chart, venndiagram, 
 `;
 
   const result = await ai.generate({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.5-flash",
     prompt
   });
 
