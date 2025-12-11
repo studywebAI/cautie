@@ -814,7 +814,7 @@ export function QuizTaker({ quiz, mode, sourceText, onRestart }: { quiz: Quiz; m
                                     {(mode === 'practice' || (mode === 'adaptive' && !isCorrect)) && (
                                         <Button variant="outline" size="sm" onClick={handleGetExplanation} disabled={isExplanationLoading}>
                                             {isExplanationLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
-                                            {isExplanationLoading ? 'Generating...' : 'Explain it to me'}
+                                            {isExplanationLoading ? 'Generating...' : 'Hint'}
                                         </Button>
                                     )}
                                         <div className="space-y-4">
