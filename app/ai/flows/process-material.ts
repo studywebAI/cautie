@@ -1,17 +1,13 @@
 'use server';
-/**
- * @fileOverview Processes user-provided material (text or file) and suggests learning activities.
- */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const ProcessMaterialInputSchema = z.object({
-  text: z.string().optional().describe('Pasted text content.'),
-  fileDataUri: z.string().optional().describe("A file encoded as a data URI. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
-  language: z.string().optional().describe('The language for the output (en, nl, fr). Defaults to English.'),
+  text: z.string().optional(),
+  fileDataUri: z.string().optional(),
+  language: z.string().optional(),
 });
-type ProcessMaterialInput = z.infer<typeof ProcessMaterialInputSchema>;
 
 const SuggestedActionSchema = z.object({
   id: z.enum(['create-a-summary', 'generate-a-quiz', 'make-flashcards']),
@@ -29,13 +25,13 @@ const ProcessMaterialOutputSchema = z.object({
   }),
   suggestedActions: z.array(SuggestedActionSchema),
 });
+
 export type ProcessMaterialOutput = z.infer<typeof ProcessMaterialOutputSchema>;
 
-/* -------------------------------------------
-   FIX: Define the flow FIRST, then export the
-   wrapper function that calls it.
--------------------------------------------- */
-
+/**
+ * FIXED FLOW – Gemini 2.5 Flash CAN'T output Zod structured JSON.
+ * So we request plain text and PARSE it ourselves.
+ */
 const processMaterialFlow = ai.defineFlow(
   {
     name: 'processMaterial',
@@ -43,41 +39,57 @@ const processMaterialFlow = ai.defineFlow(
     outputSchema: ProcessMaterialOutputSchema,
   },
   async input => {
-    const prompt = ai.definePrompt({
-      name: 'processMaterialPrompt',
-      model: 'gemini-2.5-flash',
-      input: { schema: ProcessMaterialInputSchema },
-      output: { schema: ProcessMaterialOutputSchema },
-      prompt: `
-You are an expert learning assistant. Extract all text, analyze it, and generate:
-- A clear title
-- The main topic
-- A concise summary
-- Suggested next actions (summary / quiz / flashcards)
+    const prompt = `
+You are an expert learning assistant.
 
-Language code: {{{language}}}. Default: English.
+Extract all text, analyze it and return EXACTLY this JSON:
+
+{
+  "analysis": {
+    "title": "...",
+    "topic": "...",
+    "summary": "...",
+    "sourceText": "..."
+  },
+  "suggestedActions": [
+    {
+      "id": "create-a-summary",
+      "label": "Create Summary",
+      "description": "Generate a clean summary",
+      "icon": "FileText"
+    },
+    {
+      "id": "generate-a-quiz",
+      "label": "Quiz Me",
+      "description": "Generate a quiz with answers",
+      "icon": "BrainCircuit"
+    },
+    {
+      "id": "make-flashcards",
+      "label": "Flashcards",
+      "description": "Create AI flashcards",
+      "icon": "BookCopy"
+    }
+  ]
+}
 
 Material:
-{{#if text}}
-Text:
-{{{text}}}
-{{/if}}
+${input.text ?? ""}
+${input.fileDataUri ? `[FILE DATA INCLUDED]` : ""}
+`;
 
-{{#if fileDataUri}}
-File:
-{{media url=fileDataUri}}
-{{/if}}
-`,
+    // Run Gemini 2.5 Flash
+    const result = await ai.run("gemini-2.5-flash", {
+      prompt
     });
 
-    const { output } = await prompt(input);
-    return output!;
+    // Parse JSON manually
+    const json = JSON.parse(result.text);
+
+    return json;
   }
 );
 
-/* -------------------------------------------
-   The exported function now works correctly
--------------------------------------------- */
-export async function processMaterial(input: ProcessMaterialInput) {
+export async function processMaterial(input: z.infer<typeof ProcessMaterialInputSchema>) {
   return processMaterialFlow(input);
 }
