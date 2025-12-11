@@ -164,7 +164,7 @@ function NotesPageContent() {
   const totalLoading = isLoading || isProcessingFile;
 
   const styleOptions = [
-    'standard', 'wordweb', 'structured', 'bullet-points', 'outline', 'summary', 'cornell', 'mindmap',
+    'standard', 'wordweb', 'structured', 'bullet-points', 'outline', 'summary', 'cornell', 'mindmap', 'regular',
     'flowchart', 'timeline', 'chart', 'boxing', 'sentence', 'mapping', 'pattern', 'qa', 'tchart',
     'venndiagram', 'conceptmap', 'fishbone', 'decisiontree', 'swot', 'pestel', 'kanban'
   ];
