@@ -30,10 +30,10 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [createdClass, setCreatedClass] = useState<ClassInfo | null>(null);
+  const [createdClass, setCreatedClass] = useState<any>(null);
   const { toast } = useToast();
   
-  const inviteLink = createdClass ? `${window.location.origin}/classes?join_code=${createdClass.id}` : '';
+  const inviteLink = createdClass ? `${window.location.origin}/classes/join/${createdClass.join_code}` : '';
   const qrCodeUrl = createdClass ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(inviteLink)}` : '';
 
 
@@ -135,8 +135,8 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
                 <div className='space-y-2'>
                     <Label>Join Code</Label>
                     <div className="flex w-full items-center space-x-2">
-                       <Input type="text" value={createdClass?.id} readOnly />
-                       <Button type="submit" size="icon" onClick={() => copyToClipboard(createdClass?.id || '', 'code')}>
+                       <Input type="text" value={createdClass?.join_code} readOnly />
+                       <Button type="submit" size="icon" onClick={() => copyToClipboard(createdClass?.join_code || '', 'code')}>
                          <Copy className="h-4 w-4" />
                        </Button>
                     </div>

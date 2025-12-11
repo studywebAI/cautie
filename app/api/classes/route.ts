@@ -83,10 +83,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Generate unique join code
+  let joinCode;
+  let attempts = 0;
+  do {
+    joinCode = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('').sort(() => Math.random() - 0.5).slice(0,6).join('');
+    const { data: existing } = await supabase
+      .from('classes')
+      .select('id')
+      .eq('join_code', joinCode)
+      .single();
+    if (!existing) break;
+    attempts++;
+  } while (attempts < 10);
+
+  if (attempts >= 10) {
+    return NextResponse.json({ error: 'Failed to generate unique join code' }, { status: 500 });
+  }
+
   // Cast to correct insert type
-  const insertData: Database['public']['Tables']['classes']['Insert'] = {
+  const insertData = {
     name, 
     description,
+    join_code: joinCode,
     owner_id: user?.id || null,
     guest_id: guestId || null,
     owner_type: user ? 'user' : 'guest'

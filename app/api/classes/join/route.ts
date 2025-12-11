@@ -7,7 +7,31 @@ import type { Database } from '@/lib/supabase/database.types'
 
 export const dynamic = 'force-dynamic'
 
-// POST a new assignment
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const code = searchParams.get('code');
+
+  if (!code) {
+    return NextResponse.json({ error: 'Join code is required' }, { status: 400 });
+  }
+
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
+
+  const { data: classData, error: classError } = await supabase
+    .from('classes')
+    .select('id, name, description, owner_id')
+    .eq('join_code', code)
+    .single();
+
+  if (classError || !classData) {
+    return NextResponse.json({ error: 'Class not found' }, { status: 404 });
+  }
+
+  return NextResponse.json(classData);
+}
+
+// POST to join a class
 export async function POST(request: Request) {
   const { class_code } = await request.json();
   const cookieStore = cookies();
@@ -19,11 +43,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 1. Verify class exists with the join code (which is the class ID)
+  // 1. Verify class exists with the join code
   const { data: classData, error: classError } = await supabase
     .from('classes')
-    .select('id, owner_id')
-    .eq('id', class_code)
+    .select('id, owner_id, name, description')
+    .eq('join_code', class_code)
     .single();
   
   if (classError || !classData) {
