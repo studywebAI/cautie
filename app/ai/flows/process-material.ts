@@ -28,10 +28,6 @@ const ProcessMaterialOutputSchema = z.object({
 
 export type ProcessMaterialOutput = z.infer<typeof ProcessMaterialOutputSchema>;
 
-/**
- * FIXED FLOW – Gemini 2.5 Flash CAN'T output Zod structured JSON.
- * So we request plain text and PARSE it ourselves.
- */
 const processMaterialFlow = ai.defineFlow(
   {
     name: 'processMaterial',
@@ -42,8 +38,7 @@ const processMaterialFlow = ai.defineFlow(
     const prompt = `
 You are an expert learning assistant.
 
-Extract all text, analyze it and return EXACTLY this JSON:
-
+Return EXACT JSON:
 {
   "analysis": {
     "title": "...",
@@ -61,13 +56,13 @@ Extract all text, analyze it and return EXACTLY this JSON:
     {
       "id": "generate-a-quiz",
       "label": "Quiz Me",
-      "description": "Generate a quiz with answers",
+      "description": "Generate a quiz",
       "icon": "BrainCircuit"
     },
     {
       "id": "make-flashcards",
       "label": "Flashcards",
-      "description": "Create AI flashcards",
+      "description": "Create flashcards",
       "icon": "BookCopy"
     }
   ]
@@ -75,16 +70,16 @@ Extract all text, analyze it and return EXACTLY this JSON:
 
 Material:
 ${input.text ?? ""}
-${input.fileDataUri ? `[FILE DATA INCLUDED]` : ""}
+${input.fileDataUri ? "[FILE]" : ""}
 `;
 
-    // Run Gemini 2.5 Flash
-    const result = await ai.run("gemini-2.5-flash", {
+    // CORRECT api call
+    const result = await ai.generate({
+      model: "gemini-2.5-flash",
       prompt
     });
 
-    // Parse JSON manually
-    const json = JSON.parse(result.text);
+    const json = JSON.parse(result.text());
 
     return json;
   }
