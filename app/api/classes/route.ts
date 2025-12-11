@@ -87,7 +87,11 @@ export async function POST(request: Request) {
   let joinCode;
   let attempts = 0;
   do {
-    joinCode = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('').sort(() => Math.random() - 0.5).slice(0,6).join('');
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    joinCode = '';
+    for (let i = 0; i < 6; i++) {
+      joinCode += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
     const { data: existing } = await supabase
       .from('classes')
       .select('id')

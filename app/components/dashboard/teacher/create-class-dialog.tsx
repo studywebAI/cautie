@@ -127,7 +127,7 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
             <div className="flex flex-col items-center gap-4">
                 {qrCodeUrl && (
                     <div className="p-4 bg-white rounded-lg border">
-                        <Image src={qrCodeUrl} alt="Class Invite QR Code" width={200} height={200} />
+                        <Image src={qrCodeUrl} alt="Class Invite QR Code" width={200} height={200} unoptimized />
                     </div>
                 )}
             </div>
