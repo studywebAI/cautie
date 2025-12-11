@@ -26,7 +26,7 @@ const KEY_ENV_NAMES = [
   'NEXT_PUBLIC_GEMINI_API_KEY_2',
 ] as const;
 
-const MODEL_NAME = 'gemini-1.0-pro';
+const MODEL_NAME = 'gemini-2.5-flash';
 
 /** --- Internal caches & state --- **/
 const keyList: (string | undefined)[] = KEY_ENV_NAMES.map((k) => process.env[k]);
