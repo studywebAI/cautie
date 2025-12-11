@@ -5,11 +5,9 @@
  * - Robust initialization + error handling
  * - Exports `ai` that proxies common Genkit methods safely
  *
- * Note: keep environment vars:
+ * Note: keep environment vars (server-side only, no NEXT_PUBLIC_ for security):
  *  - GEMINI_API_KEY
- *  - NEXT_PUBLIC_GEMINI_API_KEY
  *  - GEMINI_API_KEY_2
- *  - NEXT_PUBLIC_GEMINI_API_KEY_2
  */
 
 import { genkit } from 'genkit';
@@ -21,9 +19,7 @@ type GoogleAIPlugin = ReturnType<typeof googleAI>;
 /** --- CONFIG --- **/
 const KEY_ENV_NAMES = [
   'GEMINI_API_KEY',
-  'NEXT_PUBLIC_GEMINI_API_KEY',
   'GEMINI_API_KEY_2',
-  'NEXT_PUBLIC_GEMINI_API_KEY_2',
 ] as const;
 
 const MODEL_NAME = 'gemini-2.5-flash';
@@ -222,6 +218,7 @@ const exported: Record<string, AnyFn> = {
     return (instance as any).defineFlow(config, wrappedFn);
   },
   runFlow: createDelegator('runFlow'),
+  generate: createDelegator('generate'),
   // expose a method to retrieve low-level genkit instance if absolutely necessary
   _getInstance: async () => {
     const { instance } = await getWorkingInstance();
@@ -234,6 +231,7 @@ export const ai = exported as unknown as {
   definePrompt: (...args: any[]) => any;
   defineFlow: (config: any, fn: AnyFn) => any;
   runFlow?: (...args: any[]) => Promise<any>;
+  generate: (...args: any[]) => Promise<any>;
   _getInstance: () => Promise<GenkitInstance>;
 };
 
