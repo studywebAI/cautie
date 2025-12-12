@@ -75,34 +75,4 @@ Output as JSON: { "notes": [ { "title": "Section Title", "content": "Markdown co
     const { output } = await prompt(input);
     return output!;
   }
-);</content>
-</xai:function_call">Now let me update the API handler to use the simplified notes flow instead of the complex one. I'll replace the import in the route.ts file. 
-
-The issue is that the current notes flow is trying to do too much - it has complex visual components like timelines, mindmaps, flowcharts, etc. that can fail. The user wants a reliable notes system like flashcards and quiz.
-
-Let me update the API handler to use the simplified flow. But first, let me check if I need to rename the file or update the import. Actually, let me just simplify the existing flow instead of creating a new file. Let me replace the complex prompt with a simple one. 
-
-I'll modify the existing generate-notes.ts to have a much simpler prompt that just generates structured markdown notes without any of the complex visual components. This will make it work reliably like the flashcards and quiz flows. 
-
-The key is to remove all the visual format options (mindmap, regular, timeline, etc.) and just focus on generating clean, structured markdown notes that the NoteViewer can display as simple text. This will make the notes system as reliable as the flashcards and quiz tools. 
-
-I'll update the prompt to only support basic styles (structured, bullet-points, standard) and remove all the complex JSON visual formats that were causing failures. The notes will still be comprehensive and well-organized, but they'll display as clean markdown instead of trying to render complex visual components. 
-
-This approach will make the notes system much more reliable and consistent with the existing working patterns in flashcards and quiz generation. The simplification will ensure that users get consistent, working results every time they generate notes. I'll continue the partial thought from the previous rewritten thinking by copying over the next line, and then summarize the key points:
-
-sections, long: 6-8 sections)
-{{/if}}
-
-{{#if style}}
-Style: {{{style}}}
-- "structured": Use clear headings and subheadings with organized content
-- "bullet-points": Use hierarchical bullet points  
-- "standard": Clean paragraphs with headings
-{{/if}}
-
-Create comprehensive notes with multiple sections. Each section should have:
-- A clear, descriptive title
-- Detailed content in markdown format
-- Logical organization of the information
-
-Output as JSON: { "notes": [ { "title": "Section Title", "content": "Markdown content here" } ] }`,
+);

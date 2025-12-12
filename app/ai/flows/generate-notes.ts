@@ -103,7 +103,10 @@ For "mindmap" style:
 - Branches represent major subtopics or categories
 - Include 3-5 main branches with 2-3 sub-branches each
 - Focus on hierarchical relationships and connections
-Example: {"type": "mindmap", "central": "Photosynthesis", "branches": [{"topic": "Process", "subs": ["Light Reaction", "Dark Reaction"]}, {"topic": "Requirements", "subs": ["Light", "Water", "CO2"]}]}
+IMPORTANT: For mindmap style, output ONLY this exact JSON format:
+{"type": "mindmap", "central": "Main Topic", "branches": [{"topic": "Branch 1", "subs": ["Sub1", "Sub2"]}, {"topic": "Branch 2", "subs": ["Sub3", "Sub4"]}]}
+- OUTPUT MUST BE VALID JSON with no additional text
+- Do not wrap the JSON in markdown code blocks
 
 For "timeline" style:
 - Chronological representation of events, processes, or historical developments

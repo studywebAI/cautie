@@ -751,7 +751,19 @@ export function NoteViewer({ notes }: NoteViewerProps) {
                 {notes.map((note, index) => (
                     <div key={index} className="mb-8">
                         <h2>{note.title}</h2>
-                        {typeof note.content === 'string' && note.content.trim().startsWith('{"type":') ? (
+                        {(() => {
+                          if (typeof note.content === 'string') {
+                            try {
+                              const data = JSON.parse(note.content.trim());
+                              if (data && typeof data === 'object' && data.type) {
+                                return true;
+                              }
+                            } catch {
+                              // Fall through
+                            }
+                          }
+                          return false;
+                        })() ? (
                           (() => {
                             try {
                               const data = JSON.parse(note.content);
