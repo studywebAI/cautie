@@ -23,7 +23,21 @@ export default function Login({
     })
 
     if (error) {
-      return redirect('/login?message=Could not authenticate user')
+      let errorMessage = 'An error occurred during sign in'
+      let errorType = 'error'
+
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please check your credentials and try again.'
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = 'Please check your email and click the confirmation link before signing in.'
+        errorType = 'warning'
+      } else if (error.message.includes('Too many requests')) {
+        errorMessage = 'Too many sign-in attempts. Please wait a few minutes before trying again.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+
+      return redirect(`/login?message=${encodeURIComponent(errorMessage)}&type=${errorType}`)
     }
 
     return redirect('/')
