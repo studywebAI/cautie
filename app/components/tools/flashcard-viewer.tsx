@@ -36,14 +36,14 @@ const cardVariants = {
 function FlipView({ card, isFlipped, setIsFlipped }: { card: Flashcard; isFlipped: boolean; setIsFlipped: (f: boolean) => void; }) {
   return (
     <div className='flex flex-col items-center justify-center gap-6'>
-      <div className="w-full max-w-md h-64 [perspective:1000px]">
+      <div className="w-full max-w-lg h-80 [perspective:1000px]">
         <div
           className="relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]"
           style={{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
           onClick={() => setIsFlipped(!isFlipped)}
         >
           <div className="absolute flex items-center justify-center p-6 w-full h-full bg-card border rounded-lg [backface-visibility:hidden]">
-            <p className="text-center text-lg font-medium">{card.front}</p>
+            <p className="text-center text-xl font-medium">{card.front}</p>
           </div>
           <div className="absolute flex items-center justify-center p-6 w-full h-full bg-card border rounded-lg [transform:rotateY(180deg)] [backface-visibility:hidden]">
             <p className="text-center text-muted-foreground">{card.back}</p>
@@ -204,7 +204,7 @@ export function FlashcardViewer({ cards, mode, onRestart }: { cards: Flashcard[]
             animate="center"
             exit="exit"
             transition={{
-              x: { type: 'spring', stiffness: 300, damping: 30 },
+              x: { type: 'tween', duration: 0.3 },
               opacity: { duration: 0.2 },
             }}
             className="w-full"
