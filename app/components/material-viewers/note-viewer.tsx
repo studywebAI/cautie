@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React from 'react';
 import { marked } from 'marked';
 import { Card, CardContent } from '@/components/ui/card';
@@ -282,7 +282,7 @@ function MindmapRenderer({ data }: { data: MindmapData }) {
       </div>
 
       <div className="absolute bottom-2 left-2 text-xs text-gray-500 bg-white bg-opacity-75 px-2 py-1 rounded">
-        Drag to pan • Scroll to zoom
+        Drag to pan � Scroll to zoom
       </div>
     </div>
   );
