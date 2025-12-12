@@ -266,7 +266,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
            try {
                 const [localClasses, localAssignments, localPersonalTasks] = await Promise.all([
                     Promise.resolve(getFromLocalStorage<ClassInfo[]>('studyweb-local-classes', [])),
-                    Promise.resolve(getFromLocalStorage<ClassAssignment[]>('studyweb-local-assignments', [])),  
+                    Promise.resolve(getFromLocalStorage<ClassAssignment[]>('studyweb-local-assignments', [])),
                     Promise.resolve(getFromLocalStorage<PersonalTask[]>('studyweb-local-personal-tasks', [])),
                 ]);
                 setClasses(localClasses);
@@ -411,7 +411,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         const res = await fetch('/api/assignments');
         if (res.ok) {
             const data = await res.json();
-            setAssignments(data || []);  
+            setAssignments(data || []);
         }
     }
   }, [session]);
