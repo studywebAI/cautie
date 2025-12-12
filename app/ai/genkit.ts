@@ -12,9 +12,9 @@ let currentKeyIndex = 0;
 const getGoogleAI = () => {
   const keys = [
     process.env.GEMINI_API_KEY,           // ← Now GEMINI_API_KEY first
-    process.env.NEXT_PUBLIC_GEMINI_API_KEY,
+
     process.env.GEMINI_API_KEY_2,
-    process.env.NEXT_PUBLIC_GEMINI_API_KEY_2,
+
   ];
 
   const apiKey = keys[currentKeyIndex];
@@ -69,7 +69,7 @@ const createVirtualAI = () => ({
   defineFlow: (name: string, schema: any, fn: any) => {
     const wrappedFn = async (input: any) => {
       currentKeyIndex = 0; // Reset to first key
-      const keyIndices = [0, 1, 2, 3];
+      const keyIndices = [0, 1];
       for (const keyIndex of keyIndices) {
         try {
           currentKeyIndex = keyIndex;
