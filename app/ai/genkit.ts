@@ -11,10 +11,10 @@ let currentKeyIndex = 0;
 
 const getGoogleAI = () => {
   const keys = [
-    process.env.GEMINI_API_KEY_2,
-    process.env.NEXT_PUBLIC_GEMINI_API_KEY_2,
     process.env.GEMINI_API_KEY,
     process.env.NEXT_PUBLIC_GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.NEXT_PUBLIC_GEMINI_API_KEY_2,
   ];
 
   const apiKey = keys[currentKeyIndex];
