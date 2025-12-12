@@ -26,16 +26,13 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  experimental: {
-    // Correcte locatie in Next.js 16+
-    serverComponentsExternalPackages: [
-      'genkit',
-      '@genkit-ai/google-genai',
-      '@genkit-ai/next',
-    ],
-  },
+  serverExternalPackages: [
+    'genkit',
+    '@genkit-ai/google-genai',
+    '@genkit-ai/next',
+  ],
 
-  webpack: (config, { isServer }) => {
+  webpack: (config: any, { isServer }: any) => {
     if (isServer) {
       const externals = config.externals || [];
 
