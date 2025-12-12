@@ -2,6 +2,8 @@
 import React from 'react';
 import { marked } from 'marked';
 import { Card, CardContent } from '@/components/ui/card';
+import { ProfessionalMindmapRenderer } from './mindmap-professional';
+import { ProfessionalTimelineRenderer } from './timeline-professional';
 
 type NoteSection = {
   title: string;
@@ -147,8 +149,12 @@ function MindmapRenderer({ data, title }: { data: MindmapData; title?: string })
   const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
 
   // Use full viewport dimensions for maximum space utilization
-  const svgWidth = typeof window !== 'undefined' ? window.innerWidth - 100 : 1200; // Fallback for SSR
-  const svgHeight = typeof window !== 'undefined' ? window.innerHeight - 200 : 800; // Fallback for SSR
+  // Calculate dimensions to fit without scrolling, accounting for sidebar (~280px)
+  const sidebarWidth = 280;
+  const availableWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth - sidebarWidth - 80, 1000) : 1000;
+  const availableHeight = typeof window !== 'undefined' ? Math.min(window.innerHeight - 200, 700) : 700;
+  const svgWidth = Math.min(availableWidth, availableHeight * 1.4); // Maintain aspect ratio
+  const svgHeight = Math.min(availableHeight, svgWidth / 1.4);
   const centerX = svgWidth / 2;
   const centerY = svgHeight / 2;
 
@@ -808,11 +814,11 @@ export function NoteViewer({ notes }: NoteViewerProps) {
                               const data = JSON.parse(note.content);
                               switch (data.type) {
                                 case 'mindmap':
-                                  return <MindmapRenderer data={data as MindmapData} title={note.title} />;
+                                  return <ProfessionalMindmapRenderer data={data as MindmapData} title={note.title} />;
                                 case 'flowchart':
                                   return <FlowchartRenderer data={data as FlowchartData} />;
                                 case 'timeline':
-                                  return <TimelineRenderer data={data as TimelineData} />;
+                                  return <ProfessionalTimelineRenderer data={data as TimelineData} />;
                                 case 'chart':
                                   return <ChartRenderer data={data as ChartData} />;
                                 case 'venndiagram':
