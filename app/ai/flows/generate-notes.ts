@@ -22,11 +22,13 @@ const GenerateNotesInputSchema = z.object({
   highlightTitles: z.boolean().optional().describe('Whether to highlight titles with colors.'),
   fontFamily: z.string().optional().describe('The font family to use: default, serif, sans-serif, monospace.'),
 });
+
 type GenerateNotesInput = z.infer<typeof GenerateNotesInputSchema>;
 
 const GenerateNotesOutputSchema = z.object({
   notes: z.array(NoteSchema).describe('An array of generated note sections.'),
 });
+
 export type GenerateNotesOutput = z.infer<typeof GenerateNotesOutputSchema>;
 
 export async function generateNotes(
@@ -125,7 +127,7 @@ For "venn" style:
 - Include overlapping and unique elements
 - Focus on similarities (overlap) and differences (unique areas)
 - Clear, concise labels for each section
-Example: {"type": "venn", "sets": [{"label": "Set A", "items": ["item1", "item2", "shared_item"]}, {"label": "Set B", "items": ["item3", "shared_item"]}]}
+Example: {"type": "venndiagram", "sets": [{"label": "Set A", "items": ["item1", "item2", "shared_item"]}, {"label": "Set B", "items": ["item3", "shared_item"]}]}
 
 For "conceptgrid" style:
 - Tabular representation of concepts with definitions and examples
@@ -133,7 +135,7 @@ For "conceptgrid" style:
 - 4-8 key concepts from the material
 - Clear, concise definitions with practical examples
 - Useful for vocabulary, key terms, or concept relationships
-Example: {"type": "conceptgrid", "concepts": [{"term": "Term 1", "definition": "Clear definition", "example": "Practical example"}, {"term": "Term 2", "definition": "Another definition", "example": "Another example"}]}
+Example: {"type": "vocabulary", "words": [{"term": "Term 1", "definition": "Clear definition", "example": "Practical example"}, {"term": "Term 2", "definition": "Another definition", "example": "Another example"}]}
 
 For "simpleflow" style:
 - Linear process or workflow visualization
@@ -142,7 +144,7 @@ For "simpleflow" style:
 - Clear labels for each step
 - Focus on processes, procedures, or sequential operations
 - Avoid complex branching or decision points
-Example: {"type": "simpleflow", "steps": [{"id": "1", "label": "Input"}, {"id": "2", "label": "Process"}, {"id": "3", "label": "Output"}], "connections": [{"from": "1", "to": "2"}, {"from": "2", "to": "3"}]}
+Example: {"type": "flowchart", "nodes": [{"id": "1", "label": "Start", "type": "start"}, {"id": "2", "label": "Process", "type": "process"}, {"id": "3", "label": "End", "type": "end"}], "connections": [{"from": "1", "to": "2"}, {"from": "2", "to": "3"}]}
 
 For "images" style:
 - Curated selection of relevant educational images
@@ -150,30 +152,8 @@ For "images" style:
 - Include 3-5 specific, targeted search terms
 - Focus on diagrams, illustrations, or photographs that enhance understanding
 - Consider the subject matter (biology, history, math, etc.)
-Example: {"type": "images", "query": "photosynthesis process diagram chloroplast structure", "count": 3}
-{{#eq style "mindmap"}}
-{"type": "mindmap", "central": "Main Topic", "branches": [{"topic": "Branch 1", "subs": ["sub1", "sub2"]}, {"topic": "Branch 2", "subs": ["sub3"]}]}
-{{/eq}}
-{{#eq style "timeline"}}
-{"type": "timeline", "events": [{"date": "2023-01-01", "title": "Event Title", "description": "Event description"}]}
-{{/eq}}
-{{#eq style "chart"}}
-{"type": "chart", "chartType": "bar", "data": {"labels": ["A", "B", "C"], "values": [10, 20, 30]}}
-{{/eq}}
-{{#eq style "venn"}}
-{"type": "venn", "sets": [{"label": "Set A", "items": ["item1", "item2"]}, {"label": "Set B", "items": ["item2", "item3"]}]}
-{{/eq}}
-{{#eq style "conceptgrid"}}
-{"type": "conceptgrid", "concepts": [{"term": "Concept", "definition": "Meaning", "example": "Example"}]}
-{{/eq}}
+Example: {"type": "vocabulary", "words": [{"term": "Key Concept", "definition": "Definition from text", "example": "Example usage"}]}
 
-{{#eq style "simpleflow"}}
-{"type": "simpleflow", "steps": [{"id": "1", "label": "Start"}, {"id": "2", "label": "Process"}, {"id": "3", "label": "End"}], "connections": [{"from": "1", "to": "2"}, {"from": "2", "to": "3"}]}
-{{/eq}}
-
-{{#eq style "images"}}
-{"type": "images", "query": "educational images for [topic]", "count": 3}
-{{/eq}}
 {{/if}}
 
 {{#if highlightTitles}}
@@ -190,7 +170,6 @@ FINAL INSTRUCTIONS:
 - Include practical examples and applications where relevant
 - Focus on clarity, accuracy, and educational impact
 - For visual styles, ensure the JSON is valid and matches the specified format exactly
-
 
 `,
     });
