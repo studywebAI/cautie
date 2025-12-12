@@ -22,12 +22,12 @@ export function AuthForm({
   searchParams: { message: string; type: string }
 }) {
   return (
-    <div className="flex items-center justify-center h-full">
-      <Card className="mx-auto max-w-sm">
+    <div className="flex items-center justify-center min-h-screen p-4">
+      <Card className="mx-auto max-w-md w-full">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
-            Enter your email below to login or sign up for an account
+          <CardTitle className="text-3xl font-bold text-center">Welcome to StudyWeb</CardTitle>
+          <CardDescription className="text-center text-base">
+            Enter your email and password to sign in or create a new account
           </CardDescription>
         </CardHeader>
         <CardContent>
