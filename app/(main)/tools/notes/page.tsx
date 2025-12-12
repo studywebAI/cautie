@@ -28,7 +28,7 @@ function NotesPageContent() {
   const [fileType, setFileType] = useState<'image' | 'file' | null>(null);
   const [topic, setTopic] = useState('');
   const [length, setLength] = useState<'short' | 'medium' | 'long'>('medium');
-  const [style, setStyle] = useState('structured');
+  const [mode, setMode] = useState('structured');
   const [highlightTitles, setHighlightTitles] = useState(false);
   const [fontFamily, setFontFamily] = useState<'default' | 'serif' | 'sans-serif' | 'monospace'>('default');
   const { toast } = useToast();
@@ -51,7 +51,7 @@ function NotesPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           flowName: 'generateNotes',
-          input: { sourceText: text, topic: topic || undefined, length, style, highlightTitles, fontFamily },
+          input: { sourceText: text, topic: topic || undefined, length, mode, highlightTitles, fontFamily },
         }),
       });
       if (!apiResponse.ok) {
@@ -163,10 +163,8 @@ function NotesPageContent() {
 
   const totalLoading = isLoading || isProcessingFile;
 
-  const styleOptions = [
-    'standard', 'wordweb', 'structured', 'bullet-points', 'outline', 'summary', 'cornell', 'mindmap', 'regular',
-    'flowchart', 'timeline', 'chart', 'boxing', 'sentence', 'mapping', 'pattern', 'qa', 'tchart',
-    'venndiagram', 'conceptmap', 'fishbone', 'decisiontree', 'swot', 'pestel', 'kanban'
+  const modeOptions = [
+    'structured', 'bullet-points', 'standard', 'mindmap', 'timeline', 'chart', 'venndiagram', 'vocabulary', 'flowchart'
   ];
 
   if (isLoading) {
@@ -209,7 +207,7 @@ function NotesPageContent() {
       <header>
         <h1 className="text-3xl font-bold font-headline">AI Notes</h1>
         <p className="text-muted-foreground">
-          Paste any text or upload a file to automatically generate structured notes with various styles and formats.
+          Paste any text or upload a file to automatically generate structured notes with various modes and formats.
         </p>
       </header>
 
@@ -298,13 +296,13 @@ function NotesPageContent() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="style">Style</Label>
-              <Select value={style} onValueChange={setStyle}>
-                <SelectTrigger id="style">
+              <Label htmlFor="mode">Mode</Label>
+              <Select value={mode} onValueChange={setMode}>
+                <SelectTrigger id="mode">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {styleOptions.map((option) => (
+                  {modeOptions.map((option) => (
                     <SelectItem key={option} value={option}>
                       {option.charAt(0).toUpperCase() + option.slice(1).replace('-', ' ')}
                     </SelectItem>
