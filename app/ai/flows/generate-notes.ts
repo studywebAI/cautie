@@ -18,7 +18,7 @@ const GenerateNotesInputSchema = z.object({
   imageDataUri: z.string().optional().describe('Base64 data URI of an image to analyze as context.'),
   topic: z.string().optional().describe('The main topic to focus on.'),
   length: z.string().optional().describe('The desired length of the notes: short, medium, long.'),
-  style: z.string().optional().describe('The style of notes: structured, bullet-points, standard, mindmap, timeline, chart, venn, conceptgrid, simpleflow, images.'),
+  style: z.string().optional().describe('The style of notes: structured, bullet-points, standard, mindmap, timeline, chart, venndiagram, vocabulary, flowchart.'),
   highlightTitles: z.boolean().optional().describe('Whether to highlight titles with colors.'),
   fontFamily: z.string().optional().describe('The font family to use: default, serif, sans-serif, monospace.'),
 });
