@@ -51,7 +51,7 @@ function NotesPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           flowName: 'generateNotes',
-          input: { sourceText: text, topic: topic || undefined, length, mode, highlightTitles, fontFamily },
+          input: { sourceText: text, topic: topic || undefined, length, style: mode, highlightTitles, fontFamily },
         }),
       });
       if (!apiResponse.ok) {
