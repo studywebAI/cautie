@@ -140,20 +140,23 @@ type PieChartData = {
   };
 };
 
-function MindmapRenderer({ data }: { data: MindmapData }) {
+function MindmapRenderer({ data, title }: { data: MindmapData; title?: string }) {
   const [zoom, setZoom] = React.useState(1);
   const [pan, setPan] = React.useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
 
-  // Increased SVG size to prevent cut-off
-  const svgWidth = 800;
-  const svgHeight = 600;
+  // Use full viewport dimensions for maximum space utilization
+  const svgWidth = typeof window !== 'undefined' ? window.innerWidth - 100 : 1200; // Fallback for SSR
+  const svgHeight = typeof window !== 'undefined' ? window.innerHeight - 200 : 800; // Fallback for SSR
   const centerX = svgWidth / 2;
   const centerY = svgHeight / 2;
 
   // Better sizing calculations
-  const centralRadius = Math.max(50, Math.min(70, data.central.length * 1.5));
+  // Use title as central node, fallback to data.central
+  const centralText = title || data.central;
+
+  const centralRadius = Math.max(50, Math.min(70, centralText.length * 1.5));
   const branchDistance = Math.max(200, centralRadius * 3);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -228,8 +231,8 @@ function MindmapRenderer({ data }: { data: MindmapData }) {
 
   return (
     <div
-      className="relative border rounded overflow-hidden bg-gray-50"
-      style={{ width: `${svgWidth}px`, height: `${svgHeight}px` }}
+      className="relative w-full h-full border rounded overflow-hidden bg-gray-50"
+
     >
       <svg
         width={svgWidth}
@@ -252,7 +255,7 @@ function MindmapRenderer({ data }: { data: MindmapData }) {
         {/* Central node */}
         <circle cx={centerX} cy={centerY} r={centralRadius} fill="#3b82f6" stroke="#1e40af" strokeWidth="2" />
         <text x={centerX} y={centerY} textAnchor="middle" dy="0.35em" fill="white" fontSize="14" fontWeight="bold">
-          {wrapText(data.central, centralRadius * 1.8, 14).map((line, i) => (
+          {wrapText(centralText, centralRadius * 1.8, 14).map((line, i) => (
             <tspan key={i} x={centerX} dy={i === 0 ? 0 : '1.3em'}>{line}</tspan>
           ))}
         </text>
@@ -781,12 +784,12 @@ export function NoteViewer({ notes }: NoteViewerProps) {
   }
 
   return (
-    <Card>
-        <CardContent className="p-6">
-            <div className="prose dark:prose-invert max-w-none">
+    <Card className="h-full">
+        <CardContent className="p-6 h-full">
+            <div className="prose dark:prose-invert max-w-none h-full">
                 {notes.map((note, index) => (
-                    <div key={index} className="mb-8">
-                        <h2>{note.title}</h2>
+                    <div key={index} className="mb-8 h-full">
+
                         {(() => {
                           if (typeof note.content === 'string') {
                             try {
@@ -805,7 +808,7 @@ export function NoteViewer({ notes }: NoteViewerProps) {
                               const data = JSON.parse(note.content);
                               switch (data.type) {
                                 case 'mindmap':
-                                  return <MindmapRenderer data={data as MindmapData} />;
+                                  return <MindmapRenderer data={data as MindmapData} title={note.title} />;
                                 case 'flowchart':
                                   return <FlowchartRenderer data={data as FlowchartData} />;
                                 case 'timeline':
