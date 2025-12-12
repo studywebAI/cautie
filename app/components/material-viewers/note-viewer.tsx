@@ -140,6 +140,154 @@ type PieChartData = {
   };
 };
 
+function MindmapRenderer({ data }: { data: MindmapData }) {
+  const [zoom, setZoom] = React.useState(1);
+  const [pan, setPan] = React.useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
+
+  const centerX = 300;
+  const centerY = 200;
+  const radius = Math.max(60, Math.min(80, data.central.length * 2));
+  const branchRadius = 180;
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging) {
+      setPan({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    setZoom(prev => Math.max(0.5, Math.min(3, prev * zoomFactor)));
+  };
+
+  const wrapText = (text: string, maxWidth: number, fontSize: number) => {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      const testLine = currentLine + (currentLine ? ' ' : '') + word;
+      const testWidth = testLine.length * (fontSize * 0.6);
+
+      if (testWidth > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+
+    if (currentLine) lines.push(currentLine);
+    return lines;
+  };
+
+  return (
+    <div className="relative border rounded overflow-hidden" style={{ width: '600px', height: '400px' }}>
+      <svg
+        width="600"
+        height="400"
+        className="cursor-move"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
+        style={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: 'center'
+        }}
+      >
+        <circle cx={centerX} cy={centerY} r={radius} fill="#3b82f6" />
+        <text x={centerX} y={centerY} textAnchor="middle" dy="0.35em" fill="white" fontSize="12" fontWeight="bold">
+          {wrapText(data.central, radius * 1.5, 12).map((line, i) => (
+            <tspan key={i} x={centerX} dy={i === 0 ? 0 : '1.2em'}>{line}</tspan>
+          ))}
+        </text>
+
+        {data.branches.map((branch, index) => {
+          const angle = (index / data.branches.length) * 2 * Math.PI - Math.PI / 2;
+          const x = centerX + Math.cos(angle) * branchRadius;
+          const y = centerY + Math.sin(angle) * branchRadius;
+          const branchRadiusSize = Math.max(35, Math.min(45, branch.topic.length * 1.5));
+
+          return (
+            <g key={index}>
+              <line
+                x1={centerX + Math.cos(angle) * radius}
+                y1={centerY + Math.sin(angle) * radius}
+                x2={x}
+                y2={y}
+                stroke="#6b7280"
+                strokeWidth="2"
+              />
+              <circle cx={x} cy={y} r={branchRadiusSize} fill="#10b981" />
+              <text x={x} y={y} textAnchor="middle" dy="0.35em" fill="white" fontSize="10" fontWeight="bold">
+                {wrapText(branch.topic, branchRadiusSize * 1.2, 10).map((line, i) => (
+                  <tspan key={i} x={x} dy={i === 0 ? 0 : '1.1em'}>{line}</tspan>
+                ))}
+              </text>
+
+              {branch.subs?.map((sub, subIndex) => {
+                const subAngle = angle + (subIndex - (branch.subs!.length - 1) / 2) * 0.6;
+                const subX = x + Math.cos(subAngle) * 100;
+                const subY = y + Math.sin(subAngle) * 100;
+                const subRadius = Math.max(20, Math.min(30, sub.length * 1.2));
+
+                return (
+                  <g key={subIndex}>
+                    <line x1={x} y1={y} x2={subX} y2={subY} stroke="#6b7280" strokeWidth="1" />
+                    <circle cx={subX} cy={subY} r={subRadius} fill="#f59e0b" />
+                    <text x={subX} y={subY} textAnchor="middle" dy="0.35em" fill="white" fontSize="8">
+                      {wrapText(sub, subRadius * 1.5, 8).map((line, i) => (
+                        <tspan key={i} x={subX} dy={i === 0 ? 0 : '1em'}>{line}</tspan>
+                      ))}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })}
+      </svg>
+
+      <div className="absolute top-2 right-2 flex gap-1">
+        <button
+          onClick={() => setZoom(z => Math.max(0.5, z - 0.2))}
+          className="bg-white border rounded px-2 py-1 text-sm hover:bg-gray-50"
+        >
+          -
+        </button>
+        <span className="bg-white border rounded px-2 py-1 text-sm">{Math.round(zoom * 100)}%</span>
+        <button
+          onClick={() => setZoom(z => Math.min(3, z + 0.2))}
+          className="bg-white border rounded px-2 py-1 text-sm hover:bg-gray-50"
+        >
+          +
+        </button>
+      </div>
+
+      <div className="absolute bottom-2 left-2 text-xs text-gray-500 bg-white bg-opacity-75 px-2 py-1 rounded">
+        Drag to pan • Scroll to zoom
+      </div>
+    </div>
+  );
+}
+
 function FlowchartRenderer({ data }: { data: FlowchartData }) {
   const nodeSpacing = 120;
   const startY = 50;
@@ -649,153 +797,5 @@ export function NoteViewer({ notes }: NoteViewerProps) {
             </div>
         </CardContent>
     </Card>
-  );
-}
-
-function MindmapRenderer({ data }: { data: MindmapData }) {
-  const [zoom, setZoom] = React.useState(1);
-  const [pan, setPan] = React.useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = React.useState(false);
-  const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
-
-  const centerX = 300;
-  const centerY = 200;
-  const radius = Math.max(60, Math.min(80, data.central.length * 2));
-  const branchRadius = 180;
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      setPan({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom(prev => Math.max(0.5, Math.min(3, prev * zoomFactor)));
-  };
-
-  const wrapText = (text: string, maxWidth: number, fontSize: number) => {
-    const words = text.split(' ');
-    const lines: string[] = [];
-    let currentLine = '';
-
-    for (const word of words) {
-      const testLine = currentLine + (currentLine ? ' ' : '') + word;
-      const testWidth = testLine.length * (fontSize * 0.6);
-
-      if (testWidth > maxWidth && currentLine) {
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        currentLine = testLine;
-      }
-    }
-
-    if (currentLine) lines.push(currentLine);
-    return lines;
-  };
-
-  return (
-    <div className="relative border rounded overflow-hidden" style={{ width: '600px', height: '400px' }}>
-      <svg
-        width="600"
-        height="400"
-        className="cursor-move"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
-        style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-          transformOrigin: 'center'
-        }}
-      >
-        <circle cx={centerX} cy={centerY} r={radius} fill="#3b82f6" />
-        <text x={centerX} y={centerY} textAnchor="middle" dy="0.35em" fill="white" fontSize="12" fontWeight="bold">
-          {wrapText(data.central, radius * 1.5, 12).map((line, i) => (
-            <tspan key={i} x={centerX} dy={i === 0 ? 0 : '1.2em'}>{line}</tspan>
-          ))}
-        </text>
-
-        {data.branches.map((branch, index) => {
-          const angle = (index / data.branches.length) * 2 * Math.PI - Math.PI / 2;
-          const x = centerX + Math.cos(angle) * branchRadius;
-          const y = centerY + Math.sin(angle) * branchRadius;
-          const branchRadiusSize = Math.max(35, Math.min(45, branch.topic.length * 1.5));
-
-          return (
-            <g key={index}>
-              <line
-                x1={centerX + Math.cos(angle) * radius}
-                y1={centerY + Math.sin(angle) * radius}
-                x2={x}
-                y2={y}
-                stroke="#6b7280"
-                strokeWidth="2"
-              />
-              <circle cx={x} cy={y} r={branchRadiusSize} fill="#10b981" />
-              <text x={x} y={y} textAnchor="middle" dy="0.35em" fill="white" fontSize="10" fontWeight="bold">
-                {wrapText(branch.topic, branchRadiusSize * 1.2, 10).map((line, i) => (
-                  <tspan key={i} x={x} dy={i === 0 ? 0 : '1.1em'}>{line}</tspan>
-                ))}
-              </text>
-
-              {branch.subs?.map((sub, subIndex) => {
-                const subAngle = angle + (subIndex - (branch.subs!.length - 1) / 2) * 0.6;
-                const subX = x + Math.cos(subAngle) * 100;
-                const subY = y + Math.sin(subAngle) * 100;
-                const subRadius = Math.max(20, Math.min(30, sub.length * 1.2));
-
-                return (
-                  <g key={subIndex}>
-                    <line x1={x} y1={y} x2={subX} y2={subY} stroke="#6b7280" strokeWidth="1" />
-                    <circle cx={subX} cy={subY} r={subRadius} fill="#f59e0b" />
-                    <text x={subX} y={subY} textAnchor="middle" dy="0.35em" fill="white" fontSize="8">
-                      {wrapText(sub, subRadius * 1.5, 8).map((line, i) => (
-                        <tspan key={i} x={subX} dy={i === 0 ? 0 : '1em'}>{line}</tspan>
-                      ))}
-                    </text>
-                  </g>
-                );
-              })}
-            </g>
-          );
-        })}
-      </svg>
-
-      <div className="absolute top-2 right-2 flex gap-1">
-        <button
-          onClick={() => setZoom(z => Math.max(0.5, z - 0.2))}
-          className="bg-white border rounded px-2 py-1 text-sm hover:bg-gray-50"
-        >
-          -
-        </button>
-        <span className="bg-white border rounded px-2 py-1 text-sm">{Math.round(zoom * 100)}%</span>
-        <button
-          onClick={() => setZoom(z => Math.min(3, z + 0.2))}
-          className="bg-white border rounded px-2 py-1 text-sm hover:bg-gray-50"
-        >
-          +
-        </button>
-      </div>
-
-      <div className="absolute bottom-2 left-2 text-xs text-gray-500 bg-white bg-opacity-75 px-2 py-1 rounded">
-        Drag to pan • Scroll to zoom
-      </div>
-    </div>
   );
 }
