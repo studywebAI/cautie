@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useContext } from 'react';
@@ -19,6 +18,12 @@ export default function SettingsPage() {
     setDyslexiaFont,
     reducedMotion,
     setReducedMotion,
+    theme,
+    setTheme,
+    mainColor,
+    setMainColor,
+    accentColor,
+    setAccentColor,
     role,
     setRole
   } = useContext(AppContext) as AppContextType;
@@ -110,6 +115,69 @@ export default function SettingsPage() {
                 </div>
                 <Switch id="reduced-motion" checked={reducedMotion} onCheckedChange={setReducedMotion} />
             </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Personalization</CardTitle>
+          <CardDescription>
+            Customize the appearance and colors of your app.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="theme">Theme</Label>
+            <Select value={theme} onValueChange={setTheme}>
+              <SelectTrigger id="theme" className="w-[280px]">
+                <SelectValue placeholder="Select theme" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">Light</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+                <SelectItem value="pastel">Pastel</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className='text-sm text-muted-foreground'>Choose your preferred color scheme.</p>
+          </div>
+
+          {theme === 'custom' && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="main-color">Main Color</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="main-color"
+                      type="color"
+                      value={mainColor}
+                      onChange={(e) => setMainColor(e.target.value)}
+                      className="w-12 h-8 rounded border"
+                    />
+                    <span className="text-sm text-muted-foreground">{mainColor}</span>
+                  </div>
+                  <p className='text-sm text-muted-foreground'>Primary color for buttons and highlights.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="accent-color">Accent Color</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="accent-color"
+                      type="color"
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      className="w-12 h-8 rounded border"
+                    />
+                    <span className="text-sm text-muted-foreground">{accentColor}</span>
+                  </div>
+                  <p className='text-sm text-muted-foreground'>Secondary color for accents and links.</p>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
