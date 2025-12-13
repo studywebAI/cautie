@@ -503,6 +503,49 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
     }
   }, [editingNode, editTitle, editDescription, editColor]);
 
+  // Collision detection helper
+  const checkCollision = useCallback((node1: MindmapNode, node2: MindmapNode, padding: number = 10) => {
+    return !(node1.x + node1.width + padding < node2.x ||
+             node2.x + node2.width + padding < node1.x ||
+             node1.y + node1.height + padding < node2.y ||
+             node2.y + node2.height + padding < node1.y);
+  }, []);
+
+  // Auto-position node to avoid collisions
+  const findNonCollidingPosition = useCallback((newNode: MindmapNode, existingNodes: MindmapNode[], centerX: number, centerY: number) => {
+    let x = newNode.x;
+    let y = newNode.y;
+    let attempts = 0;
+    const maxAttempts = 50;
+    const step = 20;
+
+    while (attempts < maxAttempts) {
+      let hasCollision = false;
+
+      for (const existingNode of existingNodes) {
+        if (checkCollision({ ...newNode, x, y }, existingNode)) {
+          hasCollision = true;
+          break;
+        }
+      }
+
+      if (!hasCollision) {
+        return { x, y };
+      }
+
+      // Try different positions in a spiral pattern
+      const angle = attempts * 0.5;
+      const radius = step * Math.sqrt(attempts + 1);
+      x = centerX + Math.cos(angle) * radius - newNode.width / 2;
+      y = centerY + Math.sin(angle) * radius - newNode.height / 2;
+
+      attempts++;
+    }
+
+    // If we can't find a non-colliding position, return the original
+    return { x: newNode.x, y: newNode.y };
+  }, [checkCollision]);
+
   const addNewNode = useCallback(() => {
     if (newNodeTitle.trim()) {
       const newNode: MindmapNode = {
@@ -526,7 +569,7 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
       setNewNodeColor(NODE_COLORS[0]);
       setShowAddNodeDialog(false);
     }
-  }, [newNodeTitle, newNodeColor, centerX, centerY]);
+  }, [newNodeTitle, newNodeColor, centerX, centerY, nodes, findNonCollidingPosition]);
 
   const wrapText = useCallback((text: string, maxWidth: number, fontSize: number = 12) => {
     const words = text.split(' ');

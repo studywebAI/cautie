@@ -43,7 +43,7 @@ export default function ToolsPage() {
           {tools.map((tool) => {
               const Icon = tool.icon;
               return (
-                   <Card key={tool.title} className="flex flex-col group hover:border-primary transition-all">
+                   <Card key={tool.title} className="flex flex-col group hover:border-primary focus-within:border-primary active:border-primary transition-all">
                       <CardHeader>
                           <div className="flex items-start justify-between">
                                <CardTitle className="font-headline text-xl">{tool.title}</CardTitle>
