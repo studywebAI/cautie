@@ -1,4 +1,4 @@
-# **App Name**: StudyWeb
+# **App Name**: cautie
 
 ## Core Features:
 

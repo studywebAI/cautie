@@ -110,7 +110,7 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined, initialCode 
                         checkCode(joinCode);
                         return; // Stop the loop
                     } else {
-                        toast({ variant: 'destructive', title: 'Invalid QR Code', description: 'This QR code does not contain a valid StudyWeb join link.' });
+                        toast({ variant: 'destructive', title: 'Invalid QR Code', description: 'This QR code does not contain a valid cautie join link.' });
                         stopScan();
                         return;
                     }

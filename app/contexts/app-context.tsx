@@ -11,7 +11,7 @@ import type { Dictionary, Locale } from '@/lib/get-dictionary'; // Import Locale
 
 
 export type UserRole = 'student' | 'teacher';
-export type ThemeType = 'light' | 'dark' | 'pastel' | 'custom';
+export type ThemeType = 'light' | 'dark' | 'pastel';
 export type ClassInfo = Tables<'classes'>;
 export type ClassAssignment = Tables<'assignments'>;
 export type PersonalTask = Tables<'personal_tasks'>;
@@ -32,10 +32,6 @@ export type AppContextType = {
   setReducedMotion: (enabled: boolean) => void;
   theme: ThemeType;
   setTheme: (theme: ThemeType) => void;
-  mainColor: string;
-  setMainColor: (color: string) => void;
-  accentColor: string;
-  setAccentColor: (color: string) => void;
   sessionRecap: SessionRecapData | null;
   setSessionRecap: (data: SessionRecapData | null) => void;
   classes: ClassInfo[];
@@ -101,8 +97,6 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
   // Theme state
   const [theme, setThemeState] = useState<ThemeType>('light');
-  const [mainColor, setMainColorState] = useState('#3b82f6');
-  const [accentColor, setAccentColorState] = useState('#10b981');
 
   const [sessionRecap, setSessionRecap] = useState<SessionRecapData | null>(null);
 
@@ -118,26 +112,16 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const supabase = createClient(); // Initialize Supabase client
 
   // Apply theme to document
-  const applyTheme = useCallback((currentTheme: ThemeType, currentMainColor: string, currentAccentColor: string) => {
+  const applyTheme = useCallback((currentTheme: ThemeType) => {
     if (typeof window === 'undefined') return;
 
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-light', 'theme-dark', 'theme-pastel', 'theme-custom');
+    root.classList.remove('theme-light', 'theme-dark', 'theme-pastel');
 
     // Apply theme class
     root.classList.add(`theme-${currentTheme}`);
-
-    // Set CSS custom properties for custom theme
-    if (currentTheme === 'custom') {
-      root.style.setProperty('--main-color', currentMainColor);
-      root.style.setProperty('--accent-color', currentAccentColor);
-    } else {
-      // Reset custom properties for predefined themes
-      root.style.removeProperty('--main-color');
-      root.style.removeProperty('--accent-color');
-    }
   }, []);
 
   // Initialize session on mount
@@ -302,6 +286,8 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
                 const [localClasses, localAssignments, localPersonalTasks] = await Promise.all([
                     Promise.resolve(getFromLocalStorage<ClassInfo[]>('studyweb-local-classes', [])),
                     Promise.resolve(getFromLocalStorage<ClassAssignment[]>('studyweb-local-assignments', [])),
+
+
                     Promise.resolve(getFromLocalStorage<PersonalTask[]>('studyweb-local-personal-tasks', [])),
                 ]);
                 setClasses(localClasses);
@@ -480,15 +466,11 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
     // Load theme settings
     const savedTheme = getFromLocalStorage('studyweb-theme', 'light');
-    const savedMainColor = getFromLocalStorage('studyweb-main-color', '#3b82f6');
-    const savedAccentColor = getFromLocalStorage('studyweb-accent-color', '#10b981');
 
     setThemeState(savedTheme);
-    setMainColorState(savedMainColor);
-    setAccentColorState(savedAccentColor);
 
     // Apply theme
-    applyTheme(savedTheme, savedMainColor, savedAccentColor);
+    applyTheme(savedTheme);
   }, [applyTheme]);
 
   const setLanguage = (newLanguage: Locale) => { // Updated type
@@ -551,23 +533,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const setTheme = (newTheme: ThemeType) => {
     setThemeState(newTheme);
     saveToLocalStorage('studyweb-theme', newTheme);
-    applyTheme(newTheme, mainColor, accentColor);
-  };
-
-  const setMainColor = (newColor: string) => {
-    setMainColorState(newColor);
-    saveToLocalStorage('studyweb-main-color', newColor);
-    if (theme === 'custom') {
-      applyTheme(theme, newColor, accentColor);
-    }
-  };
-
-  const setAccentColor = (newColor: string) => {
-    setAccentColorState(newColor);
-    saveToLocalStorage('studyweb-accent-color', newColor);
-    if (theme === 'custom') {
-      applyTheme(theme, mainColor, newColor);
-    }
+    applyTheme(newTheme);
   };
 
 
@@ -587,10 +553,6 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     setReducedMotion,
     theme,
     setTheme,
-    mainColor,
-    setMainColor,
-    accentColor,
-    setAccentColor,
     sessionRecap,
     setSessionRecap,
     classes,

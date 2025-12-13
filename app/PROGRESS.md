@@ -1,4 +1,4 @@
-# StudyWeb Development Progress
+# cautie Development Progress
 
 This file tracks the major features that have been implemented and outlines the complete plan for future development based on the project blueprint in `README.md`.
 

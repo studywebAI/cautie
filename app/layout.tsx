@@ -23,7 +23,7 @@ const fontAtkinsonHyperlegible = Atkinson_Hyperlegible({
 
 
 export const metadata: Metadata = {
-  title: "StudyWeb",
+  title: "cautie",
   description: "The future of learning, powered by AI.",
 };
 

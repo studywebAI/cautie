@@ -18,7 +18,7 @@ import {
   BrainCircuit,
   Copy,
   FileSignature,
-  Wrench,
+  Pen,
   School,
   Calendar,
 } from 'lucide-react';
@@ -48,11 +48,11 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-primary text-primary-foreground">
-            <Wrench className="h-7 w-7" />
+          <div className="p-2 rounded-lg bg-blue-900 text-white">
+            <Pen className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold font-headline text-primary">
-            StudyWeb
+            cautie
           </h1>
         </div>
       </SidebarHeader>

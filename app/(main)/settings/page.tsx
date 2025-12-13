@@ -20,10 +20,6 @@ export default function SettingsPage() {
     setReducedMotion,
     theme,
     setTheme,
-    mainColor,
-    setMainColor,
-    accentColor,
-    setAccentColor,
     role,
     setRole
   } = useContext(AppContext) as AppContextType;
@@ -136,48 +132,10 @@ export default function SettingsPage() {
                 <SelectItem value="light">Light</SelectItem>
                 <SelectItem value="dark">Dark</SelectItem>
                 <SelectItem value="pastel">Pastel</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
               </SelectContent>
             </Select>
             <p className='text-sm text-muted-foreground'>Choose your preferred color scheme.</p>
           </div>
-
-          {theme === 'custom' && (
-            <>
-              <Separator />
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="main-color">Main Color</Label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="main-color"
-                      type="color"
-                      value={mainColor}
-                      onChange={(e) => setMainColor(e.target.value)}
-                      className="w-12 h-8 rounded border"
-                    />
-                    <span className="text-sm text-muted-foreground">{mainColor}</span>
-                  </div>
-                  <p className='text-sm text-muted-foreground'>Primary color for buttons and highlights.</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="accent-color">Accent Color</Label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="accent-color"
-                      type="color"
-                      value={accentColor}
-                      onChange={(e) => setAccentColor(e.target.value)}
-                      className="w-12 h-8 rounded border"
-                    />
-                    <span className="text-sm text-muted-foreground">{accentColor}</span>
-                  </div>
-                  <p className='text-sm text-muted-foreground'>Secondary color for accents and links.</p>
-                </div>
-              </div>
-            </>
-          )}
         </CardContent>
       </Card>
 
