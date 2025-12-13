@@ -1,176 +1,80 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
-import type { Database, Json } from '@/lib/supabase/database.types'
-import { CookieOptions } from '@supabase/ssr' // Correct import for CookieOptions
-// import { generateKnowledgeGraph } from '@/ai/flows/generate-knowledge-graph' // Removed direct import
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
-export const dynamic = 'force-dynamic'
-export const runtime = "nodejs";
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-// GET materials for a class
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const classId = searchParams.get('classId')
-
-  if (!classId) {
-    return NextResponse.json({ error: 'classId is required' }, { status: 400 });
-  }
-
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
-    {
-      cookies: {
-        get: (name: string) => (cookieStore as any).get(name)?.value,
-        set: (name: string, value: string, options: CookieOptions) => (cookieStore as any).set(name, value, options),
-        remove: (name: string, options: CookieOptions) => (cookieStore as any).set(name, '', options),
-      },
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-  );
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type');
+    const limit = parseInt(searchParams.get('limit') || '50');
+
+    let query = supabase
+      .from('materials')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+      .limit(limit);
+
+    if (type) {
+      query = query.eq('type', type);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching materials:', error);
+      return NextResponse.json({ error: 'Failed to fetch materials' }, { status: 500 });
+    }
+
+    return NextResponse.json({ materials: data });
+  } catch (error) {
+    console.error('Materials GET error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  // Security check: user must be owner or member of the class
-  // This logic should be more robust in a real app (e.g., using RLS)
-  const { data: classData, error: classError } = await supabase
-    .from('classes')
-    .select('owner_id')
-    .eq('id', classId)
-    .single();
-  
-  if (classError || !classData) {
-      return NextResponse.json({ error: 'Class not found' }, { status: 404 });
-  }
-
-  // Type narrowing to ensure classData has owner_id when not null or error
-  const ownerId = classData.owner_id; 
-
-  const { data: memberData, error: memberError } = await supabase
-    .from('class_members')
-    .select()
-    .eq('class_id', classId)
-    .eq('user_id', session.user.id);
-    
-  if (ownerId !== session.user.id && (!memberData || memberData.length === 0)) {
-     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  const { data, error } = await supabase
-    .from('materials')
-    .select('*')
-    .eq('class_id', classId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data);
 }
 
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-// POST a new material
-export async function POST(request: Request) {
-  const { title, class_id, type, notes_content, content, source_text_for_concepts } = await request.json();
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
-    {
-      cookies: {
-        get: (name: string) => (cookieStore as any).get(name)?.value,
-        set: (name: string, value: string, options: CookieOptions) => (cookieStore as any).set(name, value, options),
-        remove: (name: string, options: CookieOptions) => (cookieStore as any).set(name, '', options),
-      },
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-  );
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
-  // Security check
-  const { data: classData, error: classCheckError } = await supabase
-    .from('classes')
-    .select('owner_id')
-    .eq('id', class_id)
-    .single();
+    const body = await request.json();
+    const { type, title, description, content, source_text, metadata, tags, is_public } = body;
 
-  // Type narrowing for owner_id before access
-  const classOwnerId = classData?.owner_id; 
-
-  if (classCheckError || !classData || classOwnerId !== user.id) {
-     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  let noteId = null;
-
-  // Handle NOTE type specifically
-  if (type === 'NOTE' && notes_content) {
-    const { data: note, error: noteError } = await supabase
-      .from('notes')
-      .insert({ title, content: notes_content, owner_type: 'user', user_id: user.id } as any) // Temporary cast
+    const { data, error } = await supabase
+      .from('materials')
+      .insert({
+        user_id: user.id,
+        type,
+        title,
+        description,
+        content,
+        source_text,
+        metadata,
+        tags,
+        is_public: is_public || false,
+      })
       .select()
       .single();
 
-    if (noteError || !note) {
-      return NextResponse.json({ error: noteError?.message || 'Failed to create note content' }, { status: 500 });
+    if (error) {
+      console.error('Error saving material:', error);
+      return NextResponse.json({ error: 'Failed to save material' }, { status: 500 });
     }
-    noteId = note.id;
-  }
-  
-  // Generate concepts from the provided source text
-  let concepts: Json[] = []; // Explicitly typed as Json[]
-  if (source_text_for_concepts) {
-    try {
-      const response = await fetch('/api/ai/handle', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              flowName: 'generateKnowledgeGraph',
-              input: { sourceText: source_text_for_concepts },
-          }),
-      });
-      if (!response.ok) {
-          throw new Error(`API call failed: ${response.statusText}`);
-      }
-      const graph = await response.json();
-      concepts = graph.concepts;
-    } catch (aiError) {
-      console.error('AI concept generation failed:', JSON.stringify(aiError, null, 2));
-      return NextResponse.json({ error: 'AI concept generation failed: ' + JSON.stringify(aiError) }, { status: 500 });
-    }
-  }
 
-  // Create the material entry
-  const { data: material, error: materialError } = await supabase
-    .from('materials')
-    .insert({
-      class_id,
-      title,
-      type,
-      content_id: noteId,
-      content: content || null, // Store quiz/flashcard JSON
-      concepts,
-      owner_type: 'user', // Added owner_type
-      user_id: user.id, // Added user_id
-    } as any) // Temporary cast
-    .select()
-    .single();
-
-  if (materialError) {
-    // Attempt to clean up the orphaned note if material creation fails
-    if (noteId) {
-      await supabase.from('notes').delete().eq('id', noteId);
-    }
-    return NextResponse.json({ error: materialError.message }, { status: 500 });
+    return NextResponse.json({ material: data });
+  } catch (error) {
+    console.error('Materials POST error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  return NextResponse.json(material);
 }
