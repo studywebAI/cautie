@@ -196,7 +196,7 @@ export default function AgendaPage() {
         {isStudent && (
           <Button onClick={() => setIsCreateTaskOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
-              {dictionary.agenda.addTask}
+              {isStudent ? 'Add Activity' : 'Add Assignment'}
           </Button>
         )}
       </header>

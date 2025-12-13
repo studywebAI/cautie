@@ -15,62 +15,68 @@ import { Loader2 } from 'lucide-react'
 
 export function AuthForm({
   signIn,
+  signUp,
   searchParams,
 }: {
   signIn: (formData: FormData) => void
+  signUp: (formData: FormData) => void
   searchParams: { message: string; type: string; email: string }
 }) {
   const [isLoading, setIsLoading] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState(searchParams?.email || '')
+  const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
-  const [step, setStep] = useState<'email' | 'code'>('email')
+  const [step, setStep] = useState<'credentials' | '2fa'>('credentials')
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     try {
       const formData = new FormData()
       formData.append('email', email)
-      await signIn(formData)
-      setStep('code')
+      formData.append('password', password)
+      await (isSignUp ? signUp : signIn)(formData)
+      // If 2FA is required, the server will redirect with appropriate message
     } catch (error) {
-      console.error('Email submission failed:', error)
+      console.error('Authentication failed:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleCodeSubmit = async (e: React.FormEvent) => {
+  const handle2FASubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     try {
       const formData = new FormData()
       formData.append('email', email)
+      formData.append('password', password)
       formData.append('code', code)
       await signIn(formData)
     } catch (error) {
-      console.error('Code verification failed:', error)
+      console.error('2FA verification failed:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4 bg-gray-50">
+    <div className="flex items-center justify-center min-h-screen p-4 bg-background">
       <Card className="mx-auto max-w-md w-full">
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center">Welcome to cautie</CardTitle>
           <CardDescription className="text-center text-base">
-            {step === 'email'
-              ? 'Enter your email to receive a login code'
+            {step === 'credentials'
+              ? `Enter your email and password to ${isSignUp ? 'create an account' : 'sign in'}`
               : 'Enter the 6-digit code sent to your email'
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
-            {step === 'email' ? (
-              <form onSubmit={handleEmailSubmit} className="grid gap-4">
+            {step === 'credentials' ? (
+              <form onSubmit={handleCredentialsSubmit} className="grid gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -83,19 +89,40 @@ export function AuthForm({
                     disabled={isLoading}
                   />
                 </div>
-                <Button type="submit" disabled={isLoading || !email.trim()}>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+                <Button type="submit" disabled={isLoading || !email.trim() || !password.trim()}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending code...
+                      {isSignUp ? 'Creating account...' : 'Signing in...'}
                     </>
                   ) : (
-                    'Send Login Code'
+                    isSignUp ? 'Create Account' : 'Sign In'
                   )}
                 </Button>
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={() => setIsSignUp(!isSignUp)}
+                    disabled={isLoading}
+                  >
+                    {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                  </Button>
+                </div>
               </form>
             ) : (
-              <form onSubmit={handleCodeSubmit} className="grid gap-4">
+              <form onSubmit={handle2FASubmit} className="grid gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="code">Verification Code</Label>
                   <Input
@@ -127,7 +154,7 @@ export function AuthForm({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setStep('email')}
+                    onClick={() => setStep('credentials')}
                     disabled={isLoading}
                   >
                     Back
@@ -137,7 +164,7 @@ export function AuthForm({
             )}
 
             {searchParams?.message && (
-              <div className="mt-4 p-4 bg-foreground/10 text-foreground text-center rounded-lg">
+              <div className="mt-4 p-4 bg-muted text-foreground text-center rounded-lg">
                 <p
                   className={
                     searchParams.type === 'info'

@@ -315,9 +315,9 @@ function QuizPageContent() {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">{isAssignmentContext ? 'Create New Quiz' : 'AI Quiz Generator'}</h1>
+        <h1 className="text-3xl font-bold font-headline">{isAssignmentContext ? 'Create New Quiz' : 'Quiz'}</h1>
         <p className="text-muted-foreground">
-          {isAssignmentContext ? `Create a new quiz from text or a file to attach to your assignment.` : `Paste text or upload a file to automatically generate a multiple-choice quiz.`}
+          {isAssignmentContext ? `Create a new quiz from text or a file to attach to your assignment.` : `Create quizzes from text, files, or previous projects.`}
         </p>
       </header>
 

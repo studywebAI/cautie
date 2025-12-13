@@ -240,9 +240,9 @@ function FlashcardsPageContent() {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">{isAssignmentContext ? 'Create New Flashcard Set' : 'AI Flashcards'}</h1>
+        <h1 className="text-3xl font-bold font-headline">{isAssignmentContext ? 'Create New Flashcard Set' : 'Flashcards'}</h1>
         <p className="text-muted-foreground">
-          {isAssignmentContext ? `Create a new set of flashcards to attach to your assignment.` : `Paste any text or upload a file to automatically generate a set of flashcards.`}
+          {isAssignmentContext ? `Create a new set of flashcards to attach to your assignment.` : `Create flashcards from text, files, or previous projects.`}
         </p>
       </header>
 

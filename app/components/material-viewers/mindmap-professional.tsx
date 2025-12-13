@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Pen, Eraser } from 'lucide-react';
 
 type MindmapNode = {
   id: string;
@@ -611,7 +612,7 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
             variant={drawingMode ? "default" : "outline"}
             onClick={() => setDrawingMode(!drawingMode)}
           >
-            {drawingMode ? 'Stop Drawing' : 'Draw'}
+            <Pen className="h-4 w-4" />
           </Button>
 
           {drawingMode && (
@@ -640,7 +641,7 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
                 variant={eraserMode ? "default" : "outline"}
                 onClick={() => setEraserMode(!eraserMode)}
               >
-                Eraser
+                <Eraser className="h-4 w-4" />
               </Button>
 
               <Button
@@ -770,7 +771,8 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
                 fill="#000000"
                 fontSize={node.level === 0 ? "14" : node.level === 1 ? "12" : "11"}
                 fontWeight="600"
-                className="pointer-events-none"
+                className="pointer-events-none select-none"
+                style={{ userSelect: 'none' }}
               >
                 {wrapText(node.title, node.width - 16, parseInt(node.level === 0 ? "14" : node.level === 1 ? "12" : "11")).map((line, i) => (
                   <tspan key={i} x={node.x + node.width / 2} dy={i === 0 ? 0 : '1.1em'}>{line}</tspan>
