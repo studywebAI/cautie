@@ -8,10 +8,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     return (
         <SidebarProvider>
             <AppSidebar />
-            <SidebarInset className="bg-muted/40">
+            <SidebarInset className="bg-background h-screen flex flex-col">
                 <AppHeader />
-                <div className="flex-1 p-4 lg:p-6">
-                  {children}
+                <div className="flex-1 overflow-hidden">
+                  <div className="h-full">
+                    {children}
+                  </div>
                 </div>
             </SidebarInset>
         </SidebarProvider>

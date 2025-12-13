@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -41,29 +41,28 @@ export function ProfessionalTimelineRenderer({ data }: ProfessionalTimelineRende
   const fetchWikipediaTimeline = async (topic: string) => {
     setIsLoadingWikipedia(true);
     try {
-      // This is a simplified example - in reality you'd need a Wikipedia API
-      // For now, we'll simulate fetching data
+      // Mock Wikipedia API call - replace with actual API
       const mockEvents: TimelineEvent[] = [
         {
-          date: '2020-01-01',
-          title: 'Start of the Decade',
-          description: 'The beginning of a new decade marked by significant global changes.',
-          fullDescription: 'The 2020s began with the COVID-19 pandemic, which reshaped global health, economics, and social interactions worldwide.',
-          wikipediaUrl: 'https://en.wikipedia.org/wiki/2020s'
+          date: '1066-10-14',
+          title: 'Battle of Hastings',
+          description: 'William the Conqueror defeats Harold Godwinson, leading to Norman conquest of England.',
+          fullDescription: 'William, Duke of Normandy, defeated King Harold II of England at the Battle of Hastings. This pivotal battle marked the beginning of the Norman Conquest of England, fundamentally changing the country\'s language, culture, and governance. The battle took place on October 14, 1066, and resulted in Harold\'s death and William\'s coronation as King of England.',
+          wikipediaUrl: 'https://en.wikipedia.org/wiki/Battle_of_Hastings'
         },
         {
-          date: '2020-03-11',
-          title: 'COVID-19 Pandemic Declared',
-          description: 'WHO declares COVID-19 a global pandemic.',
-          fullDescription: 'On March 11, 2020, the World Health Organization declared COVID-19 a pandemic, leading to unprecedented global health measures and economic impacts.',
-          wikipediaUrl: 'https://en.wikipedia.org/wiki/COVID-19_pandemic'
+          date: '1215-06-15',
+          title: 'Magna Carta Signed',
+          description: 'King John of England signs the Magna Carta, limiting royal power.',
+          fullDescription: 'On June 15, 1215, King John of England was forced by rebellious barons to sign the Magna Carta at Runnymede. This historic document established that the king was subject to the law and protected the rights of the barons. It became a cornerstone of constitutional law and influenced the development of democratic principles worldwide.',
+          wikipediaUrl: 'https://en.wikipedia.org/wiki/Magna_Carta'
         },
         {
-          date: '2021-01-06',
-          title: 'Capitol Riot',
-          description: 'Attack on the United States Capitol building.',
-          fullDescription: 'On January 6, 2021, supporters of then-President Donald Trump stormed the United States Capitol in an attempt to overturn the results of the 2020 presidential election.',
-          wikipediaUrl: 'https://en.wikipedia.org/wiki/January_6_United_States_Capitol_attack'
+          date: '1348-01-01',
+          title: 'Black Death Arrives',
+          description: 'The bubonic plague reaches England, killing millions across Europe.',
+          fullDescription: 'The Black Death, one of the most devastating pandemics in human history, arrived in England in 1348. Caused by the Yersinia pestis bacterium, it killed an estimated 30-60% of Europe\'s population. The plague fundamentally altered medieval society, leading to labor shortages, social upheaval, and significant economic changes.',
+          wikipediaUrl: 'https://en.wikipedia.org/wiki/Black_Death_in_England'
         }
       ];
 
@@ -91,56 +90,38 @@ export function ProfessionalTimelineRenderer({ data }: ProfessionalTimelineRende
   const sortedEvents = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6">
-      <div className="relative">
-        {/* Timeline line */}
-        <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 to-green-500"></div>
+    <div className="w-full h-full overflow-x-auto">
+      <div className="relative min-w-max p-6">
+        {/* Horizontal Timeline line */}
+        <div className="absolute top-16 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500"></div>
 
         {/* Events */}
-        <div className="space-y-8">
+        <div className="flex items-start justify-start gap-8 pb-8">
           {sortedEvents.map((event, index) => (
-            <div key={index} className="relative flex items-start">
+            <div key={index} className="relative flex flex-col items-center min-w-64">
               {/* Timeline dot */}
-              <div className="absolute left-6 w-4 h-4 bg-white border-4 border-blue-500 rounded-full shadow-lg"></div>
+              <div className="absolute top-12 w-4 h-4 bg-white border-4 border-blue-500 rounded-full shadow-lg z-10"></div>
+
+              {/* Date */}
+              <div className="mb-4 text-center">
+                <div className="text-sm font-medium text-gray-600 mb-1">
+                  {formatDate(event.date)}
+                </div>
+              </div>
 
               {/* Event card */}
-              <div className="ml-16 w-full">
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedEvent(event)}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge variant="outline" className="text-sm font-medium">
-                            {formatDate(event.date)}
-                          </Badge>
-                          {event.wikipediaUrl && (
-                            <a
-                              href={event.wikipediaUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-500 hover:text-blue-700 text-sm"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              📖 Wikipedia
-                            </a>
-                          )}
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">
-                          {event.title}
-                        </h3>
-                        <p className="text-gray-600 text-sm leading-relaxed">
-                          {event.description}
-                        </p>
-                      </div>
-                      <div className="ml-4 text-gray-400">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer w-full" onClick={() => setSelectedEvent(event)}>
+                <CardContent className="p-4">
+                  <div className="text-center">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                      {event.title.length > 50 ? event.title.substring(0, 50) + '...' : event.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
+                      {event.description}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           ))}
         </div>

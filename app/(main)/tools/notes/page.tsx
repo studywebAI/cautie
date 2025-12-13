@@ -188,7 +188,7 @@ function NotesPageContent() {
       <div className="flex flex-col gap-8">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold font-headline">AI Notes</h1>
+            <h1 className="text-3xl font-bold font-headline">Notes</h1>
             <p className="text-muted-foreground">
               Your automatically generated notes.
             </p>
@@ -205,9 +205,9 @@ function NotesPageContent() {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-3xl font-bold font-headline">AI Notes</h1>
+        <h1 className="text-3xl font-bold font-headline">Notes</h1>
         <p className="text-muted-foreground">
-          Paste any text or upload a file to automatically generate structured notes with various modes and formats.
+          Create notes from text files or previous projects.
         </p>
       </header>
 
@@ -334,7 +334,7 @@ function NotesPageContent() {
             </div>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex gap-2">
           <Button onClick={handleFormSubmit} disabled={totalLoading || !sourceText}>
             {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

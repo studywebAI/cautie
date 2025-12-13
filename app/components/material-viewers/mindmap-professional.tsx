@@ -117,6 +117,8 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingColor, setDrawingColor] = useState('#000000');
   const [eraserMode, setEraserMode] = useState(false);
+  const [circleEraserMode, setCircleEraserMode] = useState(false);
+  const [circleStart, setCircleStart] = useState<{x: number, y: number} | null>(null);
   const [allDrawingPaths, setAllDrawingPaths] = useState<Array<{path: string[], color: string, id: string}>>(() => {
     // Load saved drawings
     if (typeof window !== 'undefined') {
@@ -140,6 +142,35 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
   }, [allDrawingPaths, title, data.central]);
 
   const svgRef = useRef<SVGSVGElement>(null);
+
+  // Touch event handlers for mobile support
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (rect) {
+      const x = (touch.clientX - rect.left - pan.x) / zoom;
+      const y = (touch.clientY - rect.top - pan.y) / zoom;
+      setDragStart({ x: touch.clientX - pan.x, y: touch.clientY - pan.y });
+      setIsDragging(true);
+    }
+  }, [pan, zoom]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      setPan({
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y
+      });
+    }
+  }, [dragStart]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
 
   // Calculate dimensions
   const sidebarWidth = 280;
@@ -346,6 +377,17 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
     setZoom(prev => Math.max(0.3, Math.min(3, prev * zoomFactor)));
   }, []);
 
+  const handleNodeDoubleClick = useCallback((node: MindmapNode, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent text selection
+    e.stopPropagation();
+
+    // Start editing the node title
+    setEditingNode(node);
+    setEditTitle(node.title);
+    setEditDescription(node.description);
+    setEditColor(node.color || NODE_COLORS[0]);
+  }, []);
+
   const handleNodeClick = useCallback((node: MindmapNode, e: React.MouseEvent) => {
     e.stopPropagation();
 
@@ -507,7 +549,7 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
   }, []);
 
   return (
-    <div className="relative w-full h-full border rounded overflow-hidden bg-gray-50">
+    <div className="relative w-full h-full border rounded overflow-hidden bg-background select-none">
       {/* Toolbar */}
       <div className="absolute top-2 left-2 z-10 flex gap-2 flex-wrap">
         <Button
@@ -520,7 +562,7 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
 
         {connectionMode ? (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-muted-foreground">
               {firstSelectedNode ? 'Click second node' : 'Click first node'}
             </span>
             <Select value={connectionColor} onValueChange={setConnectionColor}>
@@ -622,6 +664,9 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         onWheel={handleWheel}
         onContextMenu={handleCanvasContextMenu}
         style={{ touchAction: 'none' }}
@@ -711,6 +756,7 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
                 strokeWidth={firstSelectedNode?.id === node.id ? '3' : '2'}
                 className="cursor-move hover:stroke-gray-400"
                 onClick={(e) => handleNodeClick(node, e)}
+                onDoubleClick={(e) => handleNodeDoubleClick(node, e)}
                 onContextMenu={(e) => handleNodeContextMenu(node, e)}
                 onMouseDown={(e) => handleNodeMouseDown(node, e)}
               />
@@ -770,7 +816,7 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
               className="w-full text-left px-3 py-2 hover:bg-gray-100"
               onClick={() => setShowAddNodeDialog(true)}
             >
-              Add Node Here
+
             </button>
           )}
         </div>

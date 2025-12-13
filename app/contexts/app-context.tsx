@@ -246,7 +246,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
               // Fetch user profile to get authoritative role
               const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
-                .select('role')
+                .select('role, theme, language, high_contrast, dyslexia_font, reduced_motion')
                 .eq('id', session.user.id)
                 .single();
 

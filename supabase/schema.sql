@@ -22,6 +22,11 @@ CREATE TABLE public.profiles (
     full_name text,
     avatar_url text,
     role text DEFAULT 'student'::text,
+    theme text DEFAULT 'light'::text,
+    language text DEFAULT 'en'::text,
+    high_contrast boolean DEFAULT false,
+    dyslexia_font boolean DEFAULT false,
+    reduced_motion boolean DEFAULT false,
     updated_at timestamp with time zone
 );
 COMMENT ON TABLE public.profiles IS 'Profile data for each user.';
@@ -66,8 +71,8 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, avatar_url, role)
-  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url', 'student');
+  INSERT INTO public.profiles (id, full_name, avatar_url, role, theme, language, high_contrast, dyslexia_font, reduced_motion)
+  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url', 'student', 'light', 'en', false, false, false);
   return new;
 END;
 $$;
