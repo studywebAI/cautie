@@ -1,4 +1,3 @@
-
 {
   "sidebar": {
     "dashboard": "Dashboard",
@@ -7,8 +6,8 @@
     "agenda": "Agenda",
     "settings": "Settings",
     "tools": {
-      "title": "AI Tools",
-      "quizGenerator": "Test",
+      "title": "Tools",
+      "quizGenerator": "Quiz",
       "flashcardMaker": "Flashcards",
       "materialProcessor": "Process Material"
     }
@@ -57,7 +56,7 @@
     }
   },
   "tools": {
-    "title": "AI-Powered Tools",
+    "title": "Tools",
     "description": "Your suite of intelligent tools to accelerate learning.",
     "select": "Select Tool",
     "quiz": {

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,9 +41,17 @@ type ProfessionalMindmapRendererProps = {
   title?: string;
 };
 
-const CONNECTION_COLORS = [
-  '#374151', '#dc2626', '#ea580c', '#ca8a04', '#16a34a',
-  '#0891b2', '#2563eb', '#7c3aed', '#c026d3'
+const DRAWING_COLORS = [
+  '#000000', // Black
+  '#FF0000', // Red
+  '#FFFF00', // Yellow
+  '#0000FF', // Blue
+  '#00FF00', // Green
+  '#FF00FF', // Magenta
+  '#00FFFF', // Cyan
+  '#FFA500', // Orange
+  '#800080', // Purple
+  '#FFC0CB', // Pink
 ];
 
 const NODE_COLORS = [
@@ -57,11 +65,31 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  const [mindmapData, setMindmapData] = useState<MindmapData>({
-    ...data,
-    customNodes: data.customNodes || [],
-    customConnections: data.customConnections || []
+  const [mindmapData, setMindmapData] = useState<MindmapData>(() => {
+    // Load from localStorage if available
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`mindmap-${title || data.central}`);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to load saved mindmap:', e);
+        }
+      }
+    }
+    return {
+      ...data,
+      customNodes: data.customNodes || [],
+      customConnections: data.customConnections || []
+    };
   });
+
+  // Save to localStorage whenever mindmapData changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`mindmap-${title || data.central}`, JSON.stringify(mindmapData));
+    }
+  }, [mindmapData, title, data.central]);
 
   // Node editing state
   const [editingNode, setEditingNode] = useState<MindmapNode | null>(null);
@@ -76,25 +104,40 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
   // Connection creation state
   const [connectionMode, setConnectionMode] = useState(false);
   const [firstSelectedNode, setFirstSelectedNode] = useState<MindmapNode | null>(null);
-  const [connectionColor, setConnectionColor] = useState(CONNECTION_COLORS[0]);
+  const [connectionColor, setConnectionColor] = useState('#374151');
 
   // Add node dialog
   const [showAddNodeDialog, setShowAddNodeDialog] = useState(false);
   const [newNodeTitle, setNewNodeTitle] = useState('');
   const [newNodeColor, setNewNodeColor] = useState(NODE_COLORS[0]);
 
-  // Context menu state
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    node?: MindmapNode;
-    connection?: MindmapConnection;
-  } | null>(null);
-
-  // Drawing state
+  // Drawing state - only activated on right-click
   const [drawingMode, setDrawingMode] = useState(false);
   const [drawingPath, setDrawingPath] = useState<string[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [drawingColor, setDrawingColor] = useState('#000000');
+  const [eraserMode, setEraserMode] = useState(false);
+  const [allDrawingPaths, setAllDrawingPaths] = useState<Array<{path: string[], color: string, id: string}>>(() => {
+    // Load saved drawings
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`mindmap-drawings-${title || data.central}`);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to load saved drawings:', e);
+        }
+      }
+    }
+    return [];
+  });
+
+  // Save drawings to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`mindmap-drawings-${title || data.central}`, JSON.stringify(allDrawingPaths));
+    }
+  }, [allDrawingPaths, title, data.central]);
 
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -109,7 +152,7 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
   const centerX = svgWidth / 2;
   const centerY = svgHeight / 2;
 
-  // Build nodes from data
+  // Build nodes from data - now includes branches and subs
   const nodes = React.useMemo(() => {
     const allNodes: MindmapNode[] = [];
 
@@ -130,6 +173,60 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
       color: '#e5e7eb'
     });
 
+    // Add branch nodes
+    if (data.branches && data.branches.length > 0) {
+      const branchCount = data.branches.length;
+      const radius = 200;
+      const angleStep = (2 * Math.PI) / branchCount;
+
+      data.branches.forEach((branch, index) => {
+        const angle = index * angleStep - Math.PI / 2; // Start from top
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        const width = Math.max(100, branch.topic.length * 8);
+        const height = 50;
+
+        allNodes.push({
+          id: `branch-${index}`,
+          title: branch.topic,
+          description: `Branch: ${branch.topic}`,
+          x: x - width / 2,
+          y: y - height / 2,
+          width,
+          height,
+          level: 1,
+          color: NODE_COLORS[index % NODE_COLORS.length]
+        });
+
+        // Add sub-nodes
+        if (branch.subs && branch.subs.length > 0) {
+          const subRadius = 120;
+          const subAngleStep = Math.PI / 6; // Spread subs around the branch
+          const baseAngle = angle;
+
+          branch.subs.forEach((sub, subIndex) => {
+            const subAngle = baseAngle + (subIndex - (branch.subs!.length - 1) / 2) * subAngleStep;
+            const subX = x + Math.cos(subAngle) * subRadius;
+            const subY = y + Math.sin(subAngle) * subRadius;
+            const subWidth = Math.max(80, sub.length * 6);
+            const subHeight = 40;
+
+            allNodes.push({
+              id: `sub-${index}-${subIndex}`,
+              title: sub,
+              description: `Sub-topic: ${sub}`,
+              x: subX - subWidth / 2,
+              y: subY - subHeight / 2,
+              width: subWidth,
+              height: subHeight,
+              level: 2,
+              color: NODE_COLORS[(index + subIndex) % NODE_COLORS.length]
+            });
+          });
+        }
+      });
+    }
+
     // Add custom nodes
     mindmapData.customNodes?.forEach(node => {
       allNodes.push(node);
@@ -139,12 +236,45 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
   }, [mindmapData, data, title, centerX, centerY]);
 
   const connections = React.useMemo(() => {
-    return mindmapData.customConnections || [];
-  }, [mindmapData.customConnections]);
+    const allConnections: MindmapConnection[] = [];
+
+    // Add connections from branches to center
+    if (data.branches) {
+      data.branches.forEach((branch, index) => {
+        allConnections.push({
+          id: `conn-central-branch-${index}`,
+          from: 'central',
+          to: `branch-${index}`,
+          color: '#6b7280'
+        });
+
+        // Add connections from subs to branches
+        if (branch.subs) {
+          branch.subs.forEach((sub, subIndex) => {
+            allConnections.push({
+              id: `conn-branch-${index}-sub-${subIndex}`,
+              from: `branch-${index}`,
+              to: `sub-${index}-${subIndex}`,
+              color: '#9ca3af'
+            });
+          });
+        }
+      });
+    }
+
+    // Add custom connections
+    if (mindmapData.customConnections) {
+      allConnections.push(...mindmapData.customConnections);
+    }
+
+    return allConnections;
+  }, [mindmapData.customConnections, data.branches]);
 
   // Event handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (drawingMode && e.target === svgRef.current) {
+    // Only start drawing on right-click when drawing mode is active
+    if (drawingMode && e.button === 2 && e.target === svgRef.current) {
+      e.preventDefault();
       setIsDrawing(true);
       const rect = svgRef.current?.getBoundingClientRect();
       if (rect) {
@@ -152,7 +282,8 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
         const y = (e.clientY - rect.top - pan.y) / zoom;
         setDrawingPath([`M ${x} ${y}`]);
       }
-    } else if (e.target === svgRef.current) {
+    } else if (e.target === svgRef.current && e.button === 0) {
+      // Left click for panning
       setIsDragging(true);
       setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
     }
@@ -194,10 +325,20 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
   }, [isDrawing, drawingMode, draggingNode, isDragging, pan, zoom, dragStart, nodeDragStart]);
 
   const handleMouseUp = useCallback(() => {
+    if (isDrawing && drawingPath.length > 1) {
+      // Save the completed drawing path
+      const newPath = {
+        path: drawingPath,
+        color: eraserMode ? '#ffffff' : drawingColor,
+        id: `drawing-${Date.now()}`
+      };
+      setAllDrawingPaths(prev => [...prev, newPath]);
+      setDrawingPath([]);
+    }
     setIsDragging(false);
     setDraggingNode(null);
     setIsDrawing(false);
-  }, []);
+  }, [isDrawing, drawingPath, drawingColor, eraserMode]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -263,6 +404,13 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
       }
     }
   }, [pan, zoom]);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    node?: MindmapNode;
+  } | null>(null);
 
   // Context menu actions
   const editNode = useCallback((node: MindmapNode) => {
@@ -383,7 +531,7 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
                 />
               </SelectTrigger>
               <SelectContent>
-                {CONNECTION_COLORS.map(color => (
+                {['#374151', '#dc2626', '#ea580c', '#ca8a04', '#16a34a', '#0891b2', '#2563eb', '#7c3aed', '#c026d3'].map(color => (
                   <SelectItem key={color} value={color}>
                     <div
                       className="w-4 h-4 rounded border"
@@ -414,13 +562,55 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
           </Button>
         )}
 
-        <Button
-          size="sm"
-          variant={drawingMode ? "default" : "outline"}
-          onClick={() => setDrawingMode(!drawingMode)}
-        >
-          {drawingMode ? 'Stop Drawing' : 'Draw'}
-        </Button>
+        {/* Drawing controls */}
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant={drawingMode ? "default" : "outline"}
+            onClick={() => setDrawingMode(!drawingMode)}
+          >
+            {drawingMode ? 'Stop Drawing' : 'Draw'}
+          </Button>
+
+          {drawingMode && (
+            <>
+              <Select value={drawingColor} onValueChange={setDrawingColor}>
+                <SelectTrigger className="w-16">
+                  <div
+                    className="w-4 h-4 rounded border"
+                    style={{ backgroundColor: drawingColor }}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {DRAWING_COLORS.map(color => (
+                    <SelectItem key={color} value={color}>
+                      <div
+                        className="w-6 h-6 rounded border"
+                        style={{ backgroundColor: color }}
+                      />
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                size="sm"
+                variant={eraserMode ? "default" : "outline"}
+                onClick={() => setEraserMode(!eraserMode)}
+              >
+                Eraser
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setAllDrawingPaths([])}
+              >
+                Clear All
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <svg
@@ -443,10 +633,23 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
           }}
         >
           {/* Drawing paths */}
+          {allDrawingPaths.map((drawing) => (
+            <path
+              key={drawing.id}
+              d={drawing.path.join(' ')}
+              stroke={drawing.color}
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ))}
+
+          {/* Current drawing path */}
           {drawingPath.length > 0 && (
             <path
               d={drawingPath.join(' ')}
-              stroke="#000000"
+              stroke={eraserMode ? '#ffffff' : drawingColor}
               strokeWidth="2"
               fill="none"
               strokeLinecap="round"
@@ -480,27 +683,17 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
             const toCenterY = toNode.y + toNode.height / 2;
 
             return (
-              <g key={conn.id}>
-                <line
-                  x1={fromCenterX}
-                  y1={fromCenterY}
-                  x2={toCenterX}
-                  y2={toCenterY}
-                  stroke={conn.color || CONNECTION_COLORS[0]}
-                  strokeWidth="2"
-                  markerEnd="url(#arrowhead)"
-                  className="drop-shadow-sm"
-                />
-                {/* Delete button */}
-                <circle
-                  cx={(fromCenterX + toCenterX) / 2}
-                  cy={(fromCenterY + toCenterY) / 2}
-                  r="8"
-                  fill="red"
-                  className="cursor-pointer hover:opacity-100 opacity-70"
-                  onClick={() => deleteConnection(conn.id)}
-                />
-              </g>
+              <line
+                key={conn.id}
+                x1={fromCenterX}
+                y1={fromCenterY}
+                x2={toCenterX}
+                y2={toCenterY}
+                stroke={conn.color || '#6b7280'}
+                strokeWidth="2"
+                markerEnd="url(#arrowhead)"
+                className="drop-shadow-sm"
+              />
             );
           })}
 
@@ -529,26 +722,14 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
                 textAnchor="middle"
                 dy="0.35em"
                 fill="#000000"
-                fontSize={node.level === 0 ? "14" : "12"}
+                fontSize={node.level === 0 ? "14" : node.level === 1 ? "12" : "11"}
                 fontWeight="600"
                 className="pointer-events-none"
               >
-                {wrapText(node.title, node.width - 16, parseInt(node.level === 0 ? "14" : "12")).map((line, i) => (
-                  <tspan key={i} x={node.x + node.width / 2} dy={i === 0 ? 0 : '1.2em'}>{line}</tspan>
+                {wrapText(node.title, node.width - 16, parseInt(node.level === 0 ? "14" : node.level === 1 ? "12" : "11")).map((line, i) => (
+                  <tspan key={i} x={node.x + node.width / 2} dy={i === 0 ? 0 : '1.1em'}>{line}</tspan>
                 ))}
               </text>
-
-              {/* Delete button for custom nodes */}
-              {node.level === -1 && (
-                <circle
-                  cx={node.x + node.width - 8}
-                  cy={node.y + 8}
-                  r="6"
-                  fill="red"
-                  className="cursor-pointer hover:opacity-100 opacity-70"
-                  onClick={() => deleteNode(node.id)}
-                />
-              )}
             </g>
           ))}
         </g>

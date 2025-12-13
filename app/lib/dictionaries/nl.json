@@ -1,4 +1,3 @@
-
 {
   "sidebar": {
     "dashboard": "Dashboard",
@@ -7,8 +6,8 @@
     "agenda": "Agenda",
     "settings": "Instellingen",
     "tools": {
-      "title": "AI Hulpmiddelen",
-      "quizGenerator": "Test",
+      "title": "Gereedschap",
+      "quizGenerator": "Quiz",
       "flashcardMaker": "Flashcards",
       "materialProcessor": "Materiaal Verwerken"
     }
@@ -57,7 +56,7 @@
     }
   },
   "tools": {
-    "title": "AI-Gereedschap",
+    "title": "Gereedschap",
     "description": "Jouw suite van intelligente hulpmiddelen om het leren te versnellen.",
     "select": "Selecteer Tool",
     "quiz": {

@@ -24,7 +24,7 @@ import {
   School,
   Calendar,
 } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+
 import { cn } from '@/lib/utils';
 import { useDictionary } from '@/contexts/app-context';
 import { RecentsSidebar } from './recents-sidebar';
