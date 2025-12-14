@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Sidebar,
-  SidebarHeader,
   SidebarContent,
   SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
   BookOpen,
@@ -18,7 +18,6 @@ import {
   BrainCircuit,
   Copy,
   FileSignature,
-  Pen,
   School,
   Calendar,
 } from 'lucide-react';
@@ -46,16 +45,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-blue-900 text-white">
-            <Pen className="h-7 w-7" />
-          </div>
-          <h1 className="text-2xl font-bold font-headline text-primary">
-            cautie
-          </h1>
-        </div>
-      </SidebarHeader>
+      <div className="absolute top-4 right-4 z-50">
+        <SidebarTrigger />
+      </div>
       <SidebarContent className="p-4 flex-1">
         <SidebarMenu>
           {menuItems.map((item) => (

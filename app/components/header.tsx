@@ -1,8 +1,9 @@
 "use client";
 
 import { useContext } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { SidebarTrigger } from "@/components/ui/sidebar";
+
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { AppContext, AppContextType, useDictionary } from '@/contexts/app-context';
@@ -16,6 +17,9 @@ export function AppHeader() {
   const { role, setRole, session } = useContext(AppContext) as AppContextType;
   const { dictionary } = useDictionary();
   const isStudent = role === 'student';
+  const pathname = usePathname();
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const breadcrumb = ['cautie', ...pathSegments].join(' > ');
 
   const userEmail = session?.user?.email;
   const userInitial = userEmail ? userEmail.charAt(0).toUpperCase() : '?';
@@ -28,8 +32,8 @@ export function AppHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card/80 backdrop-blur-sm px-4 md:px-6">
-      <SidebarTrigger/>
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 bg-card/80 backdrop-blur-sm px-4 md:px-6">
+
       {/* Logo */}
       <div className="flex items-center gap-2 mr-4">
         <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
@@ -39,7 +43,7 @@ export function AppHeader() {
       </div>
       <div className="flex-1">
         <h1 className="text-xl font-semibold font-headline">
-          { isStudent ? dictionary.header.studentDashboard : dictionary.header.teacherDashboard}
+          {breadcrumb}
         </h1>
       </div>
       <div className="flex items-center gap-4">

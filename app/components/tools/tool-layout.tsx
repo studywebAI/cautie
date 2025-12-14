@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { UploadCloud, FileText, ImageIcon, Globe, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -61,6 +62,7 @@ export function ToolLayout({
   isAssignmentContext = false,
 }: ToolLayoutProps) {
   const { toast } = useToast();
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -151,7 +153,7 @@ export function ToolLayout({
       </div>
 
       {/* Fixed bottom bar - non-scrollable */}
-      <div className="border-t bg-background p-4">
+      <div className="bg-background p-4">
         <div className="max-w-6xl mx-auto space-y-4">
           {/* Settings buttons row */}
           <div className="flex justify-center gap-4 flex-wrap">
@@ -214,7 +216,7 @@ export function ToolLayout({
           </div>
 
           {/* Input bar with buttons */}
-          <div className="flex items-end gap-3">
+          <div className="space-y-3">
             {/* Generate button */}
             <Button
               onClick={onGenerate}

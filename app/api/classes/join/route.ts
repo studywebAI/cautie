@@ -63,7 +63,7 @@ export async function POST(request: Request) {
   const { data: memberData, error: memberError } = await supabase
     .from('class_members')
     .select()
-    .eq('class_id', class_code)
+    .eq('class_id', classData.id)
     .eq('user_id', user.id)
     .single();
     
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   const { error: insertError } = await supabase
     .from('class_members')
     .insert([
-      { class_id: class_code, user_id: user.id, role: 'student' },
+      { class_id: classData.id, user_id: user.id, role: 'student' },
     ]);
 
   if (insertError) {
