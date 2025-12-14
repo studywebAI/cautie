@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pen, Eraser } from 'lucide-react';
 
 type MindmapNode = {
   id: string;
@@ -41,19 +40,6 @@ type ProfessionalMindmapRendererProps = {
   data: MindmapData;
   title?: string;
 };
-
-const DRAWING_COLORS = [
-  '#000000', // Black
-  '#FF0000', // Red
-  '#FFFF00', // Yellow
-  '#0000FF', // Blue
-  '#00FF00', // Green
-  '#FF00FF', // Magenta
-  '#00FFFF', // Cyan
-  '#FFA500', // Orange
-  '#800080', // Purple
-  '#FFC0CB', // Pink
-];
 
 const NODE_COLORS = [
   '#e5e7eb', '#fef3c7', '#dbeafe', '#dcfce7', '#fce7f3',
@@ -112,36 +98,6 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
   const [newNodeTitle, setNewNodeTitle] = useState('');
   const [newNodeColor, setNewNodeColor] = useState(NODE_COLORS[0]);
 
-  // Drawing state - only activated on right-click
-  const [drawingMode, setDrawingMode] = useState(false);
-  const [drawingPath, setDrawingPath] = useState<string[]>([]);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [drawingColor, setDrawingColor] = useState('#000000');
-  const [eraserMode, setEraserMode] = useState(false);
-  const [circleEraserMode, setCircleEraserMode] = useState(false);
-  const [circleStart, setCircleStart] = useState<{x: number, y: number} | null>(null);
-  const [allDrawingPaths, setAllDrawingPaths] = useState<Array<{path: string[], color: string, id: string}>>(() => {
-    // Load saved drawings
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`mindmap-drawings-${title || data.central}`);
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error('Failed to load saved drawings:', e);
-        }
-      }
-    }
-    return [];
-  });
-
-  // Save drawings to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(`mindmap-drawings-${title || data.central}`, JSON.stringify(allDrawingPaths));
-    }
-  }, [allDrawingPaths, title, data.central]);
-
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Touch event handlers for mobile support
@@ -173,11 +129,11 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
     setIsDragging(false);
   }, []);
 
-  // Calculate dimensions
-  const sidebarWidth = 280;
-  const containerPadding = 40;
-  const availableWidth = typeof window !== 'undefined' ? window.innerWidth - sidebarWidth - containerPadding * 2 : 800;
-  const availableHeight = typeof window !== 'undefined' ? window.innerHeight - 300 : 600;
+  // Calculate dimensions - make it full screen
+  const sidebarWidth = 0; // Remove sidebar space
+  const containerPadding = 20;
+  const availableWidth = typeof window !== 'undefined' ? window.innerWidth - containerPadding * 2 : 1200;
+  const availableHeight = typeof window !== 'undefined' ? window.innerHeight - 100 : 800; // Account for header
   const size = Math.min(availableWidth, availableHeight);
   const svgWidth = size;
   const svgHeight = size;
@@ -208,15 +164,15 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
     // Add branch nodes
     if (data.branches && data.branches.length > 0) {
       const branchCount = data.branches.length;
-      const radius = 200;
+      const radius = 250; // Increased radius for better spacing
       const angleStep = (2 * Math.PI) / branchCount;
 
       data.branches.forEach((branch, index) => {
         const angle = index * angleStep - Math.PI / 2; // Start from top
         const x = centerX + Math.cos(angle) * radius;
         const y = centerY + Math.sin(angle) * radius;
-        const width = Math.max(100, branch.topic.length * 8);
-        const height = 50;
+        const width = Math.max(120, branch.topic.length * 8);
+        const height = 55;
 
         allNodes.push({
           id: `branch-${index}`,
@@ -230,18 +186,42 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
           color: NODE_COLORS[index % NODE_COLORS.length]
         });
 
-        // Add sub-nodes
+        // Add sub-nodes with collision detection
         if (branch.subs && branch.subs.length > 0) {
-          const subRadius = 120;
-          const subAngleStep = Math.PI / 6; // Spread subs around the branch
+          const subRadius = 150;
+          const subAngleStep = Math.PI / 8; // Spread subs around the branch
           const baseAngle = angle;
 
           branch.subs.forEach((sub, subIndex) => {
             const subAngle = baseAngle + (subIndex - (branch.subs!.length - 1) / 2) * subAngleStep;
-            const subX = x + Math.cos(subAngle) * subRadius;
-            const subY = y + Math.sin(subAngle) * subRadius;
-            const subWidth = Math.max(80, sub.length * 6);
-            const subHeight = 40;
+            let subX = x + Math.cos(subAngle) * subRadius;
+            let subY = y + Math.sin(subAngle) * subRadius;
+            const subWidth = Math.max(100, sub.length * 7);
+            const subHeight = 45;
+
+            // Collision detection - ensure nodes don't overlap
+            let attempts = 0;
+            const maxAttempts = 20;
+            while (attempts < maxAttempts) {
+              let hasCollision = false;
+              for (const existingNode of allNodes) {
+                const dx = Math.abs(subX - (existingNode.x + existingNode.width / 2));
+                const dy = Math.abs(subY - (existingNode.y + existingNode.height / 2));
+                const minDistance = (subWidth + existingNode.width) / 2 + 20;
+
+                if (dx < minDistance && dy < minDistance) {
+                  hasCollision = true;
+                  // Try a different angle
+                  const newAngle = subAngle + (attempts + 1) * 0.3;
+                  subX = x + Math.cos(newAngle) * (subRadius + attempts * 10);
+                  subY = y + Math.sin(newAngle) * (subRadius + attempts * 10);
+                  break;
+                }
+              }
+
+              if (!hasCollision) break;
+              attempts++;
+            }
 
             allNodes.push({
               id: `sub-${index}-${subIndex}`,
@@ -304,32 +284,15 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
 
   // Event handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Only start drawing on right-click when drawing mode is active
-    if (drawingMode && e.button === 2 && e.target === svgRef.current) {
-      e.preventDefault();
-      setIsDrawing(true);
-      const rect = svgRef.current?.getBoundingClientRect();
-      if (rect) {
-        const x = (e.clientX - rect.left - pan.x) / zoom;
-        const y = (e.clientY - rect.top - pan.y) / zoom;
-        setDrawingPath([`M ${x} ${y}`]);
-      }
-    } else if (e.target === svgRef.current && e.button === 0) {
+    if (e.target === svgRef.current && e.button === 0) {
       // Left click for panning
       setIsDragging(true);
       setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
     }
-  }, [drawingMode, pan, zoom]);
+  }, [pan]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (isDrawing && drawingMode) {
-      const rect = svgRef.current?.getBoundingClientRect();
-      if (rect) {
-        const x = (e.clientX - rect.left - pan.x) / zoom;
-        const y = (e.clientY - rect.top - pan.y) / zoom;
-        setDrawingPath(prev => [...prev, `L ${x} ${y}`]);
-      }
-    } else if (draggingNode) {
+    if (draggingNode) {
       const rect = svgRef.current?.getBoundingClientRect();
       if (rect) {
         const svgX = (e.clientX - rect.left - pan.x) / zoom;
@@ -354,23 +317,12 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
         y: e.clientY - dragStart.y
       });
     }
-  }, [isDrawing, drawingMode, draggingNode, isDragging, pan, zoom, dragStart, nodeDragStart]);
+  }, [draggingNode, isDragging, pan, zoom, dragStart, nodeDragStart]);
 
   const handleMouseUp = useCallback(() => {
-    if (isDrawing && drawingPath.length > 1) {
-      // Save the completed drawing path
-      const newPath = {
-        path: drawingPath,
-        color: eraserMode ? '#ffffff' : drawingColor,
-        id: `drawing-${Date.now()}`
-      };
-      setAllDrawingPaths(prev => [...prev, newPath]);
-      setDrawingPath([]);
-    }
     setIsDragging(false);
     setDraggingNode(null);
-    setIsDrawing(false);
-  }, [isDrawing, drawingPath, drawingColor, eraserMode]);
+  }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -503,49 +455,6 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
     }
   }, [editingNode, editTitle, editDescription, editColor]);
 
-  // Collision detection helper
-  const checkCollision = useCallback((node1: MindmapNode, node2: MindmapNode, padding: number = 10) => {
-    return !(node1.x + node1.width + padding < node2.x ||
-             node2.x + node2.width + padding < node1.x ||
-             node1.y + node1.height + padding < node2.y ||
-             node2.y + node2.height + padding < node1.y);
-  }, []);
-
-  // Auto-position node to avoid collisions
-  const findNonCollidingPosition = useCallback((newNode: MindmapNode, existingNodes: MindmapNode[], centerX: number, centerY: number) => {
-    let x = newNode.x;
-    let y = newNode.y;
-    let attempts = 0;
-    const maxAttempts = 50;
-    const step = 20;
-
-    while (attempts < maxAttempts) {
-      let hasCollision = false;
-
-      for (const existingNode of existingNodes) {
-        if (checkCollision({ ...newNode, x, y }, existingNode)) {
-          hasCollision = true;
-          break;
-        }
-      }
-
-      if (!hasCollision) {
-        return { x, y };
-      }
-
-      // Try different positions in a spiral pattern
-      const angle = attempts * 0.5;
-      const radius = step * Math.sqrt(attempts + 1);
-      x = centerX + Math.cos(angle) * radius - newNode.width / 2;
-      y = centerY + Math.sin(angle) * radius - newNode.height / 2;
-
-      attempts++;
-    }
-
-    // If we can't find a non-colliding position, return the original
-    return { x: newNode.x, y: newNode.y };
-  }, [checkCollision]);
-
   const addNewNode = useCallback(() => {
     if (newNodeTitle.trim()) {
       const newNode: MindmapNode = {
@@ -569,7 +478,7 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
       setNewNodeColor(NODE_COLORS[0]);
       setShowAddNodeDialog(false);
     }
-  }, [newNodeTitle, newNodeColor, centerX, centerY, nodes, findNonCollidingPosition]);
+  }, [newNodeTitle, newNodeColor, centerX, centerY, nodes]);
 
   const wrapText = useCallback((text: string, maxWidth: number, fontSize: number = 12) => {
     const words = text.split(' ');
@@ -593,9 +502,9 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
   }, []);
 
   return (
-    <div className="relative w-full h-full border rounded overflow-hidden bg-background select-none">
+    <div className="fixed inset-0 bg-background select-none">
       {/* Toolbar */}
-      <div className="absolute top-2 left-2 z-10 flex gap-2 flex-wrap">
+      <div className="absolute top-4 left-4 z-10 flex gap-2 flex-wrap">
         <Button
           size="sm"
           onClick={() => setShowAddNodeDialog(true)}
@@ -647,63 +556,13 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
             Connect Nodes
           </Button>
         )}
-
-        {/* Drawing controls */}
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant={drawingMode ? "default" : "outline"}
-            onClick={() => setDrawingMode(!drawingMode)}
-          >
-            <Pen className="h-4 w-4" />
-          </Button>
-
-          {drawingMode && (
-            <>
-              <Select value={drawingColor} onValueChange={setDrawingColor}>
-                <SelectTrigger className="w-16">
-                  <div
-                    className="w-4 h-4 rounded border"
-                    style={{ backgroundColor: drawingColor }}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {DRAWING_COLORS.map(color => (
-                    <SelectItem key={color} value={color}>
-                      <div
-                        className="w-6 h-6 rounded border"
-                        style={{ backgroundColor: color }}
-                      />
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Button
-                size="sm"
-                variant={eraserMode ? "default" : "outline"}
-                onClick={() => setEraserMode(!eraserMode)}
-              >
-                <Eraser className="h-4 w-4" />
-              </Button>
-
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setAllDrawingPaths([])}
-              >
-                Clear All
-              </Button>
-            </>
-          )}
-        </div>
       </div>
 
       <svg
         ref={svgRef}
         width={svgWidth}
         height={svgHeight}
-        className={drawingMode ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"}
+        className="cursor-grab active:cursor-grabbing"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -721,31 +580,6 @@ export function ProfessionalMindmapRenderer({ data, title }: ProfessionalMindmap
             transformOrigin: 'center'
           }}
         >
-          {/* Drawing paths */}
-          {allDrawingPaths.map((drawing) => (
-            <path
-              key={drawing.id}
-              d={drawing.path.join(' ')}
-              stroke={drawing.color}
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          ))}
-
-          {/* Current drawing path */}
-          {drawingPath.length > 0 && (
-            <path
-              d={drawingPath.join(' ')}
-              stroke={eraserMode ? '#ffffff' : drawingColor}
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-
           {/* Arrow markers */}
           <defs>
             <marker

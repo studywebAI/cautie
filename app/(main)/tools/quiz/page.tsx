@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense, useCallback, useContext } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Swords, BookCheck, Shield, Sparkles } from 'lucide-react';
 import { QuizTaker, QuizMode } from '@/components/tools/quiz-taker';
@@ -81,6 +80,22 @@ function QuizPageContent() {
       handleGenerate(sourceTextFromParams);
     }
   }, [sourceTextFromParams, handleGenerate]);
+
+  // Add to recents when quiz is generated
+  useEffect(() => {
+    if (generatedQuiz && !isAssignmentContext) {
+      const title = uploadedFile
+        ? `${uploadedFile.name.split('.')[0]} Quiz`
+        : `Quiz from "${sourceText.slice(0, 30)}${sourceText.length > 30 ? '...' : ''}"`;
+
+      if ((window as any).recentsManager) {
+        (window as any).recentsManager.addRecent({
+          title,
+          type: 'quiz'
+        });
+      }
+    }
+  }, [generatedQuiz, uploadedFile, sourceText, isAssignmentContext]);
 
   const handleFormSubmit = () => {
     handleGenerate(sourceText);
@@ -214,27 +229,7 @@ function QuizPageContent() {
       additionalSettings={additionalSettings}
       subjectCards={subjectCards}
       isAssignmentContext={isAssignmentContext}
-    >
-      <Card>
-        <CardHeader>
-          <CardTitle>Create a Quiz</CardTitle>
-          <CardDescription>
-            Upload a file or paste text to generate your quiz.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Use the input area below to add your content and customize your quiz settings.
-          </p>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={mainButtonAction} disabled={totalLoading || !sourceText}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : mainButtonIcon}
-            {isLoading ? 'Generating...' : finalButtonText}
-          </Button>
-        </CardFooter>
-      </Card>
-    </ToolLayout>
+    />
   );
 }
 

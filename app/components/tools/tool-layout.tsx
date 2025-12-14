@@ -222,6 +222,15 @@ export function ToolLayout({
 
           {/* Input bar with buttons */}
           <div className="flex items-end gap-3">
+            {/* Generate button */}
+            <Button
+              onClick={onGenerate}
+              disabled={isLoading || isProcessingFile || !sourceText.trim()}
+              className="px-6"
+            >
+              {isLoading ? 'Generating...' : 'Generate'}
+            </Button>
+
             <div className="flex-1">
               <Textarea
                 placeholder="Create notes from text, files, or previous projects..."

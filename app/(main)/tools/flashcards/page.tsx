@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense, useContext, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, BookCheck } from 'lucide-react';
 import { FlashcardViewer, StudyMode } from '@/components/tools/flashcard-viewer';
@@ -75,6 +74,22 @@ function FlashcardsPageContent() {
       handleGenerate(sourceTextFromParams);
     }
   }, [sourceTextFromParams, handleGenerate]);
+
+  // Add to recents when flashcards are generated
+  useEffect(() => {
+    if (generatedCards && generatedCards.length > 0 && !isAssignmentContext) {
+      const title = uploadedFile
+        ? `${uploadedFile.name.split('.')[0]} Flashcards`
+        : `Flashcards from "${sourceText.slice(0, 30)}${sourceText.length > 30 ? '...' : ''}"`;
+
+      if ((window as any).recentsManager) {
+        (window as any).recentsManager.addRecent({
+          title,
+          type: 'flashcards'
+        });
+      }
+    }
+  }, [generatedCards, uploadedFile, sourceText, isAssignmentContext]);
 
   const handleFormSubmit = () => {
       handleGenerate(sourceText);
@@ -182,31 +197,7 @@ function FlashcardsPageContent() {
       additionalSettings={additionalSettings}
       subjectCards={subjectCards}
       isAssignmentContext={isAssignmentContext}
-    >
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate Flashcards</CardTitle>
-          <CardDescription>
-            Upload a file or paste text to generate your flashcards.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Use the input area below to add your content and customize your flashcard settings.
-          </p>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={handleFormSubmit} disabled={totalLoading || !sourceText}>
-            {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              mainButtonIcon
-            )}
-            {isLoading ? 'Generating...' : 'Generate with AI'}
-          </Button>
-        </CardFooter>
-      </Card>
-    </ToolLayout>
+    />
   );
 }
 

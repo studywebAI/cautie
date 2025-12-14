@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useContext, Suspense } from 'react';
+import React, { useState, useContext, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles } from 'lucide-react';
 import { AppContext } from '@/contexts/app-context';
@@ -83,6 +82,22 @@ function NotesPageContent() {
   const handleFormSubmit = () => {
     handleGenerate(sourceText);
   };
+
+  // Add to recents when notes are generated
+  useEffect(() => {
+    if (generatedNotes) {
+      const title = uploadedFile
+        ? `${uploadedFile.name.split('.')[0]} Notes`
+        : `Notes from "${sourceText.slice(0, 30)}${sourceText.length > 30 ? '...' : ''}"`;
+
+      if ((window as any).recentsManager) {
+        (window as any).recentsManager.addRecent({
+          title,
+          type: 'notes'
+        });
+      }
+    }
+  }, [generatedNotes, uploadedFile, sourceText]);
 
   const handleRestart = () => {
     setGeneratedNotes(null);
@@ -196,31 +211,7 @@ function NotesPageContent() {
       modeButtonText="Note Style"
       additionalSettings={additionalSettings}
       subjectCards={subjectCards}
-    >
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate Notes</CardTitle>
-          <CardDescription>
-            Upload a file or paste text to generate your notes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Use the input area below to add your content and customize your note settings.
-          </p>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={handleFormSubmit} disabled={totalLoading || !sourceText}>
-            {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="mr-2 h-4 w-4" />
-            )}
-            {isLoading ? 'Generating...' : 'Generate Notes'}
-          </Button>
-        </CardFooter>
-      </Card>
-    </ToolLayout>
+    />
   );
 }
 
