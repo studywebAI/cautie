@@ -4,9 +4,6 @@ import React, { useState, useEffect, Suspense, useCallback, useContext } from 'r
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Loader2, Swords, BookCheck, Shield, Sparkles } from 'lucide-react';
 import { QuizTaker, QuizMode } from '@/components/tools/quiz-taker';
 import { AppContext } from '@/contexts/app-context';
@@ -149,6 +146,25 @@ function QuizPageContent() {
     { value: 'duel', label: 'Duel (1v1)' },
   ];
 
+  // Generate subject cards based on uploaded content
+  const subjectCards = uploadedFile ? [
+    { title: `${uploadedFile.name.split('.')[0]} Quiz`, type: 'Quiz' },
+    { title: `${uploadedFile.name.split('.')[0]} Test`, type: 'Test' },
+    { title: `${uploadedFile.name.split('.')[0]} Review`, type: 'Review' },
+  ] : [];
+
+  const additionalSettings = [
+    {
+      label: 'Edit Mode',
+      value: isEditMode,
+      onChange: setIsEditMode,
+      options: [
+        { value: false, label: 'Direct Start' },
+        { value: true, label: 'Review & Edit' },
+      ]
+    }
+  ];
+
   if (isLoading) {
      return (
        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-8">
@@ -192,44 +208,24 @@ function QuizPageContent() {
       selectedMode={quizMode}
       onModeChange={(mode) => setQuizMode(mode as QuizMode)}
       modeButtonText="Quiz Mode"
+      countValue={questionCount}
+      onCountChange={setQuestionCount}
+      countLabel="Questions"
+      additionalSettings={additionalSettings}
+      subjectCards={subjectCards}
       isAssignmentContext={isAssignmentContext}
     >
       <Card>
         <CardHeader>
           <CardTitle>Create a Quiz</CardTitle>
           <CardDescription>
-            Choose your settings and let the AI build your quiz.
+            Upload a file or paste text to generate your quiz.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-            <div className="space-y-2">
-              <Label htmlFor="question-count">Number of Questions</Label>
-              <Input
-                id="question-count"
-                type="number"
-                value={questionCount}
-                onChange={(e) => setQuestionCount(Number(e.target.value))}
-                min={1}
-                max={50}
-                placeholder="Enter number of questions"
-                disabled={quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel' || quizMode === 'boss-fight'}
-              />
-              {(quizMode === 'survival' || quizMode === 'adaptive' || quizMode === 'duel' || quizMode === 'boss-fight') && <p className="text-xs text-muted-foreground">Number of questions is managed by the AI in this mode.</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-mode">Options</Label>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="edit-mode"
-                  checked={isEditMode}
-                  onCheckedChange={setIsEditMode}
-                  disabled={quizMode === 'adaptive' || quizMode === 'duel' || quizMode === 'boss-fight'}
-                />
-                <Label htmlFor="edit-mode" className="text-sm">Review & Edit Before Starting</Label>
-              </div>
-            </div>
-          </div>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Use the input area below to add your content and customize your quiz settings.
+          </p>
         </CardContent>
         <CardFooter>
           <Button onClick={mainButtonAction} disabled={totalLoading || !sourceText}>

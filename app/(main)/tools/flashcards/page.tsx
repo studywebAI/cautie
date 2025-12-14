@@ -4,9 +4,6 @@ import React, { useState, useEffect, Suspense, useContext, useCallback } from 'r
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Loader2, Sparkles, BookCheck } from 'lucide-react';
 import { FlashcardViewer, StudyMode } from '@/components/tools/flashcard-viewer';
 import { AppContext } from '@/contexts/app-context';
@@ -115,8 +112,27 @@ function FlashcardsPageContent() {
 
   const studyModeOptions = [
     { value: 'flip', label: 'Classic Flip' },
-    { value: 'type', label: 'Type (Active Recall)' },
+    { value: 'type', label: 'Active Recall' },
     { value: 'multiple-choice', label: 'Multiple Choice' },
+  ];
+
+  // Generate subject cards based on uploaded content
+  const subjectCards = uploadedFile ? [
+    { title: `${uploadedFile.name.split('.')[0]} Flashcards`, type: 'Flashcards' },
+    { title: `${uploadedFile.name.split('.')[0]} Study`, type: 'Study Set' },
+    { title: `${uploadedFile.name.split('.')[0]} Review`, type: 'Review' },
+  ] : [];
+
+  const additionalSettings = [
+    {
+      label: 'Edit Mode',
+      value: isEditMode,
+      onChange: setIsEditMode,
+      options: [
+        { value: false, label: 'Direct Start' },
+        { value: true, label: 'Review & Edit' },
+      ]
+    }
   ];
 
   if (isLoading) {
@@ -160,41 +176,24 @@ function FlashcardsPageContent() {
       selectedMode={studyMode}
       onModeChange={(mode) => setStudyMode(mode as StudyMode)}
       modeButtonText="Study Mode"
+      countValue={flashcardCount}
+      onCountChange={setFlashcardCount}
+      countLabel="Cards"
+      additionalSettings={additionalSettings}
+      subjectCards={subjectCards}
       isAssignmentContext={isAssignmentContext}
     >
       <Card>
         <CardHeader>
           <CardTitle>Generate Flashcards</CardTitle>
           <CardDescription>
-            Choose your settings and let the AI create your flashcards.
+            Upload a file or paste text to generate your flashcards.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-            <div className="space-y-2">
-                <Label htmlFor="flashcard-count">Number of Flashcards</Label>
-                <Input
-                    id="flashcard-count"
-                    type="number"
-                    value={flashcardCount}
-                    onChange={(e) => setFlashcardCount(Number(e.target.value))}
-                    min={1}
-                    max={50}
-                    placeholder="Enter number of flashcards"
-                />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-mode">Options</Label>
-              <div className="flex items-center space-x-2">
-                <Switch
-                    id="edit-mode"
-                    checked={isEditMode}
-                    onCheckedChange={setIsEditMode}
-                />
-                <Label htmlFor="edit-mode" className="text-sm">Review & Edit Before Starting</Label>
-              </div>
-            </div>
-          </div>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Use the input area below to add your content and customize your flashcard settings.
+          </p>
         </CardContent>
         <CardFooter>
           <Button onClick={handleFormSubmit} disabled={totalLoading || !sourceText}>
