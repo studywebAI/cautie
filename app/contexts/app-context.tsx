@@ -96,7 +96,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [reducedMotion, setReducedMotionState] = useState(false);
 
   // Theme state
-  const [theme, setThemeState] = useState<ThemeType>('light');
+  const [theme, setThemeState] = useState<ThemeType>('pastel');
 
   const [sessionRecap, setSessionRecap] = useState<SessionRecapData | null>(null);
 

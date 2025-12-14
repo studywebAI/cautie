@@ -9,7 +9,8 @@
       "title": "Tools",
       "quizGenerator": "Quiz",
       "flashcardMaker": "Flashcards",
-      "materialProcessor": "Process Material"
+      "materialProcessor": "Process Material",
+      "notes": "Notes"
     }
   },
   "header": {

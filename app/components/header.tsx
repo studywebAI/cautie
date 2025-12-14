@@ -30,6 +30,13 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card/80 backdrop-blur-sm px-4 md:px-6">
       <SidebarTrigger/>
+      {/* Logo */}
+      <div className="flex items-center gap-2 mr-4">
+        <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+          <span className="text-primary-foreground font-bold text-sm">C</span>
+        </div>
+        <span className="font-bold text-lg hidden sm:block">Cautie</span>
+      </div>
       <div className="flex-1">
         <h1 className="text-xl font-semibold font-headline">
           { isStudent ? dictionary.header.studentDashboard : dictionary.header.teacherDashboard}

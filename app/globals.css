@@ -171,13 +171,13 @@
   }
 
   .theme-pastel {
-    --background: 50 20% 98%; /* Pastel off-white */
+    --background: 45 15% 97%; /* Very light cream/beige */
     --foreground: 240 10% 3.9%;
     --card: 120 30% 95%; /* Pastel blue */
     --card-foreground: 240 10% 3.9%;
     --popover: 120 30% 95%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 160 60% 70%; /* Pastel green */
+    --primary: 120 40% 35%; /* Aula F75 Cedar green */
     --primary-foreground: 0 0% 98%;
     --secondary: 50 20% 95%;
     --secondary-foreground: 240 5.9% 10%;

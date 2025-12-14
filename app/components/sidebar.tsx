@@ -41,7 +41,7 @@ export function AppSidebar() {
   const toolsMenuItems = [
     { href: '/tools/quiz', label: dictionary.sidebar.tools.quizGenerator, icon: BrainCircuit },
     { href: '/tools/flashcards', label: dictionary.sidebar.tools.flashcardMaker, icon: Copy },
-    { href: '/tools/notes', label: 'Notes', icon: FileSignature },
+    { href: '/tools/notes', label: dictionary.sidebar.tools.notes, icon: FileSignature },
   ];
 
   return (
@@ -62,7 +62,7 @@ export function AppSidebar() {
             <SidebarMenuItem key={item.label}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href && item.href === '/'}
+                isActive={pathname === item.href}
                 tooltip={item.label}
                 className="font-medium"
               >

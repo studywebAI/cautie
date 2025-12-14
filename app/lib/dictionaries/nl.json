@@ -9,7 +9,8 @@
       "title": "Gereedschap",
       "quizGenerator": "Quiz",
       "flashcardMaker": "Flashcards",
-      "materialProcessor": "Materiaal Verwerken"
+      "materialProcessor": "Materiaal Verwerken",
+      "notes": "Notities"
     }
   },
   "header": {
@@ -91,5 +92,32 @@
     "eventsOn": "Gebeurtenissen op",
     "noEvents": "Geen gebeurtenissen gepland voor deze dag.",
     "addTask": "Taak Toevoegen"
+  },
+  "setup": {
+    "welcome": "Welkom bij Cautie",
+    "getStarted": "Laten we je instellen",
+    "step": "Stap",
+    "of": "van",
+    "next": "Volgende",
+    "back": "Terug",
+    "finish": "Installatie Voltooien",
+    "language": {
+      "title": "Kies je taal",
+      "description": "Selecteer de taal die je in de app wilt gebruiken."
+    },
+    "theme": {
+      "title": "Kies je thema",
+      "description": "Kies een kleurenschema dat bij je past."
+    },
+    "profile": {
+      "title": "Stel je profiel in",
+      "description": "Vertel ons een beetje over jezelf om je ervaring te personaliseren.",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "role": "Ik ben een...",
+      "student": "Student",
+      "teacher": "Docent",
+      "saveProfile": "Profiel Opslaan"
+    }
   }
 }

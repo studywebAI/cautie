@@ -175,26 +175,19 @@ export function ToolLayout({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Count button */}
+            {/* Count input */}
             {countValue !== undefined && onCountChange && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="min-w-[80px]">
-                    {countValue}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" side="top">
-                  {countOptions.map((option) => (
-                    <DropdownMenuItem
-                      key={option}
-                      onClick={() => onCountChange(option)}
-                      className={countValue === option ? 'bg-accent' : ''}
-                    >
-                      {option}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">{countLabel}:</span>
+                <Input
+                  type="number"
+                  value={countValue}
+                  onChange={(e) => onCountChange(parseInt(e.target.value) || 1)}
+                  className="w-20 h-8 text-center"
+                  min="1"
+                  max="100"
+                />
+              </div>
             )}
 
             {/* Additional settings buttons */}

@@ -18,6 +18,7 @@ function FlashcardsPageContent() {
   const context = searchParams.get('context');
   const classId = searchParams.get('classId');
   const isAssignmentContext = context === 'assignment';
+  const { language } = useContext(AppContext);
 
   const [sourceText, setSourceText] = useState(sourceTextFromParams || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +44,7 @@ function FlashcardsPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           flowName: 'generateFlashcards',
-          input: { sourceText: text, count: flashcardCount },
+          input: { sourceText: text, count: flashcardCount, language },
         }),
       });
       if (!apiResponse.ok) {
