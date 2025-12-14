@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Swords, BookCheck, Shield, Sparkles } from 'lucide-react';
 import { QuizTaker, QuizMode } from '@/components/tools/quiz-taker';
 import { AppContext } from '@/contexts/app-context';
-import { useContext } from 'react';
+
 import type { Quiz } from '@/lib/types';
 import { QuizDuel } from '@/components/tools/quiz-duel';
 import { QuizEditor } from '@/components/tools/quiz-editor';
@@ -20,7 +20,9 @@ function QuizPageContent() {
   const context = searchParams.get('context');
   const classId = searchParams.get('classId');
   const isAssignmentContext = context === 'assignment';
-  const { language } = useContext(AppContext);
+  const appContext = useContext(AppContext);
+  if (!appContext) return null;
+  const { language } = appContext;
 
   const [sourceText, setSourceText] = useState(sourceTextFromParams || '');
   const [isLoading, setIsLoading] = useState(false);

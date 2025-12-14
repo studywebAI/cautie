@@ -18,7 +18,9 @@ function FlashcardsPageContent() {
   const context = searchParams.get('context');
   const classId = searchParams.get('classId');
   const isAssignmentContext = context === 'assignment';
-  const { language } = useContext(AppContext);
+  const appContext = useContext(AppContext);
+  if (!appContext) return null;
+  const { language } = appContext;
 
   const [sourceText, setSourceText] = useState(sourceTextFromParams || '');
   const [isLoading, setIsLoading] = useState(false);
