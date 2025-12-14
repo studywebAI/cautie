@@ -232,10 +232,11 @@
     }
   }
 }
-"/* Hide scrollbars */" 
-"::-webkit-scrollbar {" 
-"  display: none;" 
-"}"  
-"* {"  
-"  scrollbar-width: none;"  
-"}" 
+
+/* Hide scrollbars */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  scrollbar-width: none;
+}
