@@ -54,6 +54,7 @@ CREATE TABLE "public"."classes" (
     "name" text NOT NULL,
     "description" text,
     "owner_id" uuid NOT NULL,
+    "join_code" text UNIQUE,
     CONSTRAINT "classes_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "classes_owner_id_fkey" FOREIGN KEY (owner_id) REFERENCES auth.users (id) ON DELETE CASCADE
 );

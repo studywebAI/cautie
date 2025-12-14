@@ -1,3 +1,6 @@
+-- Add join_code to classes table
+ALTER TABLE public.classes ADD COLUMN IF NOT EXISTS join_code text UNIQUE;
+
 -- Add missing tables for full application functionality
 -- Run this in your Supabase SQL editor
 
