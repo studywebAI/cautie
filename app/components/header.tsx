@@ -19,7 +19,6 @@ export function AppHeader() {
   const isStudent = role === 'student';
   const pathname = usePathname();
   const pathSegments = pathname.split('/').filter(Boolean);
-  const breadcrumb = ['cautie', ...pathSegments].join(' > ');
 
   const userEmail = session?.user?.email;
   const userInitial = userEmail ? userEmail.charAt(0).toUpperCase() : '?';
@@ -33,18 +32,24 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 bg-card/80 backdrop-blur-sm px-4 md:px-6">
-
-      {/* Logo */}
-      <div className="flex items-center gap-2 mr-4">
-        <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-          <span className="text-primary-foreground font-bold text-sm">C</span>
-        </div>
-        <span className="font-bold text-lg hidden sm:block">Cautie</span>
-      </div>
       <div className="flex-1">
-        <h1 className="text-xl font-semibold font-headline">
-          {breadcrumb}
-        </h1>
+        <nav className="text-xl font-semibold font-headline">
+          {pathSegments.length === 0 ? (
+            <span>Dashboard</span>
+          ) : (
+            <span>
+              <Link href="/" className="hover:underline">cautie</Link>
+              {pathSegments.map((segment, index) => (
+                <span key={index}>
+                  {' > '}
+                  <Link href={`/${pathSegments.slice(0, index + 1).join('/')}`} className="hover:underline">
+                    {segment}
+                  </Link>
+                </span>
+              ))}
+            </span>
+          )}
+        </nav>
       </div>
       <div className="flex items-center gap-4">
         {session ? (
