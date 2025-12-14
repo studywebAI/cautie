@@ -217,7 +217,7 @@ function NotesPageContent() {
 
 export default function NotesPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>Loading..</div>}>
       <NotesPageContent />
     </Suspense>
   );
