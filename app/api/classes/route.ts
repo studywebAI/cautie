@@ -118,7 +118,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('classes')
     .insert([insertData])
-    .select()
+    .select('*')
     .single();
 
   if (error) {

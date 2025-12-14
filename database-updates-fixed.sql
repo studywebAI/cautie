@@ -74,8 +74,11 @@ ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own materials" ON public.materials FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can view public materials" ON public.materials FOR SELECT USING (is_public = true);
 
+DROP POLICY IF EXISTS "Users can manage their own tasks" ON public.personal_tasks;
 CREATE POLICY "Users can manage their own tasks" ON public.personal_tasks FOR ALL USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can manage their own sessions" ON public.user_sessions;
 CREATE POLICY "Users can manage their own sessions" ON public.user_sessions FOR ALL USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can manage their own preferences" ON public.user_preferences;
 CREATE POLICY "Users can manage their own preferences" ON public.user_preferences FOR ALL USING (auth.uid() = user_id);
