@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase
       .from('classes')
       .select('*')
-      .eq('owner_id', session.user.id);
+      .eq('user_id', session.user.id);
     
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     ownedClasses = data;
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   do {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     joinCode = '';
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
       joinCode += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     const { data: existing } = await supabase
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     name, 
     description,
     join_code: joinCode,
-    owner_id: user?.id || null,
+    user_id: user?.id || null,
     guest_id: guestId || null,
     owner_type: user ? 'user' : 'guest'
   };
