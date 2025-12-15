@@ -33,8 +33,8 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
   const [createdClass, setCreatedClass] = useState<any>(null);
   const { toast } = useToast();
   
-  const inviteLink = createdClass ? `${window.location.origin}/classes/join/${createdClass.join_code}` : '';
-  const qrCodeUrl = createdClass ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(inviteLink)}` : '';
+  const inviteLink = createdClass?.join_code ? `${window.location.origin}/classes/join/${createdClass.join_code}` : '';
+  const qrCodeUrl = inviteLink ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(inviteLink)}` : '';
 
 
   const handleCreate = async () => {

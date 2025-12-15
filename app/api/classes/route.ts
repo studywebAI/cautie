@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase
       .from('classes')
       .select('*')
-      .eq('user_id', session.user.id);
+      .eq('owner_id', session.user.id);
     
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     ownedClasses = data;
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
     const { data: memberClassesData, error: memberError } = await supabase
       .from('class_members')
       .select('classes(*)')
-      .eq('member_id', session.user.id);
+      .eq('user_id', session.user.id);
     
     if (memberError) return NextResponse.json({ error: memberError.message }, { status: 500 });
     
@@ -110,14 +110,14 @@ export async function POST(request: Request) {
     name, 
     description,
     join_code: joinCode,
-    user_id: user?.id || null,
+    owner_id: user?.id || null,
     guest_id: guestId || null,
     owner_type: user ? 'user' : 'guest'
   };
   
   const { data, error } = await supabase
     .from('classes')
-    .insert([insertData])
+    .insert([insertData as any])
     .select('id, name, description, join_code')
     .single();
 
