@@ -135,7 +135,7 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
                 <div className='space-y-2'>
                     <Label>Join Code</Label>
                     <div className="flex w-full items-center space-x-2">
-                       <Input type="text" value={createdClass?.join_code} readOnly />
+                       <Input type="text" value={createdClass?.join_code || 'Error: Join code not generated'} readOnly />
                        <Button type="submit" size="icon" onClick={() => copyToClipboard(createdClass?.join_code || '', 'code')}>
                          <Copy className="h-4 w-4" />
                        </Button>
