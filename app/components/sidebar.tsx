@@ -9,6 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
   BookOpen,
@@ -45,6 +46,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
+      <div className="absolute top-4 right-4 z-50">
+        <SidebarTrigger />
+      </div>
       <SidebarContent className="p-4 flex-1">
         <SidebarMenu>
           {menuItems.map((item) => (
