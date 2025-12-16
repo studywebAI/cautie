@@ -97,7 +97,7 @@ export default function Login({
     }
 
     if (data.user && !data.session) {
-      return redirect('/login?message=Account created successfully! You can now sign in.&type=info');
+      return redirect(`/auth/confirm-email?email=${encodeURIComponent(email)}&message=Please check your email for the 6-digit verification code.`);
     }
 
     return redirect('/login?message=An unexpected error occurred. Please try again.');
