@@ -35,17 +35,20 @@ export function AppHeader() {
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 bg-card/80 backdrop-blur-sm px-4 md:px-6">
 
       <div className="flex-1">
-        <nav className="text-xl font-semibold font-headline">
+        <nav className="text-xl font-semibold font-headline flex items-center space-x-2">
           {pathSegments.length === 0 ? (
             <span>Dashboard</span>
           ) : (
             <span>
-              <Link href="/" className="hover:underline">cautie</Link>
+              <Link href="/" className="hover:text-primary transition-colors">cautie</Link>
               {pathSegments.map((segment, index) => (
-                <span key={index}>
-                  {' > '}
-                  <Link href={`/${pathSegments.slice(0, index + 1).join('/')}`} className="hover:underline">
-                    {segment}
+                <span key={index} className="flex items-center space-x-2">
+                  <span className="text-muted-foreground">/</span>
+                  <Link
+                    href={`/${pathSegments.slice(0, index + 1).join('/')}`}
+                    className="hover:text-primary transition-colors capitalize"
+                  >
+                    {segment.replace('-', ' ')}
                   </Link>
                 </span>
               ))}

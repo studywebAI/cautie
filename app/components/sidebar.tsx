@@ -34,7 +34,7 @@ export function AppSidebar() {
     { href: '/subjects', label: dictionary.sidebar.subjects, icon: BookOpen },
     { href: '/classes', label: dictionary.sidebar.classes, icon: School },
     { href: '/agenda', label: dictionary.sidebar.agenda, icon: Calendar },
-    { href: '/material', label: dictionary.sidebar.tools.materialProcessor, icon: FileSignature },
+    { href: '/material', label: 'Material', icon: FileSignature },
   ];
 
   const toolsMenuItems = [
@@ -46,10 +46,10 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <div className="absolute top-4 right-4 z-50">
+      <div className="absolute top-1/2 right-0 transform -translate-y-1/2 z-50">
         <SidebarTrigger />
       </div>
-      <SidebarContent className="p-4 flex-1">
+      <SidebarContent className="px-6 py-4 flex-1">
         <SidebarMenu>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.label}>

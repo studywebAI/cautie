@@ -128,7 +128,7 @@ export const StandaloneBlockEditor: React.FC<StandaloneBlockEditorProps> = ({
   };
 
   return (
-    <div className={`block-editor space-y-4 ${className}`}>
+    <div className={`block-editor space-y-4 max-h-96 overflow-y-auto ${className}`}>
       {blocks.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
           <p>No blocks yet. Add your first block below!</p>
