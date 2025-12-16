@@ -22,7 +22,7 @@ export default function ConfirmEmailPage({
     const { error } = await supabase.auth.verifyOtp({
       email,
       token,
-      type: 'signup',
+      type: 'email',
     });
 
     if (error) {
