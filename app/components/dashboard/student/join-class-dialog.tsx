@@ -51,7 +51,7 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined, initialCode 
     setIsCheckingCode(true);
     setClassToJoin(null);
     try {
-        const response = await fetch(`/api/classes/${codeToCheck}`);
+        const response = await fetch(`/api/classes/join?code=${codeToCheck}`);
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Failed to find class.');
