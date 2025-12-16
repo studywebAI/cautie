@@ -10,13 +10,3 @@
 - Material Library: A central location to upload, organize, and share learning materials (PDFs, presentations, links, AI summaries) per class.
 - Q&A System: A simple Q&A for each class where AI will generate an initial answer that docents can verify.
 
-## Style Guidelines:
-
-- Primary color: Deep purple (#6750A4) for a scholarly and focused feel.
-- Background color: Light grey (#F2F0F4) for a clean and modern look.
-- Accent color: Teal (#00A36C) to draw attention to actions and information.
-- Body font: 'Inter', sans-serif, known for its readability.
-- Headline font: 'Space Grotesk', sans-serif, gives an edgy tech feeling
-- Use simple, line-based icons for easy understanding and quick visual recognition.
-- Clean and spaced design that is both compact but not crowded
-- Subtle, elegant transitions and feedback, focusing on user delight
