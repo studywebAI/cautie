@@ -9,7 +9,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <SidebarProvider>
             <AppSidebar />
             <SidebarInset className="bg-background h-screen flex flex-col">
-                <div className="p-4">
+                <div className="fixed top-4 left-4 z-50">
                     <SidebarTrigger />
                 </div>
                 <AppHeader />
