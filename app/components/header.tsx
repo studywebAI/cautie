@@ -11,7 +11,7 @@ import { BookUser, User, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { SidebarTrigger } from './ui/sidebar';
+
 
 
 export function AppHeader() {
@@ -33,7 +33,7 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 bg-card/80 backdrop-blur-sm px-4 md:px-6">
-      <SidebarTrigger />
+
       <div className="flex-1">
         <nav className="text-xl font-semibold font-headline">
           {pathSegments.length === 0 ? (
