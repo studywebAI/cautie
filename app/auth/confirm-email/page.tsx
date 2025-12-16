@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -14,8 +13,7 @@ export default function ConfirmEmailPage({
 
     const token = formData.get('token') as string;
     const email = searchParams.email;
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await createClient(cookies());
 
     if (!email || !token) {
         return redirect(`/auth/confirm-email?email=${encodeURIComponent(email)}&message=Email and code are required.`);
