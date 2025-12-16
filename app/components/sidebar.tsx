@@ -9,7 +9,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
   BookOpen,
@@ -41,13 +40,11 @@ export function AppSidebar() {
     { href: '/tools/quiz', label: dictionary.sidebar.tools.quizGenerator, icon: BrainCircuit },
     { href: '/tools/flashcards', label: dictionary.sidebar.tools.flashcardMaker, icon: Copy },
     { href: '/tools/notes', label: dictionary.sidebar.tools.notes, icon: FileSignature },
+    { href: '/tools/blocks', label: 'Block Editor', icon: FileSignature },
   ];
 
   return (
     <Sidebar>
-      <div className="absolute top-4 right-4 z-50">
-        <SidebarTrigger />
-      </div>
       <SidebarContent className="p-4 flex-1">
         <SidebarMenu>
           {menuItems.map((item) => (
