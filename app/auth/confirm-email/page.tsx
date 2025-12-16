@@ -22,7 +22,7 @@ export default function ConfirmEmailPage({
     const { error } = await supabase.auth.verifyOtp({
       email,
       token,
-      type: 'signup',
+      type: 'email',
     });
 
     if (error) {
@@ -34,32 +34,38 @@ export default function ConfirmEmailPage({
   };
 
   return (
-    <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2">
-      <h1 className="text-2xl font-bold mb-4">Check your email</h1>
-      <p className="text-muted-foreground mb-4">
-        We've sent a 6-digit code to <strong>{searchParams.email}</strong>. Please enter it below to confirm your email address.
-      </p>
-      <form
-        className="flex-1 flex flex-col w-full justify-center gap-2 text-foreground"
-        action={verifyOtp}
-      >
-        <label className="text-md" htmlFor="token">Verification Code</label>
-        <input
-          className="rounded-md px-4 py-2 bg-inherit border mb-6"
-          name="token"
-          placeholder="123456"
-          required
-        />
-        <button className="bg-primary text-primary-foreground py-2 px-4 rounded-md">
-          Verify Email
-        </button>
-
-        {searchParams?.message && (
-          <p className="mt-4 p-4 bg-foreground/10 text-foreground text-center">
-            {searchParams.message}
+    <div className="flex items-center justify-center min-h-screen p-4 bg-background">
+      <div className="mx-auto max-w-md w-full space-y-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Check your email</h1>
+          <p className="text-muted-foreground mt-2">
+            We've sent a verification code to <strong>{searchParams.email}</strong>. Please enter it below to confirm your email address.
           </p>
-        )}
-      </form>
+        </div>
+        <form
+          className="space-y-4"
+          action={verifyOtp}
+        >
+          <div className="space-y-2">
+            <label className="text-md font-medium" htmlFor="token">Verification Code</label>
+            <input
+              className="w-full rounded-md px-4 py-2 bg-inherit border"
+              name="token"
+              placeholder="Enter verification code"
+              required
+            />
+          </div>
+          <button className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md">
+            Verify Email
+          </button>
+
+          {searchParams?.message && (
+            <p className="p-4 bg-muted text-foreground text-center rounded-lg">
+              {searchParams.message}
+            </p>
+          )}
+        </form>
+      </div>
     </div>
   );
 }

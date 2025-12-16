@@ -2,13 +2,6 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2 } from 'lucide-react'
@@ -63,124 +56,123 @@ export function AuthForm({
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4 bg-background">
-      <Card className="mx-auto max-w-md w-full">
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold text-center">Welcome to cautie</CardTitle>
-          <CardDescription className="text-center text-base">
+      <div className="mx-auto max-w-md w-full space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Welcome to cautie</h1>
+          <p className="text-base text-muted-foreground mt-2">
             {step === 'credentials'
               ? `Enter your email and password to ${isSignUp ? 'create an account' : 'sign in'}`
-              : 'Enter the 6-digit code sent to your email'
+              : 'Enter the verification code sent to your email'
             }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4">
-            {step === 'credentials' ? (
-              <form onSubmit={handleCredentialsSubmit} className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="m@example.com"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-                <Button type="submit" disabled={isLoading || !email.trim() || !password.trim()}>
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {step === 'credentials' ? (
+            <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="m@example.com"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <Button type="submit" disabled={isLoading || !email.trim() || !password.trim()} className="w-full">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isSignUp ? 'Creating account...' : 'Signing in...'}
+                  </>
+                ) : (
+                  isSignUp ? 'Create Account' : 'Sign In'
+                )}
+              </Button>
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  disabled={isLoading}
+                >
+                  {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handle2FASubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="code">Verification Code</Label>
+                <Input
+                  id="code"
+                  type="text"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Enter code"
+                  required
+                  disabled={isLoading}
+                  className="text-center text-2xl tracking-widest"
+                />
+                <p className="text-sm text-muted-foreground text-center">
+                  Enter the verification code sent to {email}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Button type="submit" disabled={isLoading || !code.trim()} className="w-full">
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {isSignUp ? 'Creating account...' : 'Signing in...'}
+                      Verifying...
                     </>
                   ) : (
-                    isSignUp ? 'Create Account' : 'Sign In'
+                    'Verify Code'
                   )}
                 </Button>
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => setIsSignUp(!isSignUp)}
-                    disabled={isLoading}
-                  >
-                    {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-                  </Button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handle2FASubmit} className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="code">Verification Code</Label>
-                  <Input
-                    id="code"
-                    type="text"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="000000"
-                    maxLength={6}
-                    required
-                    disabled={isLoading}
-                    className="text-center text-2xl tracking-widest"
-                  />
-                  <p className="text-sm text-muted-foreground text-center">
-                    Enter the 6-digit code sent to {email}
-                  </p>
-                </div>
-                <div className="grid gap-2">
-                  <Button type="submit" disabled={isLoading || code.length !== 6}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Verifying...
-                      </>
-                    ) : (
-                      'Verify Code'
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStep('credentials')}
-                    disabled={isLoading}
-                  >
-                    Back
-                  </Button>
-                </div>
-              </form>
-            )}
-
-            {searchParams?.message && (
-              <div className="mt-4 p-4 bg-muted text-foreground text-center rounded-lg">
-                <p
-                  className={
-                    searchParams.type === 'info'
-                      ? 'text-blue-500'
-                      : searchParams.type === 'warning'
-                      ? 'text-yellow-500'
-                      : 'text-red-500'
-                  }
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep('credentials')}
+                  disabled={isLoading}
+                  className="w-full"
                 >
-                  {searchParams.message}
-                </p>
+                  Back
+                </Button>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </form>
+          )}
+
+          {searchParams?.message && (
+            <div className="p-4 bg-muted text-foreground text-center rounded-lg">
+              <p
+                className={
+                  searchParams.type === 'info'
+                    ? 'text-blue-500'
+                    : searchParams.type === 'warning'
+                    ? 'text-yellow-500'
+                    : 'text-red-500'
+                }
+              >
+                {searchParams.message}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
