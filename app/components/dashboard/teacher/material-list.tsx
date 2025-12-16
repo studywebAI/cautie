@@ -4,7 +4,7 @@
 import { useState, useContext } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileSignature, BrainCircuit, Copy, File, MoreHorizontal, Trash2, Wand2, Loader2 } from 'lucide-react';
+import { PlusCircle, FileSignature, BrainCircuit, Copy, File, MoreHorizontal, Trash2, Wand2, Loader2, Blocks } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import type { MaterialReference } from '@/lib/teacher-types';
@@ -160,6 +160,104 @@ function CreateNoteDialog({ isOpen, setIsOpen, classId }: CreateNoteDialogProps)
   )
 }
 
+
+type CreateBlockMaterialDialogProps = {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  classId: string;
+};
+
+function CreateBlockMaterialDialog({ isOpen, setIsOpen, classId }: CreateBlockMaterialDialogProps) {
+  const [title, setTitle] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { refetchMaterials } = useContext(AppContext) as AppContextType;
+  const { toast } = useToast();
+
+  const handleCreateBlockMaterial = async () => {
+    if (!title.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing title',
+        description: 'Please provide a title for the block material.',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/materials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          class_id: classId,
+          title,
+          type: 'BLOCK',
+          content: {}, // Empty content for block materials
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create block material.');
+      }
+
+      const data = await response.json();
+
+      toast({
+        title: 'Block Material Created',
+        description: `${title} has been created. You can now add blocks to it.`,
+      });
+
+      await refetchMaterials(classId);
+      resetAndClose();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error Creating Block Material',
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetAndClose = () => {
+    setTitle('');
+    setIsOpen(false);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create Block Material</DialogTitle>
+          <DialogDescription>
+            Create a new material that you can build using blocks. You'll be able to add text, images, code, and more.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="block-title">Material Title</Label>
+            <Input
+              id="block-title"
+              placeholder="e.g., Introduction to Algebra"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={resetAndClose}>Cancel</Button>
+          <Button onClick={handleCreateBlockMaterial} disabled={isLoading || !title}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create Block Material
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 type MaterialListProps = {
   materials: MaterialReference[];
   classId: string;
@@ -168,6 +266,7 @@ type MaterialListProps = {
 
 export function MaterialList({ materials, classId, isLoading }: MaterialListProps) {
   const [isCreateNoteOpen, setIsCreateNoteOpen] = useState(false);
+  const [isCreateBlockOpen, setIsCreateBlockOpen] = useState(false);
   const { refetchMaterials } = useContext(AppContext) as AppContextType;
   const { toast } = useToast();
 
@@ -275,7 +374,7 @@ export function MaterialList({ materials, classId, isLoading }: MaterialListProp
           )}
         </CardContent>
       </Card>
-      <CreateNoteDialog isOpen={isCreateNoteOpen} setIsOpen={setIsCreateNoteOpen} classId={classId} />
+      <CreateNoteDialog isOpen={isCreateNoteOpen} setIsOpen={setIsCreateNoteOpen} classId={classId} />`n      <CreateBlockMaterialDialog isOpen={isCreateBlockOpen} setIsOpen={setIsCreateBlockOpen} classId={classId} />
     </>
   );
 }

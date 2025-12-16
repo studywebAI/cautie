@@ -36,7 +36,7 @@ export type MaterialReference = {
     id: string;
     class_id: string;
     title: string;
-    type: 'NOTE' | 'QUIZ' | 'FLASHCARDS' | 'FILE';
+    type: 'NOTE' | 'QUIZ' | 'FLASHCARDS' | 'FILE' | 'BLOCK';
     concepts: { id: string; name: string; }[] | null;
     content: any | null; // For quiz/flashcard data
     created_at: string;

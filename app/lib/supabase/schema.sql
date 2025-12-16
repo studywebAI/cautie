@@ -20,6 +20,13 @@ DROP POLICY IF EXISTS "Allow individual read access" ON "public"."profiles";
 DROP POLICY IF EXISTS "Allow individual insert access" ON "public"."profiles";
 DROP POLICY IF EXISTS "Allow individual update access" ON "public"."profiles";
 
+DROP POLICY IF EXISTS "Users can manage their own materials" ON "public"."materials";
+DROP POLICY IF EXISTS "Users can view public materials" ON "public"."materials";
+DROP POLICY IF EXISTS "Allow authenticated read" ON "public"."blocks";
+DROP POLICY IF EXISTS "Allow authenticated insert" ON "public"."blocks";
+DROP POLICY IF EXISTS "Allow authenticated update for owners" ON "public"."blocks";
+DROP POLICY IF EXISTS "Allow authenticated delete for owners" ON "public"."blocks";
+
 -- Drop dependent functions and triggers before tables
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
@@ -29,6 +36,8 @@ DROP TABLE IF EXISTS "public"."assignments" CASCADE;
 DROP TABLE IF EXISTS "public"."class_members" CASCADE;
 DROP TABLE IF EXISTS "public"."classes" CASCADE;
 DROP TABLE IF EXISTS "public"."profiles" CASCADE;
+DROP TABLE IF EXISTS "public"."materials" CASCADE;
+DROP TABLE IF EXISTS "public"."blocks" CASCADE;
 
 
 --
