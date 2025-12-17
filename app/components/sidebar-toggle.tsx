@@ -12,12 +12,14 @@ export function SidebarToggle() {
       variant="outline"
       size="icon"
       onClick={toggleSidebar}
-      className="fixed top-1/2 left-0 z-50 h-12 w-6 rounded-l-none rounded-r-full border-l-0 bg-background shadow-md hover:bg-accent"
+      className={`fixed top-1/2 -translate-y-1/2 z-50 h-10 w-10 rounded-full bg-background shadow-lg hover:bg-accent border-2 ${
+        state === 'expanded' ? 'left-[236px]' : 'left-[44px]'
+      }`}
     >
       {state === 'expanded' ? (
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="h-5 w-5" />
       ) : (
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="h-5 w-5" />
       )}
     </Button>
   );

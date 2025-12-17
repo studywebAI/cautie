@@ -35,7 +35,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 bg-card/80 backdrop-blur-sm px-4 md:px-6">
 
       <div className="flex-1">
-        <nav className="text-xl font-semibold font-headline flex items-center space-x-2">
+        <h1 className="text-xl font-semibold font-headline">
           {pathSegments.length === 0 ? (
             <span>Dashboard</span>
           ) : (
