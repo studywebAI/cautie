@@ -11,12 +11,10 @@ export async function GET(request: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        get: (name: string) => cookies().get(name)?.value,
-      },
+      cookies: cookies()
     }
   );
-  
+
   const { data: { session } } = await supabase.auth.getSession();
   const { searchParams } = new URL(request.url);
   const guestId = searchParams.get('guestId');
@@ -32,7 +30,7 @@ export async function GET(request: Request) {
       .from('classes')
       .select('*')
       .eq('owner_id', session.user.id);
-    
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     ownedClasses = data;
   } else if (guestId) {
@@ -40,7 +38,7 @@ export async function GET(request: Request) {
       .from('classes')
       .select('*')
       .eq('guest_id', guestId);
-    
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     ownedClasses = data;
   }
@@ -51,15 +49,15 @@ export async function GET(request: Request) {
       .from('class_members')
       .select('classes(*)')
       .eq('user_id', session.user.id);
-    
+
     if (memberError) return NextResponse.json({ error: memberError.message }, { status: 500 });
-    
+
     memberClasses = memberClassesData?.map(member => member.classes) || [];
   }
 
   const allClasses = [...ownedClasses, ...memberClasses];
   const uniqueClasses = Array.from(new Map(allClasses.map(c => [c.id, c])).values());
-  
+
   return NextResponse.json(uniqueClasses);
 }
 
@@ -69,14 +67,10 @@ export async function POST(request: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        get(name: string) {
-          return cookies().get(name)?.value;
-        },
-      },
+      cookies: cookies()
     }
   );
-  
+
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user && !guestId) {
@@ -107,14 +101,14 @@ export async function POST(request: Request) {
 
   // Cast to correct insert type
   const insertData = {
-    name, 
+    name,
     description,
     join_code: joinCode,
     owner_id: user?.id || null,
     guest_id: guestId || null,
     owner_type: user ? 'user' : 'guest'
   };
-  
+
   const { data, error } = await supabase
     .from('classes')
     .insert([insertData as any])
