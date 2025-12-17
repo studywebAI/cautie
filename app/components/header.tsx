@@ -36,25 +36,8 @@ export function AppHeader() {
 
       <div className="flex-1">
         <h1 className="text-xl font-semibold font-headline">
-          {pathSegments.length === 0 ? (
-            <span>Dashboard</span>
-          ) : (
-            <span>
-              <Link href="/" className="hover:text-primary transition-colors">cautie</Link>
-              {pathSegments.map((segment, index) => (
-                <span key={index} className="flex items-center space-x-2">
-                  <span className="text-muted-foreground">/</span>
-                  <Link
-                    href={`/${pathSegments.slice(0, index + 1).join('/')}`}
-                    className="hover:text-primary transition-colors capitalize"
-                  >
-                    {segment.replace('-', ' ')}
-                  </Link>
-                </span>
-              ))}
-            </span>
-          )}
-        </nav>
+          {pathSegments.length === 0 ? 'Dashboard' : pathSegments[pathSegments.length - 1]?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Cautie'}
+        </h1>
       </div>
       <div className="flex items-center gap-4">
         {session ? (
