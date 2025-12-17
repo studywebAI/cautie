@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -7,23 +7,8 @@ import type { Database } from '@/lib/supabase/database.types'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookies().get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          cookies().set(name, value, options)
-        },
-        remove(name: string, options: any) {
-          cookies().set(name, '', { ...options, maxAge: 0 })
-        }
-      }
-    }
-  );
+  const cookieStore = cookies()
+  const supabase = await createClient(cookieStore)
 
   const { data: { user } } = await supabase.auth.getUser();
   const { searchParams } = new URL(request.url);
@@ -62,7 +47,7 @@ export async function GET(request: Request) {
 
     if (memberError) return NextResponse.json({ error: memberError.message }, { status: 500 });
 
-    memberClasses = memberClassesData?.map(member => member.classes) || [];
+    memberClasses = memberClassesData?.map((member: any) => member.classes) || [];
   }
 
   const allClasses = [...ownedClasses, ...memberClasses];
@@ -73,23 +58,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const { name, description, guestId } = await request.json();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookies().get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          cookies().set(name, value, options)
-        },
-        remove(name: string, options: any) {
-          cookies().set(name, '', { ...options, maxAge: 0 })
-        }
-      }
-    }
-  );
+  const cookieStore = cookies()
+  const supabase = await createClient(cookieStore)
 
   const { data: { user } } = await supabase.auth.getUser();
 
