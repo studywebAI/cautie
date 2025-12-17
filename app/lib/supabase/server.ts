@@ -6,7 +6,7 @@ export async function createClient(cookieStore: ReturnType<typeof cookies> | Pro
   const resolvedCookies = await cookieStore
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.SUPABASE_SECRET_KEY!,
     {
       cookies: {
         get(name: string) {
