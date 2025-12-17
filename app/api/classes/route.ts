@@ -20,21 +20,21 @@ export async function GET(request: Request) {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
   const { searchParams } = new URL(request.url);
   const guestId = searchParams.get('guestId');
 
-  if (!session && !guestId) {
+  if (!user && !guestId) {
     return NextResponse.json([]);
   }
 
   // Get classes the user owns
   let ownedClasses: any[] = [];
-  if (session) {
+  if (user) {
     const { data, error } = await supabase
       .from('classes')
       .select('*')
-      .eq('owner_id', session.user.id);
+      .eq('owner_id', user.id);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     ownedClasses = data;
@@ -49,11 +49,11 @@ export async function GET(request: Request) {
   }
 
   let memberClasses: any[] = [];
-  if (session) {
+  if (user) {
     const { data: memberClassesData, error: memberError } = await supabase
       .from('class_members')
       .select('classes(*)')
-      .eq('user_id', session.user.id);
+      .eq('user_id', user.id);
 
     if (memberError) return NextResponse.json({ error: memberError.message }, { status: 500 });
 
