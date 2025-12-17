@@ -1,5 +1,4 @@
-
-import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -12,16 +11,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const guestId = searchParams.get('guestId');
   
-  const cookieStore = await cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get: (name) => cookieStore.get(name)?.value,
-      },
-    }
-  );
+  const cookieStore = cookies();
+  const supabase = await createClient(cookieStore);
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user && !guestId) {
@@ -92,16 +83,8 @@ export async function GET(request: Request) {
 // POST a new assignment
 export async function POST(request: Request) {
   const { title, due_date, class_id, material_id, guestId } = await request.json();
-  const cookieStore = await cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get: (name: string) => cookieStore.get(name)?.value,
-      },
-    }
-  );
+  const cookieStore = cookies();
+  const supabase = await createClient(cookieStore);
   
   const { data: { user } } = await supabase.auth.getUser();
 

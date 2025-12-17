@@ -1,5 +1,5 @@
 
-import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   }
 
   const cookieStore = cookies();
-  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
+  const supabase = await createClient(cookieStore);
 
   const { data: classData, error: classError } = await supabase
     .from('classes')
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const { class_code } = await request.json();
   const cookieStore = cookies();
-  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
+  const supabase = await createClient(cookieStore);
   
   const { data: { user } } = await supabase.auth.getUser();
 
