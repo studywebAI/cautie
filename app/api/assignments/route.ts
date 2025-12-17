@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -10,9 +10,25 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const guestId = searchParams.get('guestId');
-  
-  const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
+
+  const cookieStore = await cookies()
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          cookieStore.set(name, value, options)
+        },
+        remove(name: string, options: any) {
+          cookieStore.set(name, '', { ...options, maxAge: 0 })
+        }
+      }
+    }
+  )
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user && !guestId) {
@@ -55,7 +71,7 @@ export async function GET(request: Request) {
     }
     ownedClassIds = guestClasses.map(c => c.id);
   }
-  
+
   if (ownedClassIds.length === 0) {
     return NextResponse.json([]);
   }
@@ -83,9 +99,25 @@ export async function GET(request: Request) {
 // POST a new assignment
 export async function POST(request: Request) {
   const { title, due_date, class_id, material_id, guestId } = await request.json();
-  const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
-  
+  const cookieStore = await cookies()
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          cookieStore.set(name, value, options)
+        },
+        remove(name: string, options: any) {
+          cookieStore.set(name, '', { ...options, maxAge: 0 })
+        }
+      }
+    }
+  )
+
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user && !guestId) {
@@ -119,9 +151,9 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('assignments')
     .insert([{
-      title, 
-      due_date, 
-      class_id, 
+      title,
+      due_date,
+      class_id,
       material_id,
       owner_id: user?.id || null,
       guest_id: guestId || null,
