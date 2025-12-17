@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!,
-    { cookies: () => cookieStore }
+    {`n      cookies: {`n        getAll: () => ({}),`n        setAll: (cookies: Record<string, string>) => {`n          for (const [name, value] of Object.entries(cookies)) {`n            cookieStore.set(name, value)`n          }`n        },`n        removeAll: () => {}`n      }`n    }
   );
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!,
-    { cookies: () => cookieStore }
+    {`n      cookies: {`n        getAll: () => ({}),`n        setAll: (cookies: Record<string, string>) => {`n          for (const [name, value] of Object.entries(cookies)) {`n            cookieStore.set(name, value)`n          }`n        },`n        removeAll: () => {}`n      }`n    }
   );
 
   const { data: { user } } = await supabase.auth.getUser();
