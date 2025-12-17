@@ -1,4 +1,3 @@
-
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -13,7 +12,7 @@ export async function GET(
   { params }: { params: { classId: string } }
 ) {
   const classId = params.classId;
-  const cookieStore = cookies();
+  const cookieStore = await cookies()
   // No need for admin client here, public info is fine
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,18 +20,18 @@ export async function GET(
     {
       cookies: {
         get(name: string) {
-          return cookies().get(name)?.value
+          return cookieStore.get(name)?.value
         },
         set(name: string, value: string, options: any) {
-          cookies().set(name, value, options)
+          cookieStore.set(name, value, options)
         },
         remove(name: string, options: any) {
-          cookies().set(name, '', { ...options, maxAge: 0 })
+          cookieStore.set(name, '', { ...options, maxAge: 0 })
         }
       }
     }
   );
-  
+
   const { data: classData, error } = await supabase
     .from('classes')
     .select('id, name, description')

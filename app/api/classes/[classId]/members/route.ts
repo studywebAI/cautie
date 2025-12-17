@@ -1,4 +1,3 @@
-
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -13,8 +12,24 @@ export async function GET(
   { params }: { params: { classId: string } }
 ) {
   const classId = params.classId;
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>({ cookies: () => cookieStore });
+  const cookieStore = await cookies()
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          cookieStore.set(name, value, options)
+        },
+        remove(name: string, options: any) {
+          cookieStore.set(name, '', { ...options, maxAge: 0 })
+        }
+      }
+    }
+  )
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
@@ -71,18 +86,30 @@ export async function GET(
     .from('profiles')
     .select('id, full_name, avatar_url')
     .in('id', userIds);
-    
-   // Fetch user emails from auth.users (requires admin client)
-   const supabaseAdmin = createServerClient<Database>(
-     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-     { cookies: () => cookieStore }
-   );
-   const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
-    
-   if (profilesError || usersError) {
-     return NextResponse.json({ error: profilesError?.message || usersError?.message }, { status: 500 });
-   }
+
+    // Fetch user emails from auth.users (requires admin client)
+    const supabaseAdmin = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SECRET_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set(name, value, options)
+          },
+          remove(name: string, options: any) {
+            cookieStore.set(name, '', { ...options, maxAge: 0 })
+          }
+        }
+      }
+    );
+    const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
+
+    if (profilesError || usersError) {
+      return NextResponse.json({ error: profilesError?.message || usersError?.message }, { status: 500 });
+    }
 
   // Combine profile data with email from auth.users
   const students = usersData.users
