@@ -10,7 +10,11 @@ export const dynamic = 'force-dynamic'
 // GET all personal tasks for the logged-in user
 export async function GET(request: Request) {
   const cookieStore = cookies();
-  const supabase = createServerClient<Database>(`n    process.env.NEXT_PUBLIC_SUPABASE_URL!,`n    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,`n    { cookies: () => cookieStore }`n  );
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: () => cookieStore }
+  );
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
@@ -35,7 +39,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const { title, description, date, subject } = await request.json();
   const cookieStore = cookies();
-  const supabase = createServerClient<Database>(`n    process.env.NEXT_PUBLIC_SUPABASE_URL!,`n    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,`n    { cookies: () => cookieStore }`n  );
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: () => cookieStore }
+  );
   
   const { data: { user } } = await supabase.auth.getUser();
 
