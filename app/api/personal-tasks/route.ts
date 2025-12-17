@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
 // POST a new personal task
 export async function POST(request: Request) {
-  const { title, description, date, subject } = await request.json();
+  const { title, description, due_date, subject } = await request.json();
   const cookieStore = cookies()
   const supabase = await createClient(cookieStore)
   
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('personal_tasks')
     .insert([
-      { title, description, date, subject, user_id: user.id },
+      { title, description, due_date, subject, user_id: user.id },
     ])
     .select()
     .single();
