@@ -23,18 +23,18 @@ export async function GET(request: Request) {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session && !guestId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user && !guestId) {
     return NextResponse.json([]);
   }
 
   // Get owned class IDs either by user ID or guest ID
   let ownedClassIds: string[] = [];
-  if (session) {
+  if (user) {
     const { data: userClasses, error: ownedError } = await supabase
       .from('classes')
       .select('id')
-      .or(`owner_id.eq.${session.user.id},user_id.eq.${session.user.id}`);
+      .or(`owner_id.eq.${user.id},user_id.eq.${user.id}`);
 
     if (ownedError) {
       return NextResponse.json({ error: ownedError.message }, { status: 500 });
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     const { data: memberClasses, error: memberError } = await supabase
       .from('class_members')
       .select('class_id')
-      .eq('user_id', session.user.id);
+      .eq('user_id', user.id);
 
     if (memberError) {
       return NextResponse.json({ error: memberError.message }, { status: 500 });

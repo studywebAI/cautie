@@ -9,15 +9,15 @@ export const dynamic = 'force-dynamic'
 
 // GET all personal tasks for the logged-in user
 export async function GET(request: Request) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: () => cookieStore }
+    {`n      cookies: {`n        get: (name: string) => cookieStore.get(name)?.value,`n        set: (name: string, value: string, options: any) => cookieStore.set(name, value, options),`n        remove: (name: string, options: any) => cookieStore.set(name, '', { ...options, maxAge: 0 })`n      }`n    }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
     // For guests, return an empty array. The client will use local storage.
     return NextResponse.json([]);
   }
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from('personal_tasks')
     .select()
-    .eq('user_id', session.user.id);
+    .eq('user_id', user.id);
 
   if (error) {
     console.error('Error fetching personal tasks:', error);
@@ -38,11 +38,11 @@ export async function GET(request: Request) {
 // POST a new personal task
 export async function POST(request: Request) {
   const { title, description, date, subject } = await request.json();
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: () => cookieStore }
+    {`n      cookies: {`n        get: (name: string) => cookieStore.get(name)?.value,`n        set: (name: string, value: string, options: any) => cookieStore.set(name, value, options),`n        remove: (name: string, options: any) => cookieStore.set(name, '', { ...options, maxAge: 0 })`n      }`n    }
   );
   
   const { data: { user } } = await supabase.auth.getUser();
