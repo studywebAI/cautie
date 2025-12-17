@@ -1,5 +1,5 @@
 
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   }
 
   const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
+  const supabase = createServerClient<Database>(`n    process.env.NEXT_PUBLIC_SUPABASE_URL!,`n    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,`n    {`n      cookies: {`n        get(name: string) {`n          return cookies().get(name)?.value`n        },`n        set(name: string, value: string, options: any) {`n          cookies().set(name, value, options)`n        },`n        remove(name: string, options: any) {`n          cookies().set(name, '', { ...options, maxAge: 0 })`n        }`n      }`n    }`n  );
 
   const { data: classData, error: classError } = await supabase
     .from('classes')
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const { class_code } = await request.json();
   const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
+  const supabase = createServerClient<Database>(`n    process.env.NEXT_PUBLIC_SUPABASE_URL!,`n    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,`n    {`n      cookies: {`n        get(name: string) {`n          return cookies().get(name)?.value`n        },`n        set(name: string, value: string, options: any) {`n          cookies().set(name, value, options)`n        },`n        remove(name: string, options: any) {`n          cookies().set(name, '', { ...options, maxAge: 0 })`n        }`n      }`n    }`n  );
   
   const { data: { user } } = await supabase.auth.getUser();
 

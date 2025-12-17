@@ -12,15 +12,14 @@ export async function GET(request: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return Object.fromEntries(
-            Object.entries(cookies().getAll()).map(([name, cookie]) => [name, cookie.value])
-          )
+        get(name: string) {
+          return cookies().get(name)?.value
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookies().set(name, value, options)
-          })
+        set(name: string, value: string, options: any) {
+          cookies().set(name, value, options)
+        },
+        remove(name: string, options: any) {
+          cookies().set(name, '', { ...options, maxAge: 0 })
         }
       }
     }
@@ -79,15 +78,14 @@ export async function POST(request: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return Object.fromEntries(
-            Object.entries(cookies().getAll()).map(([name, cookie]) => [name, cookie.value])
-          )
+        get(name: string) {
+          return cookies().get(name)?.value
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookies().set(name, value, options)
-          })
+        set(name: string, value: string, options: any) {
+          cookies().set(name, value, options)
+        },
+        remove(name: string, options: any) {
+          cookies().set(name, '', { ...options, maxAge: 0 })
         }
       }
     }
