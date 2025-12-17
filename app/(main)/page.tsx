@@ -38,7 +38,7 @@ function StudentDashboard() {
   if (isLoading || !assignments || !classes || !personalTasks) {
     return <DashboardSkeleton />;
   }
-  
+
   const enrolledClasses = classes.filter(c => c.owner_id !== session?.user?.id);
   const subjects: Subject[] = enrolledClasses.map(c => ({
     id: c.id,
@@ -89,18 +89,18 @@ function TeacherSummaryDashboard() {
     if (isLoading || !classes) {
         return <DashboardSkeleton />;
     }
-    
+
     // For teacher dashboard, we only care about classes they own.
     const teacherClasses = classes.filter(c => c.owner_id === session?.user.id);
-    
+
     const totalStudents = students.length;
-    
+
     const activeAssignments = assignments.filter(a => {
         if (!a.due_date) return false;
         const dueDate = parseISO(a.due_date);
         return isFuture(dueDate);
     }).length;
-    
+
     const lowProgressAlerts = 0; // Placeholder until progress is tracked
 
     return (
@@ -153,7 +153,7 @@ function TeacherSummaryDashboard() {
                     </CardContent>
                 </Card>
             </div>
-             
+
              <Card>
                 <CardHeader>
                     <div className="flex justify-between items-center">
