@@ -7,6 +7,7 @@ import type { Database } from '@/lib/supabase/database.types'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
+  try {
   const cookieStore = cookies()
   const supabase = await createClient(cookieStore)
 
