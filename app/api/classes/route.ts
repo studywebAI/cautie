@@ -55,6 +55,10 @@ export async function GET(request: Request) {
   const uniqueClasses = Array.from(new Map(allClasses.map(c => [c.id, c])).values());
 
   return NextResponse.json(uniqueClasses);
+  } catch (err) {
+    console.error('Unexpected error in classes GET:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
