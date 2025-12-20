@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { AuthForm } from '@/components/auth-form';
@@ -14,6 +14,17 @@ export default function Login({
   const router = useRouter();
   const supabase = createClient();
 
+  // Redirect if already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push('/');
+      }
+    };
+    checkSession();
+  }, [router, supabase.auth]);
+
   const signIn = async (formData: FormData) => {
     setIsLoading(true);
     const email = formData.get('email') as string;
@@ -21,7 +32,7 @@ export default function Login({
     const code = formData.get('code') as string;
 
     if (code) {
-      // Verify 2FA code
+      // Verify OTP code for email confirmation
       const { error } = await supabase.auth.verifyOtp({
         email,
         token: code,
@@ -29,6 +40,7 @@ export default function Login({
       });
 
       if (error) {
+        console.error('OTP verification error:', error);
         let errorMessage = 'Invalid verification code';
         let errorType = 'error';
 
@@ -43,7 +55,7 @@ export default function Login({
         } else if (error.message.includes('Too many requests')) {
           errorMessage = 'Too many verification attempts. Please wait a few minutes before trying again.';
         } else if (error.message) {
-          errorMessage = error.message;
+          errorMessage = `Verification error: ${error.message}`;
         }
 
         router.push(`/login?message=${encodeURIComponent(errorMessage)}&type=${errorType}&email=${encodeURIComponent(email)}`);
@@ -51,31 +63,40 @@ export default function Login({
         return;
       }
 
+      // Success - redirect to dashboard
       router.push('/');
       setIsLoading(false);
     } else {
       // Sign in with password
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      if (error) {
-        let errorMessage = 'Sign in failed';
-        let errorType = 'error';
+        if (error) {
+          console.error('Sign in error:', error);
+          let errorMessage = 'Sign in failed';
+          let errorType = 'error';
 
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Please check your email and click the confirmation link before signing in.';
-          errorType = 'warning';
-        } else if (error.message.includes('Too many requests')) {
-          errorMessage = 'Too many sign-in attempts. Please wait a few minutes before trying again.';
-        } else if (error.message) {
-          errorMessage = error.message;
+          if (error.message.includes('Invalid login credentials')) {
+            errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+          } else if (error.message.includes('Email not confirmed')) {
+            errorMessage = 'Please check your email and click the confirmation link before signing in.';
+            errorType = 'warning';
+          } else if (error.message.includes('Too many requests')) {
+            errorMessage = 'Too many sign-in attempts. Please wait a few minutes before trying again.';
+          } else if (error.message) {
+            errorMessage = `Authentication error: ${error.message}`;
+          }
+
+          router.push(`/login?message=${encodeURIComponent(errorMessage)}&type=${errorType}&email=${encodeURIComponent(email)}`);
+          setIsLoading(false);
+          return;
         }
-
-        router.push(`/login?message=${encodeURIComponent(errorMessage)}&type=${errorType}&email=${encodeURIComponent(email)}`);
+      } catch (err) {
+        console.error('Sign in exception:', err);
+        router.push(`/login?message=${encodeURIComponent('Network error during sign in. Please try again.')}&email=${encodeURIComponent(email)}`);
         setIsLoading(false);
         return;
       }

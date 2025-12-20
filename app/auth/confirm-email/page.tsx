@@ -49,7 +49,7 @@ export default function ConfirmEmailPage({
         <div className="text-center">
           <h1 className="text-2xl font-bold">Check your email</h1>
           <p className="text-muted-foreground mt-2">
-            We've sent a verification code to <strong>{searchParams.email}</strong>. Please enter it below to confirm your email address.
+            We've sent an 8-digit verification code to <strong>{searchParams.email}</strong>. Please enter it below to confirm your email address.
           </p>
         </div>
         <form
@@ -65,7 +65,7 @@ export default function ConfirmEmailPage({
             <input
               className="w-full rounded-md px-4 py-2 bg-inherit border"
               name="token"
-              placeholder="Enter verification code"
+              placeholder="Enter 8-digit verification code"
               required
               disabled={isLoading}
             />

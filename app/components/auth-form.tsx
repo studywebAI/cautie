@@ -123,7 +123,7 @@ export function AuthForm({
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="Enter code"
+                  placeholder="Enter 8-digit code"
                   required
                   disabled={isLoading}
                   className="text-center text-2xl tracking-widest"
@@ -133,7 +133,7 @@ export function AuthForm({
                 </p>
               </div>
               <div className="space-y-2">
-                <Button type="submit" disabled={isLoading || !code.trim()} className="w-full">
+                <Button type="submit" disabled={isLoading || code.length !== 8} className="w-full">
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
