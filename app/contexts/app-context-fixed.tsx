@@ -87,7 +87,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
   const [language, setLanguageState] = useState<Locale>('en'); // Initialized with full type
   const [dictionary, setDictionary] = useState<Dictionary>(() => getDictionary(language));
-  const [role, setRoleState] = useState<UserRole>('student');
+  const [role, setRoleState] = useState<UserRole>(() => getFromLocalStorage('studyweb-role', 'student'));
   const [highContrast, setHighContrastState] = useState(false);
   const [dyslexiaFont, setDyslexiaFontState] = useState(false);
   const [reducedMotion, setReducedMotionState] = useState(false);

@@ -1,22 +1,30 @@
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ConfirmEmailPage({
   searchParams,
 }: {
   searchParams: { message: string, email: string };
 }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const supabase = createClient();
 
   const verifyOtp = async (formData: FormData) => {
-    'use server';
+    setIsLoading(true);
+    setError(null);
 
     const token = formData.get('token') as string;
     const email = searchParams.email;
-    const supabase = await createClient(cookies());
 
     if (!email || !token) {
-        return redirect(`/auth/confirm-email?email=${encodeURIComponent(email)}&message=Email and code are required.`);
+      setError('Email and code are required.');
+      setIsLoading(false);
+      return;
     }
 
     const { error } = await supabase.auth.verifyOtp({
@@ -26,11 +34,13 @@ export default function ConfirmEmailPage({
     });
 
     if (error) {
-      return redirect(`/auth/confirm-email?email=${encodeURIComponent(email)}&message=Invalid or expired code. Please try again.`);
+      setError('Invalid or expired code. Please try again.');
+      setIsLoading(false);
+      return;
     }
 
-    // On successful verification, Supabase sets the session cookie and the user is logged in.
-    return redirect('/');
+    // On successful verification, redirect to home
+    router.push('/');
   };
 
   return (
@@ -53,15 +63,19 @@ export default function ConfirmEmailPage({
               name="token"
               placeholder="Enter verification code"
               required
+              disabled={isLoading}
             />
           </div>
-          <button className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md">
-            Verify Email
+          <button
+            className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md disabled:opacity-50"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Verifying...' : 'Verify Email'}
           </button>
 
-          {searchParams?.message && (
+          {(searchParams?.message || error) && (
             <p className="p-4 bg-muted text-foreground text-center rounded-lg">
-              {searchParams.message}
+              {error || searchParams.message}
             </p>
           )}
         </form>
