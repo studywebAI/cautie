@@ -101,7 +101,7 @@ export async function POST(request: Request) {
     name,
     description,
     join_code: joinCode,
-    owner_id: user?.id || null,
+    user_id: user?.id || null,
     guest_id: guestId || null,
     owner_type: user ? 'user' : 'guest'
   };
