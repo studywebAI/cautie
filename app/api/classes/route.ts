@@ -63,58 +63,62 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-  console.log('POST /api/classes called');
-  const { name, description, guestId } = await request.json();
-  const cookieStore = cookies()
-  const supabase = await createClient(cookieStore)
+    console.log('POST /api/classes called');
+    const { name, description, guestId } = await request.json();
+    const cookieStore = cookies()
+    const supabase = await createClient(cookieStore)
 
-  const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user && !guestId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Generate unique join code
-  let joinCode;
-  let attempts = 0;
-  do {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    joinCode = '';
-    for (let i = 0; i < 8; i++) {
-      joinCode += chars.charAt(Math.floor(Math.random() * chars.length));
+    if (!user && !guestId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { data: existing } = await supabase
+
+    // Generate unique join code
+    let joinCode;
+    let attempts = 0;
+    do {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      joinCode = '';
+      for (let i = 0; i < 8; i++) {
+        joinCode += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const { data: existing } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('join_code', joinCode)
+        .single();
+      if (!existing) break;
+      attempts++;
+    } while (attempts < 10);
+
+    if (attempts >= 10) {
+      return NextResponse.json({ error: 'Failed to generate unique join code' }, { status: 500 });
+    }
+
+    // Cast to correct insert type
+    const insertData = {
+      name,
+      description,
+      join_code: joinCode,
+      user_id: user?.id || null,
+      guest_id: guestId || null,
+      owner_type: user ? 'user' : 'guest'
+    };
+
+    const { data, error } = await supabase
       .from('classes')
-      .select('id')
-      .eq('join_code', joinCode)
+      .insert([insertData as any])
+      .select('id, name, description, join_code')
       .single();
-    if (!existing) break;
-    attempts++;
-  } while (attempts < 10);
 
-  if (attempts >= 10) {
-    return NextResponse.json({ error: 'Failed to generate unique join code' }, { status: 500 });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data);
+  } catch (err) {
+    console.error('Unexpected error in classes POST:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  // Cast to correct insert type
-  const insertData = {
-    name,
-    description,
-    join_code: joinCode,
-    user_id: user?.id || null,
-    guest_id: guestId || null,
-    owner_type: user ? 'user' : 'guest'
-  };
-
-  const { data, error } = await supabase
-    .from('classes')
-    .insert([insertData as any])
-    .select('id, name, description, join_code')
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data);
 }
