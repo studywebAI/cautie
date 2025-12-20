@@ -62,6 +62,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  try {
   console.log('POST /api/classes called');
   const { name, description, guestId } = await request.json();
   const cookieStore = cookies()
@@ -100,7 +101,7 @@ export async function POST(request: Request) {
     name,
     description,
     join_code: joinCode,
-    user_id: user?.id || null,
+    owner_id: user?.id || null,
     guest_id: guestId || null,
     owner_type: user ? 'user' : 'guest'
   };

@@ -77,7 +77,7 @@ export function StudentClasses() {
     }
   };
   
-  const enrolledClasses = classes.filter(c => c.user_id !== session?.user?.id);
+  const enrolledClasses = classes.filter(c => c.owner_id !== session?.user?.id);
 
   if (isLoading || !classes) {
       return (
