@@ -39,7 +39,7 @@ function StudentDashboard() {
     return <DashboardSkeleton />;
   }
 
-  const enrolledClasses = classes.filter(c => c.owner_id !== session?.user?.id);
+  const enrolledClasses = classes.filter(c => c.user_id !== session?.user?.id);
   const subjects: Subject[] = enrolledClasses.map(c => ({
     id: c.id,
     name: c.name,
@@ -91,7 +91,7 @@ function TeacherSummaryDashboard() {
     }
 
     // For teacher dashboard, we only care about classes they own.
-    const teacherClasses = classes.filter(c => c.owner_id === session?.user.id);
+    const teacherClasses = classes.filter(c => c.user_id === session?.user.id);
 
     const totalStudents = students.length;
 

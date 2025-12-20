@@ -12,7 +12,7 @@ function SubjectsPageContent() {
   const subjects: Subject[] = useMemo(() => {
     if (!classes || !session) return [];
     // Subjects are the classes a student is enrolled in.
-    const enrolledClasses = classes.filter(c => c.owner_id !== session.user.id);
+    const enrolledClasses = classes.filter(c => c.user_id !== session.user.id);
     return enrolledClasses.map(c => ({
       id: c.id,
       name: c.name,
