@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     do {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       joinCode = '';
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 6; i++) {
         joinCode += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       const { data: existing } = await supabase
