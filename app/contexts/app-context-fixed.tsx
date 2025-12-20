@@ -243,7 +243,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
               }
 
               // Fetch all students for all classes owned by the teacher
-              const ownedClassIds = (classesData as ClassInfo[] || []).filter((c: ClassInfo) => c.owner_id === session.user.id).map((c: ClassInfo) => c.id);
+              const ownedClassIds = (classesData as ClassInfo[] || []).filter((c: ClassInfo) => c.user_id === session.user.id).map((c: ClassInfo) => c.id);
               if (ownedClassIds.length > 0) {
                  const studentPromises = ownedClassIds.map((id: string) => fetch(`/api/classes/${id}/members`).then(res => res.json()));
                  const studentsPerClass = await Promise.all(studentPromises);
@@ -323,7 +323,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         name: newClassData.name,
         description: newClassData.description,
         created_at: new Date().toISOString(),
-        owner_id: 'local-user',
+        user_id: 'local-user',
       };
       const updatedClasses = [...classes, newClass];
       setClasses(updatedClasses);

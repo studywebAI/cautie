@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase
       .from('classes')
       .select('*')
-      .eq('owner_id', user.id);
+      .eq('user_id', user.id);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     ownedClasses = data;
@@ -62,6 +62,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  console.log('POST /api/classes called');
   const { name, description, guestId } = await request.json();
   const cookieStore = cookies()
   const supabase = await createClient(cookieStore)
@@ -99,7 +100,7 @@ export async function POST(request: Request) {
     name,
     description,
     join_code: joinCode,
-    owner_id: user?.id || null,
+    user_id: user?.id || null,
     guest_id: guestId || null,
     owner_type: user ? 'user' : 'guest'
   };
