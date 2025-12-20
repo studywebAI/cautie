@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const { data: userClasses, error: ownedError } = await supabase
       .from('classes')
       .select('id')
-      .or(`owner_id.eq.${user.id},user_id.eq.${user.id}`);
+      .eq('user_id', user.id);
 
     if (ownedError) {
       return NextResponse.json({ error: ownedError.message }, { status: 500 });
@@ -96,11 +96,11 @@ export async function POST(request: Request) {
   if (user) {
     const { data: classData, error: classError } = await supabase
       .from('classes')
-      .select('owner_id')
+      .select('user_id')
       .eq('id', class_id)
       .single();
 
-    if (classError || !classData || classData.owner_id !== user.id) {
+    if (classError || !classData || classData.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden. You are not the owner of this class.' }, { status: 403 });
     }
   } else if (guestId) {

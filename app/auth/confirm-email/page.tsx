@@ -54,7 +54,11 @@ export default function ConfirmEmailPage({
         </div>
         <form
           className="space-y-4"
-          action={verifyOtp}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            verifyOtp(formData);
+          }}
         >
           <div className="space-y-2">
             <label className="text-md font-medium" htmlFor="token">Verification Code</label>
