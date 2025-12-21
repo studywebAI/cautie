@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarIcon, BrainCircuit, Copy, Loader2, Link as LinkIcon, Paperclip, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [type, setType] = useState('homework');
   const [dueDate, setDueDate] = useState<Date>();
   const [selectedMaterial, setSelectedMaterial] = useState<Pick<MaterialReference, 'id' | 'title'> | null>(null);
   const [isSelectMaterialOpen, setIsSelectMaterialOpen] = useState(false);
@@ -124,7 +126,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
             </div>
             
              <div className="grid gap-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <Label htmlFor="description">Content (Optional)</Label>
               <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Add any extra instructions or context for your students." />
             </div>
 

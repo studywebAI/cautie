@@ -82,7 +82,7 @@ export async function GET(request: Request) {
 
 // POST a new assignment
 export async function POST(request: Request) {
-  const { title, due_date, class_id, guestId } = await request.json();
+  const { title, due_date, class_id, guestId, type = 'homework', content, files = [] } = await request.json();
   const cookieStore = cookies();
   const supabase = await createClient(cookieStore);
 
@@ -121,9 +121,7 @@ export async function POST(request: Request) {
     .insert([{
       title,
       due_date,
-      class_id,
-
-      user_id: user?.id || null,
+      class_id,\r\n      type,\r\n      content,\r\n      files,\r\n\r\n      user_id: user?.id || null,
       guest_id: guestId || null,
       owner_type: user ? 'user' : 'guest'
     },
@@ -138,3 +136,4 @@ export async function POST(request: Request) {
 
   return NextResponse.json(data);
 }
+

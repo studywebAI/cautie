@@ -81,7 +81,7 @@ export function AssignmentList({ assignments, classId }: AssignmentListProps) {
               })}
                {assignments.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                         No assignments have been created yet.
                     </TableCell>
                 </TableRow>
