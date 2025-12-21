@@ -128,7 +128,7 @@ export default function Login({
     }
 
     if (data.user && !data.session) {
-      router.push(`/auth/confirm-email?email=${encodeURIComponent(email)}&message=Please check your email for the 6-digit verification code.`);
+      router.push(`/auth/confirm-email?email=${encodeURIComponent(email)}&message=Please check your email for the 8-digit verification code.`);
       setIsLoading(false);
       return;
     }
