@@ -20,12 +20,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon, BrainCircuit, Copy, Loader2, Link as LinkIcon, Paperclip, X } from 'lucide-react';
+import { CalendarIcon, BrainCircuit, Copy, Loader2, Link as LinkIcon, Paperclip, X, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { SelectMaterialDialog } from './select-material-dialog';
+import { Badge } from '@/components/ui/badge';
 import type { MaterialReference } from '@/lib/teacher-types';
 
 
@@ -43,6 +44,8 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
   const [dueDate, setDueDate] = useState<Date>();
   const [selectedMaterial, setSelectedMaterial] = useState<Pick<MaterialReference, 'id' | 'title'> | null>(null);
   const [isSelectMaterialOpen, setIsSelectMaterialOpen] = useState(false);
+  const [studyReferences, setStudyReferences] = useState<Array<{id: string, type: string, title: string, description: string}>>([]);
+  const [isSelectReferenceOpen, setIsSelectReferenceOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { createAssignment } = useContext(AppContext) as AppContextType;
@@ -64,7 +67,7 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
             due_date: format(dueDate, 'yyyy-MM-dd'),
             class_id: classId,
             material_id: selectedMaterial?.id || null,
-        });
+        } as any);
         
         toast({
             title: 'Assignment Created',
