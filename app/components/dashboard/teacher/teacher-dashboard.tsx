@@ -3,7 +3,8 @@
 
 import { useState, useContext } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { PlusCircle, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { ClassCard } from './class-card';
 import { CreateClassDialog } from './create-class-dialog';
 import { AppContext, AppContextType, ClassInfo } from '@/contexts/app-context';
@@ -18,6 +19,8 @@ export function TeacherDashboard() {
     const stored = localStorage.getItem('archived-classes');
     return stored ? JSON.parse(stored) : [];
   });
+  const [showArchived, setShowArchived] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
   const toggleArchive = (classId: string) => {
@@ -65,8 +68,13 @@ export function TeacherDashboard() {
       )
   }
 
-  const activeClasses = classes.filter(cls => !archivedClassIds.includes(cls.id));
-  const archivedClasses = classes.filter(cls => archivedClassIds.includes(cls.id));
+  const filteredClasses = classes.filter(cls =>
+    cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (cls.description && cls.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const activeClasses = filteredClasses.filter(cls => !archivedClassIds.includes(cls.id));
+  const archivedClasses = filteredClasses.filter(cls => archivedClassIds.includes(cls.id));
 
   return (
     <div className="flex flex-col gap-8">
@@ -82,6 +90,17 @@ export function TeacherDashboard() {
           Create New Class
         </Button>
       </header>
+
+      {/* Search Bar */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search classes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 rounded-full"
+        />
+      </div>
 
       {activeClasses.length === 0 && archivedClasses.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
@@ -100,35 +119,53 @@ export function TeacherDashboard() {
         </div>
       ) : (
         <div className="space-y-8">
-          {activeClasses.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Active Classes</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {activeClasses.map((classInfo) => (
-                  <ClassCard
-                    key={classInfo.id}
-                    classInfo={classInfo}
-                    onArchive={() => toggleArchive(classInfo.id)}
-                    isArchived={false}
-                  />
-                ))}
-              </div>
+          {/* Active Classes - Always Visible */}
+          <div className="min-h-[400px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {activeClasses.map((classInfo) => (
+                <ClassCard
+                  key={classInfo.id}
+                  classInfo={classInfo}
+                  isArchived={false}
+                />
+              ))}
             </div>
-          )}
+          </div>
 
+          {/* Archived Classes Toggle */}
           {archivedClasses.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4 text-muted-foreground">Archived Classes</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {archivedClasses.map((classInfo) => (
-                  <ClassCard
-                    key={classInfo.id}
-                    classInfo={classInfo}
-                    onArchive={() => toggleArchive(classInfo.id)}
-                    isArchived={true}
-                  />
-                ))}
-              </div>
+            <div className="text-center pt-8 pb-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowArchived(!showArchived)}
+                className="rounded-full"
+              >
+                {showArchived ? (
+                  <>
+                    <ChevronUp className="mr-2 h-4 w-4" />
+                    Hide Archived Classes ({archivedClasses.length})
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="mr-2 h-4 w-4" />
+                    Show Archived Classes ({archivedClasses.length})
+                  </>
+                )}
+              </Button>
+
+              {showArchived && (
+                <div className="mt-8 space-y-4">
+                  <h2 className="text-xl font-semibold text-muted-foreground">Archived Classes</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {archivedClasses.map((classInfo) => (
+                      <ClassCard
+                        key={classInfo.id}
+                        classInfo={classInfo}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

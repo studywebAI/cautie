@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -9,15 +8,16 @@ import { AssignmentList } from '@/components/dashboard/teacher/assignment-list';
 import { StudentList } from '@/components/dashboard/teacher/student-list';
 import type { Student } from '@/lib/teacher-types';
 import { MaterialList } from '@/components/dashboard/teacher/material-list';
+import { ClassSettings } from '@/components/dashboard/teacher/class-settings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, FileText } from 'lucide-react';
+import { BookOpen, Users, FileText, Settings } from 'lucide-react';
 
 
 export default function ClassDetailsPage() {
   const params = useParams();
   const { classId } = params as { classId: string };
   const { classes, assignments, isLoading: isAppLoading, materials, refetchMaterials } = useContext(AppContext) as AppContextType;
-  
+
   const [students, setStudents] = useState<Student[]>([]);
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
 
@@ -47,14 +47,14 @@ export default function ClassDetailsPage() {
         setIsStudentsLoading(false);
       }
     };
-    
+
     if(classId) {
         fetchStudents();
         refetchMaterials(classId);
     }
   }, [classId, refetchMaterials]);
 
-  const isLoading = isAppLoading || (isStudentsLoading && classId && !classId.startsWith('local-'));
+  const isLoading = Boolean(isAppLoading) || (isStudentsLoading && classId && !classId.startsWith('local-'));
 
   if (isLoading && !classInfo) {
     return (
@@ -92,20 +92,24 @@ export default function ClassDetailsPage() {
       </header>
 
       <Tabs defaultValue="assignments" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="assignments"><FileText className="mr-2 h-4 w-4" /> Assignments</TabsTrigger>
           <TabsTrigger value="materials"><BookOpen className="mr-2 h-4 w-4" /> Materials</TabsTrigger>
           <TabsTrigger value="students"><Users className="mr-2 h-4 w-4" /> Students</TabsTrigger>
+          <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="assignments">
           <AssignmentList assignments={classAssignments} classId={classId} />
         </TabsContent>
-         <TabsContent value="materials">
-          <MaterialList materials={materials} classId={classId} isLoading={isLoading} />
-        </TabsContent>
-        <TabsContent value="students">
-           <StudentList students={students} isLoading={isLoading} />
-        </TabsContent>
+          <TabsContent value="materials">
+           <MaterialList materials={materials} classId={classId} isLoading={isLoading} />
+         </TabsContent>
+         <TabsContent value="students">
+            <StudentList students={students} isLoading={isLoading} />
+         </TabsContent>
+         <TabsContent value="settings">
+           <ClassSettings classId={classId} className={classInfo.name} onArchive={() => window.location.href = '/classes'} />
+         </TabsContent>
       </Tabs>
     </div>
   );

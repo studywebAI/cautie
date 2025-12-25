@@ -45,3 +45,64 @@ export async function GET(
 
   return NextResponse.json(classData);
 }
+
+// DELETE - Archive a class (set status to 'archived')
+export async function DELETE(
+  request: Request,
+  { params }: { params: { classId: string } }
+) {
+  const classId = params.classId;
+  const cookieStore = await cookies()
+
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          cookieStore.set(name, value, options)
+        },
+        remove(name: string, options: any) {
+          cookieStore.set(name, '', { ...options, maxAge: 0 })
+        }
+      }
+    }
+  );
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Check if user is the owner of the class
+  const { data: classData, error: classError } = await supabase
+    .from('classes')
+    .select('owner_id')
+    .eq('id', classId)
+    .single();
+
+  if (classError || !classData) {
+    return NextResponse.json({ error: 'Class not found' }, { status: 404 });
+  }
+
+  if (classData.owner_id !== user.id) {
+    return NextResponse.json({ error: 'Only the class owner can archive this class' }, { status: 403 });
+  }
+
+  // Archive the class by setting status to 'archived'
+  const { error: updateError } = await supabase
+    .from('classes')
+    .update({ status: 'archived' })
+    .eq('id', classId);
+
+  if (updateError) {
+    console.error('Error archiving class:', updateError);
+    return NextResponse.json({ error: 'Failed to archive class' }, { status: 500 });
+  }
+
+  return NextResponse.json({ message: 'Class archived successfully' });
+}

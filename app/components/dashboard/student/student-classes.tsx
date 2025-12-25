@@ -4,8 +4,9 @@
 import { useState, useContext, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { JoinClassDialog } from './join-class-dialog';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Search } from 'lucide-react';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import { ClassCard } from '../teacher/class-card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 export function StudentClasses() {
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [initialCode, setInitialCode] = useState<string | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState('');
   const { classes, isLoading, refetchClasses, session } = useContext(AppContext) as AppContextType;
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -77,7 +79,12 @@ export function StudentClasses() {
     }
   };
   
-  const enrolledClasses = classes.filter(c => c.user_id !== session?.user?.id);
+  const enrolledClasses = classes
+    .filter(c => c.user_id !== session?.user?.id)
+    .filter(cls =>
+      cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (cls.description && cls.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
   if (isLoading || !classes) {
       return (
@@ -113,6 +120,17 @@ export function StudentClasses() {
           Join a Class
         </Button>
       </header>
+
+      {/* Search Bar */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search classes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 rounded-full"
+        />
+      </div>
 
       {enrolledClasses.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
