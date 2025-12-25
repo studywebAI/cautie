@@ -32,10 +32,20 @@ export function ClassCard({ classInfo, onArchive, isArchived = false }: ClassCar
         try {
             const [studentsRes, assignmentsRes] = await Promise.all([
                 fetch(`/api/classes/${classInfo.id}/members`),
-                fetch(`/api/assignments`) 
+                fetch(`/api/assignments`)
             ]);
 
-            const studentsData = await studentsRes.json();
+            // Handle 404 errors gracefully - class might not exist or have no members yet
+            let studentsData = [];
+            if (studentsRes.ok) {
+                studentsData = await studentsRes.json();
+            } else if (studentsRes.status === 404) {
+                console.warn(`Class ${classInfo.id} not found or no members yet`);
+                studentsData = [];
+            } else {
+                throw new Error(`Failed to fetch students: ${studentsRes.status}`);
+            }
+
             const allAssignments = await assignmentsRes.json();
 
             setStudents(studentsData);
@@ -43,6 +53,9 @@ export function ClassCard({ classInfo, onArchive, isArchived = false }: ClassCar
 
         } catch (error) {
             console.error(`Failed to fetch data for class ${classInfo.id}`, error);
+            // Set empty data on error to prevent UI issues
+            setStudents([]);
+            setAssignments([]);
         } finally {
             setIsLoading(false);
         }

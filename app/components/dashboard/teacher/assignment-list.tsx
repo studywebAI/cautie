@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreateAssignmentDialog } from './create-assignment-dialog';
 import { SubmitAssignmentDialog } from '../student/submit-assignment-dialog';
+import { SubmissionsView } from './submissions-view';
 import type { ClassAssignment } from '@/contexts/app-context';
 import { format, parseISO } from 'date-fns';
-import { useContext, useEffect } from 'react';
 import { AppContext } from '@/contexts/app-context';
 
 type AssignmentListProps = {
@@ -30,6 +30,10 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<ClassAssignment | null>(null);
+  const [submissionStatuses, setSubmissionStatuses] = useState<Record<string, string>>({});
+  const [submissionCounts, setSubmissionCounts] = useState<Record<string, number>>({});
+  const [showSubmissions, setShowSubmissions] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
 
   const handleSubmitClick = (assignment: ClassAssignment) => {
     setSelectedAssignment(assignment);
@@ -37,9 +41,61 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
   };
 
   const handleSubmissionComplete = () => {
-    // Could refresh data here if needed
+    // Refresh submission statuses
+    fetchSubmissionStatuses();
     setSelectedAssignment(null);
   };
+
+  const handleViewSubmissions = (assignmentId: string) => {
+    setSelectedAssignmentId(assignmentId);
+    setShowSubmissions(true);
+  };
+
+  const fetchSubmissionStatuses = async () => {
+    if (!isTeacher) {
+      // For students, check their own submissions
+      try {
+        const response = await fetch('/api/submissions');
+        if (response.ok) {
+          const submissions = await response.json();
+          const statusMap: Record<string, string> = {};
+          submissions.forEach((sub: any) => {
+            statusMap[sub.assignment_id] = sub.status === 'graded' ? 'Graded' : 'Submitted';
+          });
+          setSubmissionStatuses(statusMap);
+        }
+      } catch (error) {
+        console.error('Failed to fetch submission statuses:', error);
+      }
+    }
+  };
+
+  const fetchSubmissionCounts = async () => {
+    if (!isTeacher) return;
+
+    try {
+      // For teachers, fetch all submissions for their assignments
+      const response = await fetch('/api/submissions');
+      if (response.ok) {
+        const submissions = await response.json();
+        const countMap: Record<string, number> = {};
+        submissions.forEach((sub: any) => {
+          countMap[sub.assignment_id] = (countMap[sub.assignment_id] || 0) + 1;
+        });
+        setSubmissionCounts(countMap);
+      }
+    } catch (error) {
+      console.error('Failed to fetch submission counts:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!isTeacher) {
+      fetchSubmissionStatuses();
+    } else {
+      fetchSubmissionCounts();
+    }
+  }, [assignments, isTeacher]);
 
   return (
     <>
@@ -77,8 +133,9 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
             </TableHeader>
             <TableBody>
               {assignments.map((assignment) => {
-                  const submissionRate = 0; // Placeholder until submissions are tracked
-                  const studentSubmissionStatus = Math.random() > 0.5 ? "Submitted" : "Not submitted"; // Placeholder for student status
+                  const submissionCount = submissionCounts[assignment.id] || 0;
+                  const submissionRate = 0; // We don't have total student count yet, so keep placeholder
+                  const studentSubmissionStatus = isTeacher ? null : (submissionStatuses[assignment.id] || "Not submitted");
 
                   return (
                       <TableRow key={assignment.id}>
@@ -86,13 +143,12 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
                           <TableCell>{assignment.due_date ? format(parseISO(assignment.due_date), 'MMM d, yyyy') : 'No due date'}</TableCell>
                           <TableCell>
                             {isTeacher ? (
-                              <div className="flex items-center gap-2">
-                                  <Progress value={submissionRate} className="h-2 w-24" />
-                                  <span className="text-sm text-muted-foreground">{submissionRate}%</span>
+                              <div className="text-sm text-muted-foreground">
+                                {submissionCount} submission{submissionCount !== 1 ? 's' : ''}
                               </div>
                             ) : (
                               <span className={`text-sm px-2 py-1 rounded-full ${
-                                studentSubmissionStatus === 'Submitted'
+                                studentSubmissionStatus === 'Submitted' || studentSubmissionStatus === 'Graded'
                                   ? 'bg-green-100 text-green-800'
                                   : 'bg-yellow-100 text-yellow-800'
                               }`}>
@@ -110,7 +166,9 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem>View Submissions</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleViewSubmissions(assignment.id)}>
+                                    View Submissions
+                                  </DropdownMenuItem>
                                   <DropdownMenuItem>Edit Assignment</DropdownMenuItem>
                                   <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -120,8 +178,10 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleSubmitClick(assignment)}
+                                disabled={studentSubmissionStatus === 'Graded'}
                               >
-                                {studentSubmissionStatus === 'Submitted' ? 'View Submission' : 'Submit Work'}
+                                {studentSubmissionStatus === 'Submitted' ? 'Update Submission' :
+                                 studentSubmissionStatus === 'Graded' ? 'Graded' : 'Submit Work'}
                               </Button>
                             )}
                           </TableCell>
@@ -152,6 +212,11 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
           assignmentTitle={selectedAssignment.title}
           onSubmitted={handleSubmissionComplete}
         />
+      )}
+      {showSubmissions && selectedAssignmentId && (
+        <div className="mt-8">
+          <SubmissionsView assignmentId={selectedAssignmentId} />
+        </div>
       )}
     </>
   );
