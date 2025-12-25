@@ -39,7 +39,7 @@ export async function GET(
   // Security check: Ensure the requesting user is the owner of the class or a member
   const { data: classData, error: classError } = await supabase
     .from('classes')
-    .select('owner_id')
+    .select('user_id')
     .eq('id', classId)
     .single();
 
@@ -47,7 +47,7 @@ export async function GET(
     return NextResponse.json({ error: 'Class not found' }, { status: 404 });
   }
 
-  let isMemberOrOwner = classData.owner_id === session.user.id;
+  let isMemberOrOwner = classData.user_id === session.user.id;
 
   if (!isMemberOrOwner) {
     const { data: memberData, error: memberError } = await supabase
