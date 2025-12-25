@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PlusCircle, Search, ChevronDown, ChevronUp } from 'lucide-react';
@@ -14,22 +14,37 @@ import { useToast } from '@/hooks/use-toast';
 export function TeacherDashboard() {
   const { classes, createClass, isLoading, refetchClasses } = useContext(AppContext) as AppContextType;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [archivedClassIds, setArchivedClassIds] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
-    const stored = localStorage.getItem('archived-classes');
-    return stored ? JSON.parse(stored) : [];
-  });
   const [showArchived, setShowArchived] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [allClasses, setAllClasses] = useState<ClassInfo[]>([]);
+  const [archivedClassesCount, setArchivedClassesCount] = useState(0);
   const { toast } = useToast();
 
-  const toggleArchive = (classId: string) => {
-    const newArchived = archivedClassIds.includes(classId)
-      ? archivedClassIds.filter(id => id !== classId)
-      : [...archivedClassIds, classId];
-    setArchivedClassIds(newArchived);
-    localStorage.setItem('archived-classes', JSON.stringify(newArchived));
+  // Fetch all classes including archived when toggling
+  const fetchAllClasses = async (includeArchived = false) => {
+    try {
+      const params = includeArchived ? '?includeArchived=true' : '';
+      const response = await fetch(`/api/classes${params}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAllClasses(data);
+        // Count archived classes
+        const archived = data.filter((cls: ClassInfo) => cls.status === 'archived');
+        setArchivedClassesCount(archived.length);
+      }
+    } catch (error) {
+      console.error('Failed to fetch classes:', error);
+    }
   };
+
+  // Update allClasses when classes context changes
+  useEffect(() => {
+    setAllClasses(classes || []);
+    // Fetch archived count separately
+    fetchAllClasses(true).then(() => {
+      // This will update archivedClassesCount
+    });
+  }, [classes]);
 
   const handleClassCreated = async (newClass: { name: string; description: string | null }): Promise<ClassInfo | null> => {
      try {
@@ -50,6 +65,18 @@ export function TeacherDashboard() {
       return null;
     }
   };
+
+  // Handle toggling archived classes view
+  const handleToggleArchived = async () => {
+    if (!showArchived) {
+      // Fetch classes including archived ones
+      await fetchAllClasses(true);
+    } else {
+      // Revert to normal classes
+      await refetchClasses();
+    }
+    setShowArchived(!showArchived);
+  };
   
   if (isLoading || !classes) {
       return (
@@ -68,13 +95,13 @@ export function TeacherDashboard() {
       )
   }
 
-  const filteredClasses = classes.filter(cls =>
+  const filteredClasses = allClasses.filter(cls =>
     cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (cls.description && cls.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const activeClasses = filteredClasses.filter(cls => !archivedClassIds.includes(cls.id));
-  const archivedClasses = filteredClasses.filter(cls => archivedClassIds.includes(cls.id));
+  const activeClasses = filteredClasses.filter(cls => cls.status !== 'archived');
+  const archivedClasses = filteredClasses.filter(cls => cls.status === 'archived');
 
   return (
     <div className="flex flex-col gap-8">
@@ -133,22 +160,22 @@ export function TeacherDashboard() {
           </div>
 
           {/* Archived Classes Toggle */}
-          {archivedClasses.length > 0 && (
+          {archivedClassesCount > 0 && (
             <div className="text-center pt-8 pb-4">
               <Button
                 variant="outline"
-                onClick={() => setShowArchived(!showArchived)}
+                onClick={handleToggleArchived}
                 className="rounded-full"
               >
                 {showArchived ? (
                   <>
                     <ChevronUp className="mr-2 h-4 w-4" />
-                    Hide Archived Classes ({archivedClasses.length})
+                    Hide Archived Classes ({archivedClassesCount})
                   </>
                 ) : (
                   <>
                     <ChevronDown className="mr-2 h-4 w-4" />
-                    Show Archived Classes ({archivedClasses.length})
+                    Show Archived Classes ({archivedClassesCount})
                   </>
                 )}
               </Button>

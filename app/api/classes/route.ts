@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   const { searchParams } = new URL(request.url);
   const guestId = searchParams.get('guestId');
+  const includeArchived = searchParams.get('includeArchived') === 'true';
 
   if (!user && !guestId) {
     return NextResponse.json([]);
@@ -22,18 +23,32 @@ export async function GET(request: Request) {
   // Get classes the user owns
   let ownedClasses: any[] = [];
   if (user) {
-    const { data, error } = await supabase
+    let query = supabase
       .from('classes')
       .select('*')
       .or(`user_id.eq.${user.id},owner_id.eq.${user.id}`);
 
+    // Exclude archived classes unless explicitly requested
+    if (!includeArchived) {
+      query = query.or('status.is.null,status.neq.archived');
+    }
+
+    const { data, error } = await query;
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     ownedClasses = data || [];
   } else if (guestId) {
-    const { data, error } = await supabase
+    let query = supabase
       .from('classes')
       .select('*')
       .eq('guest_id', guestId);
+
+    // Exclude archived classes unless explicitly requested
+    if (!includeArchived) {
+      query = query.or('status.is.null,status.neq.archived');
+    }
+
+    const { data, error } = await query;
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     ownedClasses = data || [];

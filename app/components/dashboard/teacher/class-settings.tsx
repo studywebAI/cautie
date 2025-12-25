@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Trash2, Archive } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useContext } from 'react';
+import { AppContext } from '@/contexts/app-context';
 
 interface ClassSettingsProps {
   classId: string;
@@ -15,6 +17,7 @@ interface ClassSettingsProps {
 
 export function ClassSettings({ classId, className, onArchive }: ClassSettingsProps) {
   const [isArchiving, setIsArchiving] = useState(false);
+  const { refetchClasses } = useContext(AppContext) as any;
 
   const handleArchiveClass = async () => {
     setIsArchiving(true);
@@ -33,6 +36,8 @@ export function ClassSettings({ classId, className, onArchive }: ClassSettingsPr
         description: `${className} has been archived successfully.`,
       });
 
+      // Refresh the classes list to reflect the archived status
+      await refetchClasses();
       onArchive?.();
     } catch (error) {
       console.error('Error archiving class:', error);
