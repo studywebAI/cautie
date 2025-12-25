@@ -14,8 +14,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CreateAssignmentDialog } from './create-assignment-dialog';
+import { SubmitAssignmentDialog } from '../student/submit-assignment-dialog';
 import type { ClassAssignment } from '@/contexts/app-context';
 import { format, parseISO } from 'date-fns';
+import { useContext, useEffect } from 'react';
+import { AppContext } from '@/contexts/app-context';
 
 type AssignmentListProps = {
   assignments: ClassAssignment[];
@@ -25,6 +28,18 @@ type AssignmentListProps = {
 
 export function AssignmentList({ assignments, classId, isTeacher = true }: AssignmentListProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isSubmitOpen, setIsSubmitOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<ClassAssignment | null>(null);
+
+  const handleSubmitClick = (assignment: ClassAssignment) => {
+    setSelectedAssignment(assignment);
+    setIsSubmitOpen(true);
+  };
+
+  const handleSubmissionComplete = () => {
+    // Could refresh data here if needed
+    setSelectedAssignment(null);
+  };
 
   return (
     <>
@@ -101,7 +116,11 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             ) : (
-                              <Button variant="outline" size="sm">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSubmitClick(assignment)}
+                              >
                                 {studentSubmissionStatus === 'Submitted' ? 'View Submission' : 'Submit Work'}
                               </Button>
                             )}
@@ -120,11 +139,20 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
           </Table>
         </CardContent>
       </Card>
-      <CreateAssignmentDialog 
+      <CreateAssignmentDialog
         isOpen={isCreateOpen}
         setIsOpen={setIsCreateOpen}
         classId={classId}
       />
+      {selectedAssignment && (
+        <SubmitAssignmentDialog
+          isOpen={isSubmitOpen}
+          setIsOpen={setIsSubmitOpen}
+          assignmentId={selectedAssignment.id}
+          assignmentTitle={selectedAssignment.title}
+          onSubmitted={handleSubmissionComplete}
+        />
+      )}
     </>
   );
 }
