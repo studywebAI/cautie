@@ -203,8 +203,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({
             title: task.title,
             description: task.description,
-            date: task.date,
-            subject: task.subject,
+            // date and subject not supported in current schema
           }),
         });
         if (!response.ok) throw new Error(`Failed to sync personal task: ${task.title}`);
@@ -345,6 +344,11 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         description: newClassData.description,
         created_at: new Date().toISOString(),
         owner_id: 'local-user',
+        user_id: null,
+        guest_id: null,
+        join_code: null,
+        owner_type: 'guest',
+        status: null,
       };
       const updatedClasses = [...classes, newClass];
       setClasses(updatedClasses);
