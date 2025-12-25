@@ -20,9 +20,10 @@ import { format, parseISO } from 'date-fns';
 type AssignmentListProps = {
   assignments: ClassAssignment[];
   classId: string;
+  isTeacher?: boolean;
 };
 
-export function AssignmentList({ assignments, classId }: AssignmentListProps) {
+export function AssignmentList({ assignments, classId, isTeacher = true }: AssignmentListProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
@@ -31,12 +32,19 @@ export function AssignmentList({ assignments, classId }: AssignmentListProps) {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="font-headline">Assignments</CardTitle>
-            <CardDescription>An overview of all assignments for this class.</CardDescription>
+            <CardDescription>
+              {isTeacher
+                ? "An overview of all assignments for this class."
+                : "Your assignments for this class."
+              }
+            </CardDescription>
           </div>
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Assignment
-          </Button>
+          {isTeacher && (
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create Assignment
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <Table>
@@ -44,37 +52,59 @@ export function AssignmentList({ assignments, classId }: AssignmentListProps) {
               <TableRow>
                 <TableHead className="w-[50%]">Title</TableHead>
                 <TableHead>Due Date</TableHead>
-                <TableHead>Submissions</TableHead>
+                {isTeacher ? (
+                  <TableHead>Submissions</TableHead>
+                ) : (
+                  <TableHead>Status</TableHead>
+                )}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {assignments.map((assignment) => {
                   const submissionRate = 0; // Placeholder until submissions are tracked
+                  const studentSubmissionStatus = Math.random() > 0.5 ? "Submitted" : "Not submitted"; // Placeholder for student status
+
                   return (
                       <TableRow key={assignment.id}>
                           <TableCell className="font-medium">{assignment.title}</TableCell>
                           <TableCell>{assignment.due_date ? format(parseISO(assignment.due_date), 'MMM d, yyyy') : 'No due date'}</TableCell>
                           <TableCell>
+                            {isTeacher ? (
                               <div className="flex items-center gap-2">
                                   <Progress value={submissionRate} className="h-2 w-24" />
                                   <span className="text-sm text-muted-foreground">{submissionRate}%</span>
                               </div>
+                            ) : (
+                              <span className={`text-sm px-2 py-1 rounded-full ${
+                                studentSubmissionStatus === 'Submitted'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {studentSubmissionStatus}
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">More actions</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>View Submissions</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Assignment</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            {isTeacher ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">More actions</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem>View Submissions</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Assignment</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : (
+                              <Button variant="outline" size="sm">
+                                {studentSubmissionStatus === 'Submitted' ? 'View Submission' : 'Submit Work'}
+                              </Button>
+                            )}
                           </TableCell>
                       </TableRow>
                   )

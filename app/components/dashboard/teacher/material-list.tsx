@@ -34,6 +34,7 @@ const iconMap = {
   QUIZ: BrainCircuit,
   FLASHCARDS: Copy,
   FILE: File,
+  BLOCK: Blocks,
 };
 
 type CreateNoteDialogProps = {
@@ -262,9 +263,10 @@ type MaterialListProps = {
   materials: MaterialReference[];
   classId: string;
   isLoading: boolean;
+  isTeacher?: boolean;
 };
 
-export function MaterialList({ materials, classId, isLoading }: MaterialListProps) {
+export function MaterialList({ materials, classId, isLoading, isTeacher = true }: MaterialListProps) {
   const [isCreateNoteOpen, setIsCreateNoteOpen] = useState(false);
   const [isCreateBlockOpen, setIsCreateBlockOpen] = useState(false);
   const { refetchMaterials } = useContext(AppContext) as AppContextType;
@@ -298,9 +300,15 @@ export function MaterialList({ materials, classId, isLoading }: MaterialListProp
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="font-headline">Materials</CardTitle>
-            <CardDescription>All learning resources available for this class.</CardDescription>
+            <CardDescription>
+              {isTeacher
+                ? "All learning resources available for this class."
+                : "Learning materials available for this class."
+              }
+            </CardDescription>
           </div>
-           <DropdownMenu>
+          {isTeacher && (
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button>
                   <PlusCircle className="mr-2 h-4 w-4" />
@@ -316,12 +324,17 @@ export function MaterialList({ materials, classId, isLoading }: MaterialListProp
                   <BrainCircuit className="mr-2 h-4 w-4" />
                   <span>Create Quiz (soon)</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsCreateBlockOpen(true)}>
+                  <Blocks className="mr-2 h-4 w-4" />
+                  <span>Create Block Material</span>
+                </DropdownMenuItem>
                  <DropdownMenuItem disabled>
                   <Copy className="mr-2 h-4 w-4" />
                   <span>Create Flashcards (soon)</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {materials.map((material) => {
@@ -339,25 +352,31 @@ export function MaterialList({ materials, classId, isLoading }: MaterialListProp
                     </div>
                   </div>
                 </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">More actions</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild><Link href={`/material/${material.id}`}>View Material</Link></DropdownMenuItem>
-                    <DropdownMenuItem>Attach to Assignment</DropdownMenuItem>
-                    <DropdownMenuItem 
-                      className="text-destructive"
-                      onClick={() => handleDelete(material.id)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {isTeacher ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">More actions</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild><Link href={`/material/${material.id}`}>View Material</Link></DropdownMenuItem>
+                      <DropdownMenuItem>Attach to Assignment</DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => handleDelete(material.id)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/material/${material.id}`}>View Material</Link>
+                  </Button>
+                )}
               </div>
             );
           })}

@@ -16,7 +16,7 @@ import { BookOpen, Users, FileText, Settings } from 'lucide-react';
 export default function ClassDetailsPage() {
   const params = useParams();
   const { classId } = params as { classId: string };
-  const { classes, assignments, isLoading: isAppLoading, materials, refetchMaterials } = useContext(AppContext) as AppContextType;
+  const { classes, assignments, isLoading: isAppLoading, materials, refetchMaterials, role } = useContext(AppContext) as AppContextType;
 
   const [students, setStudents] = useState<Student[]>([]);
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
@@ -54,7 +54,10 @@ export default function ClassDetailsPage() {
     }
   }, [classId, refetchMaterials]);
 
-  const isLoading = Boolean(isAppLoading) || (isStudentsLoading && classId && !classId.startsWith('local-'));
+  const isLoading = !!isAppLoading || (isStudentsLoading && classId && !classId.startsWith('local-'));
+
+  // Check if user is a teacher (global role)
+  const isTeacher = role === 'teacher';
 
   if (isLoading && !classInfo) {
     return (
@@ -92,24 +95,32 @@ export default function ClassDetailsPage() {
       </header>
 
       <Tabs defaultValue="assignments" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-4' : 'grid-cols-2'}`}>
           <TabsTrigger value="assignments"><FileText className="mr-2 h-4 w-4" /> Assignments</TabsTrigger>
           <TabsTrigger value="materials"><BookOpen className="mr-2 h-4 w-4" /> Materials</TabsTrigger>
-          <TabsTrigger value="students"><Users className="mr-2 h-4 w-4" /> Students</TabsTrigger>
-          <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
+          {isTeacher && (
+            <>
+              <TabsTrigger value="students"><Users className="mr-2 h-4 w-4" /> Students</TabsTrigger>
+              <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
+            </>
+          )}
         </TabsList>
         <TabsContent value="assignments">
-          <AssignmentList assignments={classAssignments} classId={classId} />
+          <AssignmentList assignments={classAssignments} classId={classId} isTeacher={isTeacher} />
         </TabsContent>
           <TabsContent value="materials">
-           <MaterialList materials={materials} classId={classId} isLoading={isLoading} />
+           <MaterialList materials={materials} classId={classId} isLoading={!!isLoading} isTeacher={isTeacher} />
          </TabsContent>
-         <TabsContent value="students">
-            <StudentList students={students} isLoading={isLoading} />
-         </TabsContent>
-         <TabsContent value="settings">
-           <ClassSettings classId={classId} className={classInfo.name} onArchive={() => window.location.href = '/classes'} />
-         </TabsContent>
+         {isTeacher && (
+           <>
+             <TabsContent value="students">
+                <StudentList students={students} isLoading={!!isLoading} />
+             </TabsContent>
+             <TabsContent value="settings">
+               <ClassSettings classId={classId} className={classInfo.name} onArchive={() => window.location.href = '/classes'} />
+             </TabsContent>
+           </>
+         )}
       </Tabs>
     </div>
   );
