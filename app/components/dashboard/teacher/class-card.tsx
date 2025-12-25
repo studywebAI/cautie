@@ -3,7 +3,8 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Users, BookCheck, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, BookCheck, AlertTriangle, ArrowRight, Archive, ArchiveRestore } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import type { ClassInfo, ClassAssignment } from '@/contexts/app-context';
@@ -13,9 +14,11 @@ import type { Student } from '@/lib/teacher-types';
 
 type ClassCardProps = {
   classInfo: ClassInfo;
+  onArchive?: () => void;
+  isArchived?: boolean;
 };
 
-export function ClassCard({ classInfo }: ClassCardProps) {
+export function ClassCard({ classInfo, onArchive, isArchived = false }: ClassCardProps) {
   const [students, setStudents] = useState<Student[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,7 +105,31 @@ export function ClassCard({ classInfo }: ClassCardProps) {
             </div>
           )}
         </CardContent>
-        <CardFooter className="justify-end">
+        <CardFooter className="justify-between">
+          {onArchive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onArchive();
+              }}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              {isArchived ? (
+                <>
+                  <ArchiveRestore className="mr-1 h-4 w-4" />
+                  Unarchive
+                </>
+              ) : (
+                <>
+                  <Archive className="mr-1 h-4 w-4" />
+                  Archive
+                </>
+              )}
+            </Button>
+          )}
           <div className="flex items-center text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
             <span>Manage Class</span>
             <ArrowRight className="ml-2 h-4 w-4" />

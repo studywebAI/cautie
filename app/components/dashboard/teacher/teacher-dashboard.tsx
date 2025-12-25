@@ -13,7 +13,20 @@ import { useToast } from '@/hooks/use-toast';
 export function TeacherDashboard() {
   const { classes, createClass, isLoading, refetchClasses } = useContext(AppContext) as AppContextType;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [archivedClassIds, setArchivedClassIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    const stored = localStorage.getItem('archived-classes');
+    return stored ? JSON.parse(stored) : [];
+  });
   const { toast } = useToast();
+
+  const toggleArchive = (classId: string) => {
+    const newArchived = archivedClassIds.includes(classId)
+      ? archivedClassIds.filter(id => id !== classId)
+      : [...archivedClassIds, classId];
+    setArchivedClassIds(newArchived);
+    localStorage.setItem('archived-classes', JSON.stringify(newArchived));
+  };
 
   const handleClassCreated = async (newClass: { name: string; description: string | null }): Promise<ClassInfo | null> => {
      try {
@@ -52,6 +65,9 @@ export function TeacherDashboard() {
       )
   }
 
+  const activeClasses = classes.filter(cls => !archivedClassIds.includes(cls.id));
+  const archivedClasses = classes.filter(cls => archivedClassIds.includes(cls.id));
+
   return (
     <div className="flex flex-col gap-8">
       <header className="flex justify-between items-center">
@@ -67,7 +83,7 @@ export function TeacherDashboard() {
         </Button>
       </header>
 
-      {classes.length === 0 ? (
+      {activeClasses.length === 0 && archivedClasses.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm p-12 text-center">
           <div className="flex flex-col items-center gap-2">
             <h3 className="text-2xl font-bold tracking-tight">
@@ -83,10 +99,38 @@ export function TeacherDashboard() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classes.map((classInfo) => (
-            <ClassCard key={classInfo.id} classInfo={classInfo} />
-          ))}
+        <div className="space-y-8">
+          {activeClasses.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Active Classes</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activeClasses.map((classInfo) => (
+                  <ClassCard
+                    key={classInfo.id}
+                    classInfo={classInfo}
+                    onArchive={() => toggleArchive(classInfo.id)}
+                    isArchived={false}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {archivedClasses.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-muted-foreground">Archived Classes</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {archivedClasses.map((classInfo) => (
+                  <ClassCard
+                    key={classInfo.id}
+                    classInfo={classInfo}
+                    onArchive={() => toggleArchive(classInfo.id)}
+                    isArchived={true}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

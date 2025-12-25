@@ -135,7 +135,7 @@ export function StudentClasses() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {enrolledClasses.map((classInfo) => (
-            <ClassCard key={classInfo.id} classInfo={classInfo} />
+            <ClassCard key={classInfo.id} classInfo={classInfo} isArchived={false} />
           ))}
         </div>
       )}

@@ -171,7 +171,7 @@ function TeacherSummaryDashboard() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {teacherClasses.slice(0, 2).map(classInfo => (
-                         <ClassCard key={classInfo.id} classInfo={classInfo} />
+                         <ClassCard key={classInfo.id} classInfo={classInfo} isArchived={false} />
                     ))}
                      {teacherClasses.length === 0 && (
                         <p className="text-muted-foreground col-span-2 text-center p-8">You haven't created any classes yet. <Link href="/classes" className="text-primary hover:underline">Create one now</Link> to get started.</p>
