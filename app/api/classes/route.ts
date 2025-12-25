@@ -25,10 +25,10 @@ export async function GET(request: Request) {
     const { data, error } = await supabase
       .from('classes')
       .select('*')
-      .eq('user_id', user.id);
+      .or(`user_id.eq.${user.id},owner_id.eq.${user.id}`);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    ownedClasses = data;
+    ownedClasses = data || [];
   } else if (guestId) {
     const { data, error } = await supabase
       .from('classes')
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
       .eq('guest_id', guestId);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    ownedClasses = data;
+    ownedClasses = data || [];
   }
 
   let memberClasses: any[] = [];
@@ -68,7 +68,14 @@ export async function POST(request: Request) {
     const cookieStore = cookies()
     const supabase = await createClient(cookieStore)
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError) {
+      console.error('Auth error:', authError);
+      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
+    }
+
+    console.log('User:', user?.id, 'GuestId:', guestId);
 
     if (!user && !guestId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -103,18 +110,24 @@ export async function POST(request: Request) {
       join_code: joinCode,
       user_id: user?.id || null,
       guest_id: guestId || null,
-      owner_type: user ? 'user' : 'guest'
+      owner_id: user?.id || null,
+      owner_type: (user ? 'user' : 'guest') as 'user' | 'guest'
     };
+
+    console.log('Inserting data:', insertData);
 
     const { data, error } = await supabase
       .from('classes')
-      .insert([insertData as any])
+      .insert([insertData])
       .select('id, name, description, join_code')
       .single();
 
     if (error) {
+      console.error('Insert error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    console.log('Insert successful:', data);
 
     return NextResponse.json(data);
   } catch (err) {

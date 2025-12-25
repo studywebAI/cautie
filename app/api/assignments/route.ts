@@ -25,12 +25,12 @@ export async function GET(request: Request) {
     const { data: userClasses, error: ownedError } = await supabase
       .from('classes')
       .select('id')
-      .eq('user_id', user.id);
+      .or(`user_id.eq.${user.id},owner_id.eq.${user.id}`);
 
     if (ownedError) {
       return NextResponse.json({ error: ownedError.message }, { status: 500 });
     }
-    ownedClassIds = userClasses.map(c => c.id);
+    ownedClassIds = userClasses?.map(c => c.id) || [];
 
     // Get member class IDs only for authenticated users
     const { data: memberClasses, error: memberError } = await supabase
