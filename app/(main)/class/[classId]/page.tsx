@@ -21,7 +21,16 @@ export default function ClassDetailsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
 
-  const classInfo: ClassInfo | undefined = useMemo(() => classes.find(c => c.id === classId), [classes, classId]);
+  const [directClassInfo, setDirectClassInfo] = useState<ClassInfo | null>(null);
+
+  const classInfo: ClassInfo | undefined = useMemo(() => {
+    // First try to find in context
+    const contextClass = classes.find(c => c.id === classId);
+    if (contextClass) return contextClass;
+
+    // If not found in context, use directly fetched class
+    return directClassInfo || undefined;
+  }, [classes, classId, directClassInfo]);
   const classAssignments = useMemo(() => assignments.filter(a => a.class_id === classId), [assignments, classId]);
 
 
@@ -53,6 +62,28 @@ export default function ClassDetailsPage() {
         refetchMaterials(classId);
     }
   }, [classId, refetchMaterials]);
+
+  // Fetch class info directly if not found in context (for archived classes)
+  useEffect(() => {
+    if (!classId || classId.startsWith('local-')) return;
+
+    const contextClass = classes.find(c => c.id === classId);
+    if (contextClass || directClassInfo) return; // Already have the class info
+
+    const fetchClassInfo = async () => {
+      try {
+        const response = await fetch(`/api/classes/${classId}`);
+        if (response.ok) {
+          const classData = await response.json();
+          setDirectClassInfo(classData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch class info:', error);
+      }
+    };
+
+    fetchClassInfo();
+  }, [classId, classes, directClassInfo]);
 
   const isLoading = !!isAppLoading || (isStudentsLoading && classId && !classId.startsWith('local-'));
 
@@ -117,7 +148,11 @@ export default function ClassDetailsPage() {
                 <StudentList students={students} isLoading={!!isLoading} />
              </TabsContent>
              <TabsContent value="settings">
-               <ClassSettings classId={classId} className={classInfo.name} onArchive={() => window.location.href = '/classes'} />
+               <ClassSettings
+                  classId={classId}
+                  className={classInfo.name}
+                  isArchived={classInfo.status === 'archived'}
+                  onArchive={() => window.location.href = '/classes'} />
              </TabsContent>
            </>
          )}

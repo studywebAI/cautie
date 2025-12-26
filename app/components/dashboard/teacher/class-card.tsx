@@ -24,7 +24,7 @@ export function ClassCard({ classInfo, onArchive, isArchived = false }: ClassCar
 
   useEffect(() => {
     async function fetchData() {
-        if (!classInfo.id || classInfo.id.startsWith('local-')) {
+        if (!classInfo.id || classInfo.id.startsWith('local-') || isArchived) {
             setIsLoading(false);
             return;
         }
@@ -61,7 +61,7 @@ export function ClassCard({ classInfo, onArchive, isArchived = false }: ClassCar
         }
     }
     fetchData();
-  }, [classInfo.id]);
+  }, [classInfo.id, isArchived]);
 
 
   const studentCount = students.length;
@@ -81,18 +81,33 @@ export function ClassCard({ classInfo, onArchive, isArchived = false }: ClassCar
 
   return (
     <Link href={`/class/${classInfo.id}`} className="group">
-      <Card className="h-full flex flex-col hover:border-primary transition-all">
+      <Card className={`h-full flex flex-col hover:border-primary transition-all ${isArchived ? 'opacity-75' : ''}`}>
         <CardHeader>
-          <CardTitle className="font-headline text-xl">{classInfo.name}</CardTitle>
+          <CardTitle className="font-headline text-xl flex items-center gap-2">
+            {classInfo.name}
+            {isArchived && (
+              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                Archived
+              </span>
+            )}
+          </CardTitle>
           <div className="flex items-center text-sm text-muted-foreground pt-1 gap-4">
-            <div className="flex items-center gap-1.5">
-              <Users className="h-4 w-4" />
-              <span>{studentCount} Student{studentCount !== 1 ? 's' : ''}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <BookCheck className="h-4 w-4" />
-              <span>{assignmentsDue} Due Soon</span>
-            </div>
+            {isArchived ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground italic">Archived class - data not available</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-4 w-4" />
+                  <span>{studentCount} Student{studentCount !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <BookCheck className="h-4 w-4" />
+                  <span>{assignmentsDue} Due Soon</span>
+                </div>
+              </>
+            )}
           </div>
         </CardHeader>
         <CardContent className="flex-grow space-y-4">
