@@ -34,7 +34,7 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
   const { toast } = useToast();
   
   const inviteLink = createdClass?.join_code ? `${window.location.origin}/classes?join_code=${createdClass.join_code}` : '';
-  const qrCodeUrl = inviteLink ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(inviteLink)}` : '';
+  const qrCodeUrl = inviteLink ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteLink)}&format=png` : '';
 
 
   const handleCreate = async () => {

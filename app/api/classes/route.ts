@@ -99,10 +99,10 @@ export async function POST(request: Request) {
     // Generate unique join code
     let joinCode;
     let attempts = 0;
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     do {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       joinCode = '';
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 8; i++) {
         joinCode += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       const { data: existing } = await supabase
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
         .single();
       if (!existing) break;
       attempts++;
-    } while (attempts < 10);
+    } while (attempts < 5);
 
     if (attempts >= 10) {
       return NextResponse.json({ error: 'Failed to generate unique join code' }, { status: 500 });
