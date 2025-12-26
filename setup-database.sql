@@ -278,6 +278,24 @@ CREATE POLICY "Students can leave classes." ON public.class_members FOR DELETE U
 -- Materials RLS
 CREATE POLICY "Users can manage their own materials" ON public.materials FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can view public materials" ON public.materials FOR SELECT USING (is_public = true);
+CREATE POLICY "Class members can view class materials" ON public.materials FOR SELECT USING (
+    EXISTS (
+        SELECT 1 FROM public.classes c
+        WHERE c.id = materials.class_id AND (
+            c.owner_id = auth.uid() OR
+            EXISTS (
+                SELECT 1 FROM public.class_members cm
+                WHERE cm.class_id = materials.class_id AND cm.user_id = auth.uid()
+            )
+        )
+    )
+);
+CREATE POLICY "Class owners can manage class materials" ON public.materials FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM public.classes c
+        WHERE c.id = materials.class_id AND c.owner_id = auth.uid()
+    )
+);
 
 -- Notes RLS
 CREATE POLICY "Users can manage notes for their materials" ON public.notes FOR ALL USING (
