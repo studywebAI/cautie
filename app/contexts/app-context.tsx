@@ -263,7 +263,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
               // Fetch all students for all classes owned by the teacher
               const ownedClassIds = (classesData as ClassInfo[] || []).filter((c: ClassInfo) => c.user_id === session.user.id).map((c: ClassInfo) => c.id);
-              if (ownedClassIds.length > 0) {
+              if (ownedClassIds.length > 0 && ownedClassIds.length <= 10) { // Limit to prevent spam
                  const studentPromises = ownedClassIds.map((id: string) => fetch(`/api/classes/${id}/members`).then(res => res.json()));
                  const studentsPerClass = await Promise.all(studentPromises);
                  const allStudents = studentsPerClass.flat();
@@ -606,3 +606,4 @@ export const useDictionary = () => {
   }
   return { dictionary: context.dictionary };
 };
+
