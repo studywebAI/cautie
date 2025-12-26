@@ -9,8 +9,11 @@ import { StudentList } from '@/components/dashboard/teacher/student-list';
 import type { Student } from '@/lib/teacher-types';
 import { MaterialList } from '@/components/dashboard/teacher/material-list';
 import { ClassSettings } from '@/components/dashboard/teacher/class-settings';
+import { ChapterNavigation } from '@/components/class/ChapterNavigation';
+import { ChapterContentViewer } from '@/components/class/ChapterContentViewer';
+import { ChapterEditor } from '@/components/class/ChapterEditor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, FileText, Settings } from 'lucide-react';
+import { BookOpen, Users, FileText, Settings, GraduationCap } from 'lucide-react';
 
 
 export default function ClassDetailsPage() {
@@ -22,6 +25,7 @@ export default function ClassDetailsPage() {
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
 
   const [directClassInfo, setDirectClassInfo] = useState<ClassInfo | null>(null);
+  const [selectedChapterId, setSelectedChapterId] = useState<string | undefined>(undefined);
 
   const classInfo: ClassInfo | undefined = useMemo(() => {
     // First try to find in context
@@ -126,9 +130,10 @@ export default function ClassDetailsPage() {
       </header>
 
       <Tabs defaultValue="assignments" className="w-full">
-        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-4' : 'grid-cols-2'}`}>
+        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-5' : 'grid-cols-3'}`}>
           <TabsTrigger value="assignments"><FileText className="mr-2 h-4 w-4" /> Assignments</TabsTrigger>
           <TabsTrigger value="materials"><BookOpen className="mr-2 h-4 w-4" /> Materials</TabsTrigger>
+          <TabsTrigger value="chapters"><GraduationCap className="mr-2 h-4 w-4" /> Chapters</TabsTrigger>
           {isTeacher && (
             <>
               <TabsTrigger value="students"><Users className="mr-2 h-4 w-4" /> Students</TabsTrigger>
@@ -139,23 +144,59 @@ export default function ClassDetailsPage() {
         <TabsContent value="assignments">
           <AssignmentList assignments={classAssignments} classId={classId} isTeacher={isTeacher} />
         </TabsContent>
-          <TabsContent value="materials">
-           <MaterialList materials={materials} classId={classId} isLoading={!!isLoading} isTeacher={isTeacher} />
-         </TabsContent>
-         {isTeacher && (
-           <>
-             <TabsContent value="students">
-                <StudentList students={students} isLoading={!!isLoading} classInfo={classInfo} />
-             </TabsContent>
-             <TabsContent value="settings">
-               <ClassSettings
+           <TabsContent value="materials">
+            <MaterialList materials={materials} classId={classId} isLoading={!!isLoading} isTeacher={isTeacher} />
+          </TabsContent>
+          <TabsContent value="chapters">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <div className="lg:col-span-1">
+                <ChapterNavigation
                   classId={classId}
-                  className={classInfo.name}
-                  isArchived={classInfo.status === 'archived'}
-                  onArchive={() => window.location.href = '/classes'} />
-             </TabsContent>
-           </>
-         )}
+                  selectedChapterId={selectedChapterId}
+                  onChapterSelect={setSelectedChapterId}
+                  onCreateChapter={() => setSelectedChapterId('new')}
+                  isTeacher={isTeacher}
+                />
+              </div>
+              <div className="lg:col-span-3">
+                {isTeacher ? (
+                  <ChapterEditor
+                    classId={classId}
+                    chapterId={selectedChapterId || 'new'}
+                    onChapterUpdated={() => {
+                      // Could refresh navigation here
+                      setSelectedChapterId(undefined);
+                    }}
+                  />
+                ) : selectedChapterId ? (
+                  <ChapterContentViewer
+                    classId={classId}
+                    chapterId={selectedChapterId}
+                    isTeacher={isTeacher}
+                  />
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <GraduationCap className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p>Select a chapter from the sidebar to view its content.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+          {isTeacher && (
+            <>
+              <TabsContent value="students">
+                 <StudentList students={students} isLoading={!!isLoading} classInfo={classInfo} />
+              </TabsContent>
+              <TabsContent value="settings">
+                <ClassSettings
+                   classId={classId}
+                   className={classInfo.name}
+                   isArchived={classInfo.status === 'archived'}
+                   onArchive={() => window.location.href = '/classes'} />
+              </TabsContent>
+            </>
+          )}
       </Tabs>
     </div>
   );

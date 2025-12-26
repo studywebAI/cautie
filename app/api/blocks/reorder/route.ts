@@ -19,10 +19,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'blockIds must be an array' }, { status: 400 });
     }
 
-    // Get the first block to determine the material_id
+    // Get the first block to determine the material_id or chapter_id
     const { data: firstBlock, error: blockError } = await supabase
       .from('blocks')
-      .select('material_id')
+      .select('material_id, chapter_id')
       .eq('id', blockIds[0])
       .single();
 
@@ -30,24 +30,61 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Block not found' }, { status: 404 });
     }
 
-    // Check access to the material
-    const { data: material, error: materialError } = await supabase
-      .from('materials')
-      .select('id, class_id, user_id')
-      .eq('id', firstBlock.material_id)
-      .single();
-
-    if (materialError || !material) {
-      return NextResponse.json({ error: 'Material not found' }, { status: 404 });
-    }
-
-    // Authorization
     let hasAccess = false;
-    if (material.class_id) {
+
+    if (firstBlock.material_id) {
+      // Material blocks
+      const { data: material, error: materialError } = await supabase
+        .from('materials')
+        .select('id, class_id, user_id')
+        .eq('id', firstBlock.material_id)
+        .single();
+
+      if (materialError || !material) {
+        return NextResponse.json({ error: 'Material not found' }, { status: 404 });
+      }
+
+      // Authorization for material
+      if (material.class_id) {
+        const { data: classData } = await supabase
+          .from('classes')
+          .select('owner_id')
+          .eq('id', material.class_id)
+          .single();
+
+        if (classData?.owner_id === user.id) {
+          hasAccess = true;
+        } else {
+          const { count } = await supabase
+            .from('class_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('class_id', material.class_id)
+            .eq('user_id', user.id);
+
+          if (count && count > 0) {
+            hasAccess = true;
+          }
+        }
+      } else if (material.user_id === user.id) {
+        hasAccess = true;
+      }
+    } else if (firstBlock.chapter_id) {
+      // Chapter blocks
+      const { data: chapter, error: chapterError } = await supabase
+        .from('class_chapters')
+        .select('id, class_id')
+        .eq('id', firstBlock.chapter_id)
+        .single();
+
+      if (chapterError || !chapter) {
+        return NextResponse.json({ error: 'Chapter not found' }, { status: 404 });
+      }
+
+      // Authorization for chapter
       const { data: classData } = await supabase
         .from('classes')
         .select('owner_id')
-        .eq('id', material.class_id)
+        .eq('id', chapter.class_id)
         .single();
 
       if (classData?.owner_id === user.id) {
@@ -56,15 +93,15 @@ export async function POST(request: NextRequest) {
         const { count } = await supabase
           .from('class_members')
           .select('*', { count: 'exact', head: true })
-          .eq('class_id', material.class_id)
+          .eq('class_id', chapter.class_id)
           .eq('user_id', user.id);
 
         if (count && count > 0) {
           hasAccess = true;
         }
       }
-    } else if (material.user_id === user.id) {
-      hasAccess = true;
+    } else {
+      return NextResponse.json({ error: 'Invalid block configuration' }, { status: 400 });
     }
 
     if (!hasAccess) {

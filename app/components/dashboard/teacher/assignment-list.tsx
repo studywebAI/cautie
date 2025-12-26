@@ -34,6 +34,7 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
   const [submissionCounts, setSubmissionCounts] = useState<Record<string, number>>({});
   const [showSubmissions, setShowSubmissions] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
+  const { deleteAssignment } = useContext(AppContext) || {};
 
   const handleSubmitClick = (assignment: ClassAssignment) => {
     setSelectedAssignment(assignment);

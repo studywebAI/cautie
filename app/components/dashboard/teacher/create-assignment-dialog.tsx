@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import {
@@ -46,9 +46,62 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
   const [isSelectMaterialOpen, setIsSelectMaterialOpen] = useState(false);
   const [studyReferences, setStudyReferences] = useState<Array<{id: string, type: string, title: string, description: string}>>([]);
   const [isSelectReferenceOpen, setIsSelectReferenceOpen] = useState(false);
+  const [chapters, setChapters] = useState<Array<{id: string, title: string}>>([]);
+  const [selectedChapter, setSelectedChapter] = useState<string>('');
+  const [blocks, setBlocks] = useState<Array<{id: string, type: string, content: any}>>([]);
+  const [selectedBlock, setSelectedBlock] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingChapters, setIsLoadingChapters] = useState(false);
+  const [isLoadingBlocks, setIsLoadingBlocks] = useState(false);
   const { toast } = useToast();
   const { createAssignment } = useContext(AppContext) as AppContextType;
+
+  // Fetch chapters when dialog opens
+  useEffect(() => {
+    if (isOpen && classId) {
+      const fetchChapters = async () => {
+        setIsLoadingChapters(true);
+        try {
+          const response = await fetch(`/api/classes/${classId}/chapters`);
+          if (response.ok) {
+            const data = await response.json();
+            setChapters(data.chapters || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch chapters:', error);
+        } finally {
+          setIsLoadingChapters(false);
+        }
+      };
+      fetchChapters();
+    }
+  }, [isOpen, classId]);
+
+  // Fetch blocks when chapter is selected
+  useEffect(() => {
+    if (selectedChapter) {
+      const fetchBlocks = async () => {
+        setIsLoadingBlocks(true);
+        setBlocks([]);
+        setSelectedBlock('');
+        try {
+          const response = await fetch(`/api/classes/${classId}/chapters/${selectedChapter}/blocks`);
+          if (response.ok) {
+            const data = await response.json();
+            setBlocks(data.blocks || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch blocks:', error);
+        } finally {
+          setIsLoadingBlocks(false);
+        }
+      };
+      fetchBlocks();
+    } else {
+      setBlocks([]);
+      setSelectedBlock('');
+    }
+  }, [selectedChapter, classId]);
 
   const handleCreateAssignment = async () => {
     if (!title || !dueDate) {
@@ -67,6 +120,8 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
             due_date: format(dueDate, 'yyyy-MM-dd'),
             class_id: classId,
             material_id: selectedMaterial?.id || null,
+            chapter_id: selectedChapter || null,
+            block_id: selectedBlock || null,
         } as any);
         
         toast({
@@ -101,6 +156,8 @@ export function CreateAssignmentDialog({ isOpen, setIsOpen, classId }: CreateAss
     setDescription('');
     setDueDate(undefined);
     setSelectedMaterial(null);
+    setSelectedChapter('');
+    setSelectedBlock('');
     setIsOpen(false);
   }
 
