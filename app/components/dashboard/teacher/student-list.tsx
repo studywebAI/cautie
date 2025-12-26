@@ -16,7 +16,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
@@ -29,8 +29,29 @@ type InviteDialogProps = {
 
 function InviteDialog({ isOpen, setIsOpen, classInfo }: InviteDialogProps) {
     const { toast } = useToast();
+    const [joinCode, setJoinCode] = useState(classInfo.join_code || '');
+    const [isLoadingCode, setIsLoadingCode] = useState(!classInfo.join_code);
 
-    const inviteLink = classInfo.join_code ? `${window.location.origin}/classes?join_code=${classInfo.join_code}` : '';
+    useEffect(() => {
+        if (isOpen && !classInfo.join_code && classInfo.id) {
+            setIsLoadingCode(true);
+            fetch(`/api/classes/${classInfo.id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.class?.join_code) {
+                        setJoinCode(data.class.join_code);
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to fetch join code:', error);
+                })
+                .finally(() => {
+                    setIsLoadingCode(false);
+                });
+        }
+    }, [isOpen, classInfo.id, classInfo.join_code]);
+
+    const inviteLink = joinCode ? `${window.location.origin}/classes?join_code=${joinCode}` : '';
     const qrCodeUrl = inviteLink ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteLink)}&format=png` : '';
 
     const copyToClipboard = (text: string, type: 'link' | 'code') => {
@@ -51,14 +72,17 @@ function InviteDialog({ isOpen, setIsOpen, classInfo }: InviteDialogProps) {
                     </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col items-center gap-6 py-4">
-                    {inviteLink && <div className="p-4 bg-white rounded-lg border">
-                        <Image src={qrCodeUrl} alt="Class Invite QR Code" width={250} height={250} />
+                    {inviteLink && !isLoadingCode && <div className="p-4 bg-white rounded-lg border">
+                        <img src={qrCodeUrl} alt="Class Invite QR Code" width={200} height={200} className="rounded" />
+                    </div>}
+                    {isLoadingCode && <div className="flex items-center justify-center p-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>}
                     <div className='w-full space-y-2'>
                         <p className='text-sm font-medium text-muted-foreground'>Join Code</p>
                         <div className="flex w-full items-center space-x-2">
-                           <Input type="text" value={classInfo.join_code || 'No join code available'} readOnly />
-                           <Button type="submit" size="icon" onClick={() => copyToClipboard(classInfo.join_code || '', 'code')} disabled={!classInfo.join_code}>
+                           <Input type="text" value={joinCode || 'Loading...'} readOnly disabled={isLoadingCode} />
+                           <Button type="submit" size="icon" onClick={() => copyToClipboard(joinCode, 'code')} disabled={isLoadingCode || !joinCode}>
                              <Copy className="h-4 w-4" />
                            </Button>
                         </div>

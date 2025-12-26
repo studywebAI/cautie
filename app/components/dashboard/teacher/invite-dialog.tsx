@@ -62,7 +62,7 @@ export function InviteDialog({ isOpen, setIsOpen, classInfo }: InviteDialogProps
             <div className="flex flex-col items-center gap-4">
                 {qrCodeUrl && (
                     <div className="p-4 bg-white rounded-lg border">
-                        <img src={qrCodeUrl} alt="Class Invite QR Code" width={200} height={200} />
+                        <img src={qrCodeUrl} alt="Class Invite QR Code" width={200} height={200} className="rounded" />
                     </div>
                 )}
             </div>
