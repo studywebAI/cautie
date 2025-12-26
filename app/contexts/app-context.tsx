@@ -39,6 +39,7 @@ export type AppContextType = {
   refetchClasses: () => Promise<void>;
   assignments: ClassAssignment[];
   createAssignment: (newAssignment: Omit<ClassAssignment, 'id' | 'created_at'>) => Promise<void>;
+  deleteAssignment: (assignmentId: string) => Promise<void>;
   refetchAssignments: () => Promise<void>;
   students: Student[];
   personalTasks: PersonalTask[];
@@ -380,6 +381,22 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const deleteAssignment = async (assignmentId: string) => {
+    if (session) {
+      // Logged-in user: delete from Supabase
+      const response = await fetch(`/api/assignments/${assignmentId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete assignment in Supabase');
+      await refetchAssignments();
+    } else {
+      // Guest user: remove from localStorage
+      const updatedAssignments = assignments.filter(a => a.id !== assignmentId);
+      setAssignments(updatedAssignments);
+      saveToLocalStorage('studyweb-local-assignments', updatedAssignments);
+    }
+  };
+
    const createPersonalTask = async (newTaskData: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => {
      if (session) {
         const response = await fetch('/api/personal-tasks', {
@@ -564,6 +581,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     refetchClasses,
     assignments,
     createAssignment,
+    deleteAssignment,
     refetchAssignments,
     students,
     personalTasks,

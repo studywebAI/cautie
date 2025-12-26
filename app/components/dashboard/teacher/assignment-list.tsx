@@ -19,6 +19,7 @@ import { SubmissionsView } from './submissions-view';
 import type { ClassAssignment } from '@/contexts/app-context';
 import { format, parseISO } from 'date-fns';
 import { AppContext } from '@/contexts/app-context';
+import { useToast } from '@/hooks/use-toast';
 
 type AssignmentListProps = {
   assignments: ClassAssignment[];
@@ -35,6 +36,27 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
   const [showSubmissions, setShowSubmissions] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const { deleteAssignment } = useContext(AppContext) || {};
+  const { toast } = useToast();
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    if (confirm('Are you sure you want to delete this assignment?')) {
+      try {
+        if (deleteAssignment) {
+          await deleteAssignment(assignmentId);
+          toast({
+            title: 'Assignment Deleted',
+            description: 'The assignment has been removed.',
+          });
+        }
+      } catch (error: any) {
+        toast({
+          title: 'Error deleting assignment',
+          description: error.message || 'An unexpected error occurred.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
 
   const handleSubmitClick = (assignment: ClassAssignment) => {
     setSelectedAssignment(assignment);
@@ -171,7 +193,7 @@ export function AssignmentList({ assignments, classId, isTeacher = true }: Assig
                                     View Submissions
                                   </DropdownMenuItem>
                                   <DropdownMenuItem>Edit Assignment</DropdownMenuItem>
-                                  <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteAssignment(assignment.id)}>Delete</DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             ) : (

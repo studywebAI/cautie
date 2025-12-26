@@ -4,7 +4,7 @@
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BrainCircuit, BookCheck, Lightbulb, Loader2 } from 'lucide-react'; // Added Loader2
-import type { CalendarEvent } from '@/app/(main)/agenda/page';
+import type { CalendarEvent } from '@/lib/types';
 import type { AiSuggestion } from '@/lib/types';
 import { useDictionary } from '@/contexts/app-context';
 import { Button } from '../ui/button';
@@ -33,12 +33,18 @@ export function TodayPanel({ selectedDay, events, suggestion, isGeneratingSugges
          <div className="p-3 bg-muted/50 rounded-lg border-l-4" 
               style={{borderColor: `hsl(var(--${event.type === 'assignment' ? 'destructive' : 'primary'}))`}}>
             <div className='flex justify-between items-start'>
-              <div>
+              <div className="flex-1">
                 <p className="font-semibold">{event.title}</p>
                 <p className="text-sm text-muted-foreground">{event.subject}</p>
+                {event.chapter_title && (
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 bg-primary rounded-full"></span>
+                    {event.chapter_title}
+                  </p>
+                )}
               </div>
-              {event.type === 'assignment' 
-                ? <BookCheck className="h-4 w-4 text-destructive"/> 
+              {event.type === 'assignment'
+                ? <BookCheck className="h-4 w-4 text-destructive"/>
                 : <BrainCircuit className="h-4 w-4 text-primary"/>}
             </div>
         </div>

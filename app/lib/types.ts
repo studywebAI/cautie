@@ -137,4 +137,6 @@ export type CalendarEvent = {
   date: Date;
   type: 'assignment' | 'study_plan' | 'personal';
   href: string;
+  chapter_id?: string;
+  chapter_title?: string;
 };

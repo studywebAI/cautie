@@ -1,136 +1,141 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
+import type { Database } from '@/lib/supabase/database.types'
+
+export const dynamic = 'force-dynamic'
+
+// GET /api/classes/[classId]/chapters - List chapters for a class
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ classId: string }> }
+  request: Request,
+  { params }: { params: { classId: string } }
 ) {
   try {
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
-    const { data: { user } } = await supabase.auth.getUser();
+    const classId = params.classId
+    const cookieStore = cookies()
+    const supabase = await createClient(cookieStore)
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { classId } = await params;
-
-    // Check if user has access to the class (owner or member)
-    const { data: classData, error: classError } = await supabase
+    // Check if user has access to this class (owner or member)
+    const { data: accessCheck, error: accessError } = await supabase
       .from('classes')
-      .select('id, owner_id')
+      .select('user_id')
       .eq('id', classId)
-      .single();
+      .single()
 
-    if (classError || !classData) {
-      return NextResponse.json({ error: 'Class not found' }, { status: 404 });
+    if (accessError || !accessCheck) {
+      return NextResponse.json({ error: 'Class not found' }, { status: 404 })
     }
 
-    let hasAccess = classData.owner_id === user.id;
-    if (!hasAccess) {
-      const { count } = await supabase
+    const isOwner = accessCheck.user_id === user.id
+
+    if (!isOwner) {
+      // Check if user is a member
+      const { data: memberCheck, error: memberError } = await supabase
         .from('class_members')
-        .select('*', { count: 'exact', head: true })
+        .select()
         .eq('class_id', classId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .single()
 
-      hasAccess = (count || 0) > 0;
+      if (memberError || !memberCheck) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
     }
 
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Get chapters for the class
-    const { data: chapters, error: chaptersError } = await supabase
+    // Get chapters ordered by order_index
+    const { data: chapters, error } = await supabase
       .from('class_chapters')
       .select('*')
       .eq('class_id', classId)
-      .order('order_index', { ascending: true });
+      .order('order_index', { ascending: true })
 
-    if (chaptersError) {
-      console.error('Error fetching chapters:', chaptersError);
-      return NextResponse.json({ error: 'Failed to fetch chapters' }, { status: 500 });
+    if (error) {
+      console.error('Error fetching chapters:', error)
+      return NextResponse.json({ error: 'Failed to fetch chapters' }, { status: 500 })
     }
 
-    return NextResponse.json({ chapters });
-  } catch (error) {
-    console.error('Chapters GET error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ chapters: chapters || [] })
+  } catch (err) {
+    console.error('Unexpected error in chapters GET:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
+// POST /api/classes/[classId]/chapters - Create a new chapter
 export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ classId: string }> }
+  request: Request,
+  { params }: { params: { classId: string } }
 ) {
   try {
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
-    const { data: { user } } = await supabase.auth.getUser();
+    const classId = params.classId
+    const cookieStore = cookies()
+    const supabase = await createClient(cookieStore)
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { classId } = await params;
-    const body = await request.json();
-    const { title, description, order_index } = body;
-
-    // Validate input
-    if (!title?.trim()) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
-    }
-
-    // Check if user is teacher in the class
-    const { data: classData, error: classError } = await supabase
+    // Check if user is the owner of this class
+    const { data: classCheck, error: classError } = await supabase
       .from('classes')
-      .select('id, owner_id')
+      .select('user_id')
       .eq('id', classId)
-      .single();
+      .single()
 
-    if (classError || !classData) {
-      return NextResponse.json({ error: 'Class not found' }, { status: 404 });
+    if (classError || !classCheck) {
+      return NextResponse.json({ error: 'Class not found' }, { status: 404 })
     }
 
-    let isTeacher = classData.owner_id === user.id;
-    if (!isTeacher) {
-      const { data: memberData } = await supabase
-        .from('class_members')
-        .select('role')
-        .eq('class_id', classId)
-        .eq('user_id', user.id)
-        .single();
-
-      isTeacher = memberData?.role === 'teacher';
+    if (classCheck.user_id !== user.id) {
+      return NextResponse.json({ error: 'Only class owners can create chapters' }, { status: 403 })
     }
 
-    if (!isTeacher) {
-      return NextResponse.json({ error: 'Only teachers can create chapters' }, { status: 403 });
+    const { title, description } = await request.json()
+
+    if (!title || !title.trim()) {
+      return NextResponse.json({ error: 'Chapter title is required' }, { status: 400 })
     }
 
-    // Create the chapter
-    const { data, error } = await supabase
+    // Get the highest order_index for this class
+    const { data: lastChapter } = await supabase
+      .from('class_chapters')
+      .select('order_index')
+      .eq('class_id', classId)
+      .order('order_index', { ascending: false })
+      .limit(1)
+      .single()
+
+    const nextOrderIndex = (lastChapter?.order_index || 0) + 1
+
+    const { data: chapter, error } = await supabase
       .from('class_chapters')
       .insert({
         class_id: classId,
         title: title.trim(),
-        description: description?.trim() || null,
-        order_index: order_index || 0,
+        description: description?.trim(),
+        order_index: nextOrderIndex,
+        user_id: user.id
       })
       .select()
-      .single();
+      .single()
 
     if (error) {
-      console.error('Error creating chapter:', error);
-      return NextResponse.json({ error: 'Failed to create chapter' }, { status: 500 });
+      console.error('Error creating chapter:', error)
+      return NextResponse.json({ error: 'Failed to create chapter' }, { status: 500 })
     }
 
-    return NextResponse.json({ chapter: data });
-  } catch (error) {
-    console.error('Chapters POST error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ chapter })
+  } catch (err) {
+    console.error('Unexpected error in chapters POST:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

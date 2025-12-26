@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,8 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { BlockRenderer } from '@/components/blocks/BlockRenderer';
 import { BaseBlock, BlockContent } from '@/components/blocks/types';
-import { Plus, Save, Edit, Trash2, BookOpen } from 'lucide-react';
+import { Plus, Save, Edit, Trash2, BookOpen, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AppContext } from '@/contexts/app-context';
 
 interface Chapter {
   id: string;
@@ -36,6 +37,7 @@ export function ChapterEditor({
   className
 }: ChapterEditorProps) {
   const { toast } = useToast();
+  const { assignments } = useContext(AppContext) || {};
   const [chapter, setChapter] = useState<Chapter | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -375,16 +377,27 @@ export function ChapterEditor({
             </div>
           ) : (
             <div className="space-y-4">
-              {blocks.map((block) => (
-                <div key={block.id} className="relative group">
-                  <BlockRenderer
-                    block={block}
-                    onUpdate={(content) => handleUpdateBlock(block.id, content)}
-                    onDelete={() => handleDeleteBlock(block.id)}
-                    isEditing={true}
-                  />
-                </div>
-              ))}
+              {blocks.map((block) => {
+                const linkedAssignment = assignments?.find((a: any) => a.block_id === block.id);
+                return (
+                  <div key={block.id} className="relative group">
+                    {linkedAssignment && (
+                      <div className="absolute top-2 right-2 z-10">
+                        <div className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
+                          <FileText className="h-3 w-3" />
+                          Assignment
+                        </div>
+                      </div>
+                    )}
+                    <BlockRenderer
+                      block={block}
+                      onUpdate={(content) => handleUpdateBlock(block.id, content)}
+                      onDelete={() => handleDeleteBlock(block.id)}
+                      isEditing={true}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>

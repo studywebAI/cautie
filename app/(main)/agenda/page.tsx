@@ -16,6 +16,7 @@ import type { AiSuggestion } from '@/lib/types';
 import Link from 'next/link';
 // import { generatePersonalizedStudyPlan } from '@/ai/flows/generate-personalized-study-plan'; // Removed direct import
 import { useToast } from '@/hooks/use-toast';
+import { createClient } from '@/lib/supabase/client';
 
 
 import type { CalendarEvent } from '@/lib/types';
@@ -27,9 +28,45 @@ export default function AgendaPage() {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<AiSuggestion | null>(null);
   const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
+  const [chapters, setChapters] = useState<Map<string, { id: string; title: string }>>(new Map());
   const { toast } = useToast();
 
   const isStudent = role === 'student';
+
+  // Fetch chapter data for assignments with chapter_id
+  useEffect(() => {
+    const fetchChapters = async () => {
+      const classIdsWithChapters = new Set(
+        (assignments || [])
+          .filter(a => a.chapter_id)
+          .map(a => a.class_id)
+      );
+
+      if (classIdsWithChapters.size === 0) return;
+
+      const chapterPromises = Array.from(classIdsWithChapters).map(async (classId) => {
+        try {
+          const response = await fetch(`/api/classes/${classId}/chapters`);
+          if (response.ok) {
+            const data = await response.json();
+            return data.chapters || [];
+          }
+        } catch (error) {
+          console.error('Failed to fetch chapters for class:', classId, error);
+        }
+        return [];
+      });
+
+      const chapterResults = await Promise.all(chapterPromises);
+      const chapterMap = new Map();
+      chapterResults.flat().forEach(chapter => {
+        chapterMap.set(chapter.id, { id: chapter.id, title: chapter.title });
+      });
+      setChapters(chapterMap);
+    };
+
+    fetchChapters();
+  }, [assignments]);
 
   const events: CalendarEvent[] = useMemo(() => {
     if (isLoading) return [];
@@ -41,7 +78,8 @@ export default function AgendaPage() {
         .filter((assignment: ClassAssignment) => assignment.due_date)
         .map((assignment: ClassAssignment) => {
             const className = (classes || []).find((c: ClassInfo) => c.id === assignment.class_id)?.name || 'Class';
-            const href = assignment.material_id ? `/material/${assignment.material_id}` : `/class/${assignment.class_id}`;
+            const href = `/class/${assignment.class_id}`;
+            const chapter = assignment.chapter_id ? chapters.get(assignment.chapter_id) : undefined;
             return {
                 id: assignment.id,
                 title: assignment.title,
@@ -49,14 +87,16 @@ export default function AgendaPage() {
                 date: parseISO(assignment.due_date!),
                 type: 'assignment' as const,
                 href: href,
+                chapter_id: assignment.chapter_id || undefined,
+                chapter_title: chapter?.title,
             }
         });
 
       const personalEvents = (personalTasks || []).map((t: PersonalTask) => ({
           id: t.id,
           title: t.title,
-          subject: t.subject || 'Personal',
-          date: parseISO(t.date),
+          subject: 'Personal',
+          date: parseISO(t.due_date || t.created_at),
           type: 'personal' as const,
           href: `/agenda#${t.id}`
       }));
@@ -67,7 +107,8 @@ export default function AgendaPage() {
             .filter((assignment: ClassAssignment) => assignment.due_date && (classes || []).some((c: ClassInfo) => c.id === assignment.class_id))
             .map((assignment: ClassAssignment) => {
                 const className = (classes || []).find((c: ClassInfo) => c.id === assignment.class_id)?.name || 'Class';
-                const href = assignment.material_id ? `/material/${assignment.material_id}` : `/class/${assignment.class_id}`;
+                const href = `/class/${assignment.class_id}`;
+                const chapter = assignment.chapter_id ? chapters.get(assignment.chapter_id) : undefined;
                 return {
                     id: assignment.id,
                     title: assignment.title,
@@ -75,13 +116,15 @@ export default function AgendaPage() {
                     date: parseISO(assignment.due_date!),
                     type: 'assignment' as const,
                     href: href,
+                    chapter_id: assignment.chapter_id || undefined,
+                    chapter_title: chapter?.title,
                 }
             });
         allEvents = [...teacherAssignmentEvents];
     }
-    
+
     return allEvents;
-  }, [assignments, classes, isStudent, personalTasks, isLoading]);
+  }, [assignments, classes, isStudent, personalTasks, isLoading, chapters]);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
@@ -168,7 +211,7 @@ export default function AgendaPage() {
     const event = events.find(e => e.id === eventId);
     if (event?.type === 'personal') {
       const dateString = format(newDate, 'yyyy-MM-dd');
-      await updatePersonalTask(eventId, { date: dateString });
+      await updatePersonalTask(eventId, { due_date: dateString });
     }
   };
   
@@ -233,11 +276,17 @@ export default function AgendaPage() {
                                     <div className="p-3 bg-muted/50 rounded-lg border-l-4" 
                                          style={{borderColor: `hsl(var(--destructive))`}}>
                                         <div className='flex justify-between items-start'>
-                                            <div>
+                                            <div className="flex-1">
                                                 <p className="font-semibold">{event.title}</p>
                                                 <p className="text-sm text-muted-foreground">{event.subject}</p>
+                                                {event.chapter_title && (
+                                                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                                    <span className="inline-block w-1.5 h-1.5 bg-primary rounded-full"></span>
+                                                    {event.chapter_title}
+                                                  </p>
+                                                )}
                                             </div>
-                                            <BookCheck className="h-4 w-4 text-destructive"/> 
+                                            <BookCheck className="h-4 w-4 text-destructive"/>
                                         </div>
                                     </div>
                                 </Link>

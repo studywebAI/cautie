@@ -38,6 +38,12 @@ export function DraggableEvent({ event }: DraggableEventProps) {
     >
       <div className="font-medium truncate">{event.title}</div>
       <div className="text-muted-foreground truncate">{event.subject}</div>
+      {event.chapter_title && (
+        <div className="text-muted-foreground/70 truncate text-[10px] flex items-center gap-1">
+          <span className="inline-block w-1 h-1 bg-current rounded-full"></span>
+          {event.chapter_title}
+        </div>
+      )}
     </div>
   );
 }
