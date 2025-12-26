@@ -145,7 +145,7 @@ export default function ClassDetailsPage() {
          {isTeacher && (
            <>
              <TabsContent value="students">
-                <StudentList students={students} isLoading={!!isLoading} />
+                <StudentList students={students} isLoading={!!isLoading} classInfo={classInfo} />
              </TabsContent>
              <TabsContent value="settings">
                <ClassSettings

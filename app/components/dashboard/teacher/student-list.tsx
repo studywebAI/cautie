@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
@@ -24,36 +24,13 @@ import { Input } from '@/components/ui/input';
 type InviteDialogProps = {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  classId: string;
+  classInfo: { id: string; name: string; join_code: string | null };
 };
 
-function InviteDialog({ isOpen, setIsOpen, classId }: InviteDialogProps) {
+function InviteDialog({ isOpen, setIsOpen, classInfo }: InviteDialogProps) {
     const { toast } = useToast();
-    const [joinCode, setJoinCode] = useState('');
-    const [inviteLink, setInviteLink] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        if (isOpen && classId) {
-            setIsLoading(true);
-            fetch(`/api/classes/${classId}`)
-                .then(response => response.json())
-                .then(classData => {
-                    const code = classData.class?.join_code;
-                    if (code) {
-                        setJoinCode(code);
-                        setInviteLink(`${window.location.origin}/classes?join_code=${code}`);
-                    }
-                })
-                .catch(error => {
-                    console.error('Failed to fetch join code:', error);
-                })
-                .finally(() => {
-                    setIsLoading(false);
-                });
-        }
-    }, [isOpen, classId]);
-
+    const inviteLink = classInfo.join_code ? `${window.location.origin}/classes?join_code=${classInfo.join_code}` : '';
     const qrCodeUrl = inviteLink ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(inviteLink)}` : '';
 
     const copyToClipboard = (text: string, type: 'link' | 'code') => {
@@ -74,22 +51,19 @@ function InviteDialog({ isOpen, setIsOpen, classId }: InviteDialogProps) {
                     </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col items-center gap-6 py-4">
-                    {inviteLink && !isLoading && <div className="p-4 bg-white rounded-lg border">
+                    {inviteLink && <div className="p-4 bg-white rounded-lg border">
                         <Image src={qrCodeUrl} alt="Class Invite QR Code" width={250} height={250} />
-                    </div>}
-                    {isLoading && <div className="flex items-center justify-center p-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>}
                     <div className='w-full space-y-2'>
                         <p className='text-sm font-medium text-muted-foreground'>Join Code</p>
                         <div className="flex w-full items-center space-x-2">
-                           <Input type="text" value={joinCode || 'Loading...'} readOnly disabled={isLoading} />
-                           <Button type="submit" size="icon" onClick={() => copyToClipboard(joinCode, 'code')} disabled={isLoading || !joinCode}>
+                           <Input type="text" value={classInfo.join_code || 'No join code available'} readOnly />
+                           <Button type="submit" size="icon" onClick={() => copyToClipboard(classInfo.join_code || '', 'code')} disabled={!classInfo.join_code}>
                              <Copy className="h-4 w-4" />
                            </Button>
                         </div>
                     </div>
-                     {inviteLink && !isLoading && <div className='w-full space-y-2'>
+                     {inviteLink && <div className='w-full space-y-2'>
                         <p className='text-sm font-medium text-muted-foreground'>Invite Link</p>
                         <div className="flex w-full items-center space-x-2">
                            <Input type="text" value={inviteLink} readOnly />
@@ -108,12 +82,11 @@ function InviteDialog({ isOpen, setIsOpen, classId }: InviteDialogProps) {
 type StudentListProps = {
   students: Student[];
   isLoading: boolean;
+  classInfo?: { id: string; name: string; join_code: string | null };
 };
 
-export function StudentList({ students, isLoading }: StudentListProps) {
+export function StudentList({ students, isLoading, classInfo }: StudentListProps) {
     const [isInviteOpen, setIsInviteOpen] = useState(false);
-    const params = useParams();
-    const { classId } = params as { classId: string };
 
   return (
     <>
@@ -177,7 +150,7 @@ export function StudentList({ students, isLoading }: StudentListProps) {
         )}
       </CardContent>
     </Card>
-    <InviteDialog isOpen={isInviteOpen} setIsOpen={setIsInviteOpen} classId={classId} />
+    {classInfo && <InviteDialog isOpen={isInviteOpen} setIsOpen={setIsInviteOpen} classInfo={classInfo} />}
     </>
   );
 }
