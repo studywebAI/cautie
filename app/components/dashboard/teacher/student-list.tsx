@@ -42,7 +42,7 @@ function InviteDialog({ isOpen, setIsOpen, classId }: InviteDialogProps) {
                     const code = classData.class?.join_code;
                     if (code) {
                         setJoinCode(code);
-                        setInviteLink(`${window.location.origin}/classes/join/${code}`);
+                        setInviteLink(`${window.location.origin}/classes?join_code=${code}`);
                     }
                 })
                 .catch(error => {
