@@ -32,9 +32,42 @@ export async function GET(
     }
   );
 
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  let selectFields = 'id, name, description';
+
+  // If user is authenticated, check if they're the owner or member and include join_code
+  if (user) {
+    const { data: ownershipData } = await supabase
+      .from('classes')
+      .select('owner_id')
+      .eq('id', classId)
+      .single();
+
+    const isOwner = ownershipData?.owner_id === user.id;
+
+    if (!isOwner) {
+      // Check if user is a member
+      const { data: memberData } = await supabase
+        .from('class_members')
+        .select()
+        .eq('class_id', classId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (memberData) {
+        // User is a member, include join_code
+        selectFields += ', join_code';
+      }
+    } else {
+      // User is owner, include join_code
+      selectFields += ', join_code';
+    }
+  }
+
   const { data: classData, error } = await supabase
     .from('classes')
-    .select('id, name, description')
+    .select(selectFields)
     .eq('id', classId)
     .single();
 
@@ -43,7 +76,7 @@ export async function GET(
     return NextResponse.json({ error: 'Class not found.' }, { status: 404 });
   }
 
-  return NextResponse.json(classData);
+  return NextResponse.json({ class: classData });
 }
 
 // DELETE - Archive a class (set status to 'archived')

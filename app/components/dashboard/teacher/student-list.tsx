@@ -16,7 +16,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
@@ -29,14 +29,32 @@ type InviteDialogProps = {
 
 function InviteDialog({ isOpen, setIsOpen, classId }: InviteDialogProps) {
     const { toast } = useToast();
+    const [joinCode, setJoinCode] = useState('');
     const [inviteLink, setInviteLink] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    useState(() => {
-        // This ensures window is defined
-        setInviteLink(`${window.location.origin}/classes?join_code=${classId}`);
-    });
+    useEffect(() => {
+        if (isOpen && classId) {
+            setIsLoading(true);
+            fetch(`/api/classes/${classId}`)
+                .then(response => response.json())
+                .then(classData => {
+                    const code = classData.class?.join_code;
+                    if (code) {
+                        setJoinCode(code);
+                        setInviteLink(`${window.location.origin}/classes/join/${code}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to fetch join code:', error);
+                })
+                .finally(() => {
+                    setIsLoading(false);
+                });
+        }
+    }, [isOpen, classId]);
 
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(inviteLink)}`;
+    const qrCodeUrl = inviteLink ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(inviteLink)}` : '';
 
     const copyToClipboard = (text: string, type: 'link' | 'code') => {
         navigator.clipboard.writeText(text);
@@ -56,19 +74,22 @@ function InviteDialog({ isOpen, setIsOpen, classId }: InviteDialogProps) {
                     </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col items-center gap-6 py-4">
-                    {inviteLink && <div className="p-4 bg-white rounded-lg border">
+                    {inviteLink && !isLoading && <div className="p-4 bg-white rounded-lg border">
                         <Image src={qrCodeUrl} alt="Class Invite QR Code" width={250} height={250} />
+                    </div>}
+                    {isLoading && <div className="flex items-center justify-center p-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>}
                     <div className='w-full space-y-2'>
                         <p className='text-sm font-medium text-muted-foreground'>Join Code</p>
                         <div className="flex w-full items-center space-x-2">
-                           <Input type="text" value={classId} readOnly />
-                           <Button type="submit" size="icon" onClick={() => copyToClipboard(classId, 'code')}>
+                           <Input type="text" value={joinCode || 'Loading...'} readOnly disabled={isLoading} />
+                           <Button type="submit" size="icon" onClick={() => copyToClipboard(joinCode, 'code')} disabled={isLoading || !joinCode}>
                              <Copy className="h-4 w-4" />
                            </Button>
                         </div>
                     </div>
-                     {inviteLink && <div className='w-full space-y-2'>
+                     {inviteLink && !isLoading && <div className='w-full space-y-2'>
                         <p className='text-sm font-medium text-muted-foreground'>Invite Link</p>
                         <div className="flex w-full items-center space-x-2">
                            <Input type="text" value={inviteLink} readOnly />
