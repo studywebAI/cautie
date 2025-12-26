@@ -1,25 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   BrainCircuit,
   Copy,
   FileSignature,
-  Trash2,
-  Edit3,
   Clock
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { AppContext, AppContextType } from '@/contexts/app-context';
 
-type RecentItem = {
+type RecentMaterial = {
   id: string;
-  title: string;
-  type: 'flashcards' | 'notes' | 'quiz' | 'mindmap';
-  createdAt: Date;
-  updatedAt: Date;
+  title: string | null;
+  type: string;
+  updated_at: string;
 };
 
 const TYPE_ICONS = {
@@ -27,6 +24,8 @@ const TYPE_ICONS = {
   notes: FileSignature,
   quiz: BrainCircuit,
   mindmap: BrainCircuit,
+  wordweb: BrainCircuit,
+  timeline: FileSignature,
 };
 
 const TYPE_LABELS = {
@@ -34,90 +33,67 @@ const TYPE_LABELS = {
   notes: 'Notes',
   quiz: 'Quiz',
   mindmap: 'Mind Map',
+  wordweb: 'Word Web',
+  timeline: 'Timeline',
 };
 
 export function RecentsSidebar() {
-  const [recents, setRecents] = useState<RecentItem[]>([]);
+  const { session } = useContext(AppContext) as AppContextType;
+  const [recents, setRecents] = useState<RecentMaterial[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load recents from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('cautie_recents');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        // Convert date strings back to Date objects
-        const withDates = parsed.map((item: any) => ({
-          ...item,
-          createdAt: new Date(item.createdAt),
-          updatedAt: new Date(item.updatedAt),
-        }));
-        setRecents(withDates);
-      } catch (error) {
-        console.error('Failed to parse recents from localStorage:', error);
-      }
+    if (session) {
+      // Fetch recent materials from database
+      fetch('/api/materials?limit=5')
+        .then(response => response.json())
+        .then(data => {
+          setRecents(data.materials || []);
+        })
+        .catch(error => {
+          console.error('Failed to fetch recent materials:', error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
     }
-  }, []);
+  }, [session]);
 
-  // Save recents to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('cautie_recents', JSON.stringify(recents));
-  }, [recents]);
-
-  const addRecent = (item: Omit<RecentItem, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newItem: RecentItem = {
-      ...item,
-      id: `recent-${Date.now()}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    setRecents(prev => [newItem, ...prev.slice(0, 9)]); // Keep only 10 most recent
-  };
-
-  const updateRecent = (id: string, updates: Partial<RecentItem>) => {
-    setRecents(prev =>
-      prev.map(item =>
-        item.id === id
-          ? { ...item, ...updates, updatedAt: new Date() }
-          : item
-      )
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xs font-medium flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Recents
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="h-3 bg-muted rounded w-3/4 mb-1"></div>
+              <div className="h-2 bg-muted rounded w-1/2"></div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     );
-  };
-
-  const deleteRecent = (id: string) => {
-    setRecents(prev => prev.filter(item => item.id !== id));
-  };
-
-  const renameRecent = (id: string, newTitle: string) => {
-    updateRecent(id, { title: newTitle });
-  };
-
-  // Expose functions globally for other components to use
-  useEffect(() => {
-    (window as any).recentsManager = {
-      addRecent,
-      updateRecent,
-      deleteRecent,
-      renameRecent,
-    };
-
-    return () => {
-      delete (window as any).recentsManager;
-    };
-  }, []);
+  }
 
   if (recents.length === 0) {
     return (
       <Card className="w-full">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Recent Creations
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xs font-medium flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Recents
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No recent creations yet
+          <p className="text-xs text-muted-foreground text-center py-2">
+            No recent materials
           </p>
         </CardContent>
       </Card>
@@ -126,60 +102,36 @@ export function RecentsSidebar() {
 
   return (
     <Card className="w-full">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          Recent Creations
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xs font-medium flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Recents
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-1">
         {recents.map((item) => {
-          const Icon = TYPE_ICONS[item.type];
+          const Icon = TYPE_ICONS[item.type as keyof typeof TYPE_ICONS] || FileSignature;
+          const typeLabel = TYPE_LABELS[item.type as keyof typeof TYPE_LABELS] || item.type;
 
           return (
             <div
               key={item.id}
-              className="flex items-center justify-between p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors group"
+              className="flex items-center gap-2 p-1.5 rounded-md border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+              onClick={() => window.location.href = `/material/${item.id}`}
             >
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" title={item.title}>
-                    {item.title}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {TYPE_LABELS[item.type]}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(item.updatedAt, { addSuffix: true })}
-                    </span>
-                  </div>
+              <Icon className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate" title={item.title || 'Untitled'}>
+                  {item.title || 'Untitled'}
+                </p>
+                <div className="flex items-center gap-1">
+                  <Badge variant="outline" className="text-xs px-1 py-0 h-4">
+                    {typeLabel}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(item.updated_at), { addSuffix: true })}
+                  </span>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0"
-                  onClick={() => {
-                    const newTitle = prompt('Rename item:', item.title);
-                    if (newTitle && newTitle.trim()) {
-                      renameRecent(item.id, newTitle.trim());
-                    }
-                  }}
-                >
-                  <Edit3 className="h-3 w-3" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                  onClick={() => deleteRecent(item.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
               </div>
             </div>
           );

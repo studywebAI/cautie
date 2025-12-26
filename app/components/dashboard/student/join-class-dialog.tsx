@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Link as LinkIcon, Camera, UserPlus } from 'lucide-react';
 import jsQR from 'jsqr';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { TypingPlaceholder } from '@/components/ui/typing-placeholder';
 import type { ClassInfo } from '@/contexts/app-context';
 
 
@@ -214,12 +215,27 @@ export function JoinClassDialog({ isOpen, setIsOpen, onClassJoined, initialCode 
         <div className="py-4 space-y-2">
             <Label htmlFor="class-code">Class Code</Label>
             <div className="flex items-center space-x-2">
-            <Input
+            <div className="relative">
+              <Input
                 id="class-code"
-                placeholder="e.g., a1b2c3d4-e5f6-..."
                 value={classCode}
                 onChange={(e) => setClassCode(e.target.value)}
-            />
+              />
+              {!classCode && (
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <TypingPlaceholder
+                    texts={[
+                      "ABC12345",
+                      "XYZ98765",
+                      "DEF45678",
+                      "GHI23456"
+                    ]}
+                    typingSpeed={150}
+                    pauseTime={2000}
+                  />
+                </div>
+              )}
+            </div>
             <Button onClick={() => checkCode(classCode)} disabled={isCheckingCode || !classCode}>
                  {isCheckingCode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                  Check Code

@@ -36,7 +36,19 @@ export function AppHeader() {
 
       <div className="flex-1">
         <h1 className="text-xl font-semibold font-headline">
-          {pathSegments.length === 0 ? 'Dashboard' : pathSegments[pathSegments.length - 1]?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Cautie'}
+          {(() => {
+            if (pathSegments.length === 0) return 'Dashboard';
+
+            const lastSegment = pathSegments[pathSegments.length - 1];
+
+            // Don't show UUIDs for class pages
+            if (pathSegments.length >= 2 && pathSegments[pathSegments.length - 2] === 'class') {
+              return 'Class Details';
+            }
+
+            // Format other segments nicely
+            return lastSegment?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Cautie';
+          })()}
         </h1>
       </div>
       <div className="flex items-center gap-4">

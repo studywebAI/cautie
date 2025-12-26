@@ -49,7 +49,7 @@ export function AppSidebar() {
       <div className="absolute top-1/2 right-0 transform -translate-y-1/2 z-50">
         <SidebarTrigger />
       </div>
-      <SidebarContent className="px-6 py-4 flex-1">
+      <SidebarContent className="px-3 py-3 flex-1">
         <SidebarMenu>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.label}>
@@ -85,7 +85,7 @@ export function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="p-4 flex flex-col gap-4">
+      <SidebarFooter className="p-3 flex flex-col gap-3">
         <RecentsSidebar />
         <SidebarMenu>
           <SidebarMenuItem>
