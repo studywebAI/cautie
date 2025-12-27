@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     let query = supabase
       .from('classes')
       .select('*')
-      .or(`user_id.eq.${user.id},owner_id.eq.${user.id}`);
+      .eq('owner_id', user.id);
 
     // Exclude archived classes unless explicitly requested
     if (!includeArchived) {
@@ -79,22 +79,18 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     console.log('POST /api/classes called');
-    const { name, description, guestId } = await request.json();
+    const { name, description } = await request.json();
     const cookieStore = cookies()
     const supabase = await createClient(cookieStore)
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (authError) {
+    if (authError || !user) {
       console.error('Auth error:', authError);
-      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    console.log('User:', user?.id, 'GuestId:', guestId);
-
-    if (!user && !guestId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    console.log('User:', user.id);
 
     // Generate unique join code
     let joinCode;
@@ -123,10 +119,7 @@ export async function POST(request: Request) {
       name,
       description,
       join_code: joinCode,
-      user_id: user?.id || null,
-      guest_id: guestId || null,
-      owner_id: user?.id || null,
-      owner_type: (user ? 'user' : 'guest') as 'user' | 'guest'
+      owner_id: user?.id || null
     };
 
     console.log('Inserting data:', insertData);
