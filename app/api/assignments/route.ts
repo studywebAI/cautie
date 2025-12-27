@@ -59,114 +59,33 @@ export async function GET(request: Request) {
   if (ownedClassIds.length === 0) {
     return NextResponse.json([]);
   }
-  const classIds = ownedClassIds;
 
-
-  if (classIds.length === 0) {
-    return NextResponse.json([]);
-  }
-
-  // 2. Get assignments that belong to those classes
+  // Get assignments through the hierarchical structure:
+  // classes -> subjects -> chapters -> paragraphs -> assignments
   const { data, error } = await supabase
     .from('assignments')
-    .select()
-    .in('class_id', classIds);
+    .select(`
+      *,
+      paragraphs!inner (
+        chapters!inner (
+          subjects!inner (
+            class_id
+          )
+        )
+      )
+    `)
+    .in('paragraphs.chapters.subjects.class_id', ownedClassIds);
 
   if (error) {
-    console.error('Error fetching assignments for classes:', classIds, error);
+    console.error('Error fetching assignments for classes:', ownedClassIds, error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   return NextResponse.json(data)
 }
 
-// POST a new assignment
+// POST a new assignment - DISABLED until API is updated for hierarchical structure
 export async function POST(request: Request) {
-  const { title, due_date, class_id, chapter_id, block_id, guestId, type = 'homework', content, files = [] } = await request.json();
-  const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
-
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user && !guestId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Check ownership by either user ID or guest ID
-  if (user) {
-    const { data: classData, error: classError } = await supabase
-      .from('classes')
-      .select('user_id, owner_id')
-      .eq('id', class_id)
-      .single();
-
-    if (classError || !classData || (classData.user_id !== user.id && classData.owner_id !== user.id)) {
-      return NextResponse.json({ error: 'Forbidden. You are not the owner of this class.' }, { status: 403 });
-    }
-  } else if (guestId) {
-    const { data: classData, error: classError } = await supabase
-      .from('classes')
-      .select('guest_id')
-      .eq('id', class_id)
-      .eq('owner_type', 'guest')
-      .single();
-
-    if (classError || !classData || classData.guest_id !== guestId) {
-      return NextResponse.json({ error: 'Forbidden. You are not the owner of this class.' }, { status: 403 });
-    }
-  }
-
-  // Validate chapter_id if provided
-  if (chapter_id) {
-    const { data: chapter, error: chapterError } = await supabase
-      .from('class_chapters')
-      .select('class_id')
-      .eq('id', chapter_id)
-      .single();
-
-    if (chapterError || !chapter || chapter.class_id !== class_id) {
-      return NextResponse.json({ error: 'Invalid chapter_id' }, { status: 400 });
-    }
-  }
-
-  // Validate block_id if provided
-  if (block_id) {
-    const { data: block, error: blockError } = await supabase
-      .from('blocks')
-      .select('chapter_id')
-      .eq('id', block_id)
-      .single();
-
-    if (blockError || !block || block.chapter_id !== chapter_id) {
-      return NextResponse.json({ error: 'Invalid block_id' }, { status: 400 });
-    }
-  }
-
-  const { data, error } = await supabase
-    .from('assignments')
-    .insert([{
-      title,
-      due_date,
-      class_id,
-      chapter_id,
-      block_id,
-      type,
-      content,
-      files,
-
-      user_id: user?.id || null,
-      guest_id: guestId || null,
-      owner_type: user ? 'user' : 'guest'
-    },
-    ])
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error creating assignment:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data);
+  return NextResponse.json({ error: 'Assignment creation disabled - API needs update for hierarchical structure' }, { status: 501 });
 }
 
