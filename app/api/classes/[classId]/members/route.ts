@@ -44,7 +44,8 @@ export async function GET(
     .single();
 
   if (classError || !classData) {
-    return NextResponse.json({ error: 'Class not found' }, { status: 404 });
+    // Return empty array instead of 404 to prevent UI errors
+    return NextResponse.json([]);
   }
 
   let isMemberOrOwner = classData.owner_id === session.user.id;

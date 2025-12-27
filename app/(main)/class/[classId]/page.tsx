@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useContext, useEffect, useState, useMemo } from 'react';
 import { AppContext, AppContextType, ClassInfo } from '@/contexts/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,23 +9,23 @@ import { StudentList } from '@/components/dashboard/teacher/student-list';
 import type { Student } from '@/lib/teacher-types';
 import { MaterialList } from '@/components/dashboard/teacher/material-list';
 import { ClassSettings } from '@/components/dashboard/teacher/class-settings';
-import { ChapterNavigation } from '@/components/class/ChapterNavigation';
-import { ChapterContentViewer } from '@/components/class/ChapterContentViewer';
-import { ChapterEditor } from '@/components/class/ChapterEditor';
+import { SubjectsGrid } from '@/components/dashboard/subjects-grid';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Users, FileText, Settings, GraduationCap } from 'lucide-react';
 
 
 export default function ClassDetailsPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const { classId } = params as { classId: string };
   const { classes, assignments, isLoading: isAppLoading, materials, refetchMaterials, role } = useContext(AppContext) as AppContextType;
 
   const [students, setStudents] = useState<Student[]>([]);
   const [isStudentsLoading, setIsStudentsLoading] = useState(true);
-
   const [directClassInfo, setDirectClassInfo] = useState<ClassInfo | null>(null);
-  const [selectedChapterId, setSelectedChapterId] = useState<string | undefined>(undefined);
+
+  // Get current view from URL params or default to subjects
+  const currentView = searchParams.get('view') || 'subjects';
 
   const classInfo: ClassInfo | undefined = useMemo(() => {
     // First try to find in context
@@ -35,7 +35,6 @@ export default function ClassDetailsPage() {
     // If not found in context, use directly fetched class
     return directClassInfo || undefined;
   }, [classes, classId, directClassInfo]);
-  const classAssignments = useMemo(() => assignments.filter(a => a.class_id === classId), [assignments, classId]);
 
 
   useEffect(() => {
@@ -122,82 +121,100 @@ export default function ClassDetailsPage() {
     );
   }
 
-  return (
-    <div className="flex flex-col gap-8">
-      <header>
-        <h1 className="text-3xl font-bold font-headline">{classInfo.name}</h1>
-        <p className="text-muted-foreground">{classInfo.description || 'Manage assignments, students, and settings for this class.'}</p>
-      </header>
+  const navigationItems = [
+    { id: 'subjects', label: 'Subjects', icon: GraduationCap, showForStudents: true },
+    { id: 'assignments', label: 'Assignments', icon: FileText, showForStudents: true },
+    { id: 'materials', label: 'Materials', icon: BookOpen, showForStudents: true },
+    { id: 'students', label: 'Students', icon: Users, showForStudents: false },
+    { id: 'settings', label: 'Settings', icon: Settings, showForStudents: false },
+  ];
 
-      <Tabs defaultValue="assignments" className="w-full">
-        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-5' : 'grid-cols-3'}`}>
-          <TabsTrigger value="assignments"><FileText className="mr-2 h-4 w-4" /> Assignments</TabsTrigger>
-          <TabsTrigger value="materials"><BookOpen className="mr-2 h-4 w-4" /> Materials</TabsTrigger>
-          <TabsTrigger value="chapters"><GraduationCap className="mr-2 h-4 w-4" /> Chapters</TabsTrigger>
-          {isTeacher && (
-            <>
-              <TabsTrigger value="students"><Users className="mr-2 h-4 w-4" /> Students</TabsTrigger>
-              <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
-            </>
+  const updateView = (view: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', view);
+    window.history.pushState({}, '', url.toString());
+    // Force a re-render by updating state
+    window.location.reload();
+  };
+
+  return (
+    <div className="flex gap-6">
+      {/* Mini Sidebar Navigation */}
+      <div className="w-64 flex-shrink-0">
+        <div className="sticky top-6">
+          <div className="bg-card border rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-4">
+              Navigation
+            </h3>
+            {navigationItems
+              .filter(item => isTeacher || item.showForStudents)
+              .map((item) => {
+                const Icon = item.icon;
+                const isActive = currentView === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => updateView(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0">
+        <div className="space-y-6">
+          <header>
+            <h1 className="text-3xl font-bold font-headline">{classInfo.name}</h1>
+            <p className="text-muted-foreground">
+              {currentView === 'subjects'
+                ? 'Explore and continue your learning journey'
+                : currentView === 'assignments'
+                ? 'View and manage assignments'
+                : currentView === 'materials'
+                ? 'Access learning materials'
+                : currentView === 'students'
+                ? 'Manage class students'
+                : 'Configure class settings'
+              }
+            </p>
+          </header>
+
+          {currentView === 'subjects' && (
+            <SubjectsGrid classId={classId} isTeacher={isTeacher} />
           )}
-        </TabsList>
-        <TabsContent value="assignments">
-          <AssignmentList assignments={classAssignments} classId={classId} isTeacher={isTeacher} />
-        </TabsContent>
-           <TabsContent value="materials">
+
+          {currentView === 'assignments' && (
+            <AssignmentList assignments={[]} classId={classId} isTeacher={isTeacher} />
+          )}
+
+          {currentView === 'materials' && (
             <MaterialList materials={materials} classId={classId} isLoading={!!isLoading} isTeacher={isTeacher} />
-          </TabsContent>
-          <TabsContent value="chapters">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              <div className="lg:col-span-1">
-                <ChapterNavigation
-                  classId={classId}
-                  selectedChapterId={selectedChapterId}
-                  onChapterSelect={setSelectedChapterId}
-                  onCreateChapter={() => setSelectedChapterId('new')}
-                  isTeacher={isTeacher}
-                />
-              </div>
-              <div className="lg:col-span-3">
-                {isTeacher ? (
-                  <ChapterEditor
-                    classId={classId}
-                    chapterId={selectedChapterId || 'new'}
-                    onChapterUpdated={() => {
-                      // Could refresh navigation here
-                      setSelectedChapterId(undefined);
-                    }}
-                  />
-                ) : selectedChapterId ? (
-                  <ChapterContentViewer
-                    classId={classId}
-                    chapterId={selectedChapterId}
-                    isTeacher={isTeacher}
-                  />
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <GraduationCap className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p>Select a chapter from the sidebar to view its content.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-          {isTeacher && (
-            <>
-              <TabsContent value="students">
-                 <StudentList students={students} isLoading={!!isLoading} classInfo={classInfo} />
-              </TabsContent>
-              <TabsContent value="settings">
-                <ClassSettings
-                   classId={classId}
-                   className={classInfo.name}
-                   isArchived={classInfo.status === 'archived'}
-                   onArchive={() => window.location.href = '/classes'} />
-              </TabsContent>
-            </>
           )}
-      </Tabs>
+
+          {currentView === 'students' && isTeacher && (
+            <StudentList students={students} isLoading={!!isLoading} classInfo={classInfo} />
+          )}
+
+          {currentView === 'settings' && isTeacher && (
+            <ClassSettings
+              classId={classId}
+              className={classInfo.name}
+              isArchived={classInfo.status === 'archived'}
+              onArchive={() => window.location.href = '/classes'}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
