@@ -39,6 +39,7 @@ export async function GET(
     }
 
     // Get real subjects from database
+    console.log('Fetching subjects for classId:', params.classId)
     const { data: subjects, error: subjectsError } = await supabase
       .from('subjects')
       .select(`
@@ -57,6 +58,8 @@ export async function GET(
       `)
       .eq('class_id', params.classId)
       .order('created_at', { ascending: false })
+
+    console.log('Subjects query result:', { subjects, error: subjectsError })
 
     if (subjectsError) {
       console.error('Error fetching subjects:', subjectsError)
@@ -146,20 +149,26 @@ export async function POST(
     }
 
     const { title, class_label, cover_type, cover_image_url } = await request.json()
+    console.log('Creating subject for classId:', params.classId, { title, class_label, cover_type, cover_image_url })
 
     // Insert real subject into database
+    const subjectData = {
+      class_id: params.classId,
+      title,
+      class_label: class_label || title,
+      cover_type: cover_type || 'ai_icons',
+      cover_image_url,
+      ai_icon_seed: Math.random().toString(36).substring(2, 15)
+    }
+    console.log('Inserting subject data:', subjectData)
+
     const { data: subject, error: insertError } = await supabase
       .from('subjects')
-      .insert([{
-        class_id: params.classId,
-        title,
-        class_label: class_label || title,
-        cover_type: cover_type || 'ai_icons',
-        cover_image_url,
-        ai_icon_seed: Math.random().toString(36).substring(2, 15)
-      }])
+      .insert([subjectData])
       .select()
       .single()
+
+    console.log('Subject creation result:', { subject, error: insertError })
 
     if (insertError) {
       console.error('Error creating subject:', insertError)

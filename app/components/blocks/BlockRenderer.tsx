@@ -2,13 +2,6 @@
 
 import React from 'react';
 import { BaseBlock, BlockProps } from './types';
-import { TextBlock } from './TextBlock';
-import { ListBlock } from './ListBlock';
-import { MediaBlock } from './MediaBlock';
-import { CodeBlock } from './CodeBlock';
-import { QuoteBlock } from './QuoteBlock';
-import { LayoutBlock } from './LayoutBlock';
-import { ComplexBlock } from './ComplexBlock';
 
 interface BlockRendererProps extends Omit<BlockProps, 'block'> {
   block: BaseBlock;
@@ -25,73 +18,92 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
     switch (block.type) {
       case 'text':
         return (
-          <TextBlock
-            block={block as BlockProps['block'] & { content: any }}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            isEditing={isEditing}
-            className={className}
-          />
+          <div className={`p-4 border ${className || ''}`}>
+            <pre className="whitespace-pre-wrap font-mono text-sm">
+              {JSON.stringify(block.content, null, 2)}
+            </pre>
+          </div>
         );
-      case 'list':
+      case 'image':
         return (
-          <ListBlock
-            block={block as BlockProps['block'] & { content: any }}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            isEditing={isEditing}
-            className={className}
-          />
+          <div className={`p-4 border ${className || ''}`}>
+            <div className="text-sm text-muted-foreground">Image Block</div>
+            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
+              {JSON.stringify(block.content, null, 2)}
+            </pre>
+          </div>
         );
-      case 'media':
+      case 'video':
         return (
-          <MediaBlock
-            block={block as BlockProps['block'] & { content: any }}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            isEditing={isEditing}
-            className={className}
-          />
+          <div className={`p-4 border ${className || ''}`}>
+            <div className="text-sm text-muted-foreground">Video Block</div>
+            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
+              {JSON.stringify(block.content, null, 2)}
+            </pre>
+          </div>
         );
-      case 'code':
+      case 'multiple_choice':
         return (
-          <CodeBlock
-            block={block as BlockProps['block'] & { content: any }}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            isEditing={isEditing}
-            className={className}
-          />
+          <div className={`p-4 border ${className || ''}`}>
+            <div className="text-sm text-muted-foreground">Multiple Choice Block</div>
+            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
+              {JSON.stringify(block.content, null, 2)}
+            </pre>
+          </div>
         );
-      case 'quote':
+      case 'open_question':
         return (
-          <QuoteBlock
-            block={block as BlockProps['block'] & { content: any }}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            isEditing={isEditing}
-            className={className}
-          />
+          <div className={`p-4 border ${className || ''}`}>
+            <div className="text-sm text-muted-foreground">Open Question Block</div>
+            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
+              {JSON.stringify(block.content, null, 2)}
+            </pre>
+          </div>
         );
-      case 'layout':
+      case 'fill_in_blank':
         return (
-          <LayoutBlock
-            block={block as BlockProps['block'] & { content: any }}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            isEditing={isEditing}
-            className={className}
-          />
+          <div className={`p-4 border ${className || ''}`}>
+            <div className="text-sm text-muted-foreground">Fill in Blank Block</div>
+            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
+              {JSON.stringify(block.content, null, 2)}
+            </pre>
+          </div>
         );
-      case 'complex':
+      case 'drag_drop':
         return (
-          <ComplexBlock
-            block={block as BlockProps['block'] & { content: any }}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            isEditing={isEditing}
-            className={className}
-          />
+          <div className={`p-4 border ${className || ''}`}>
+            <div className="text-sm text-muted-foreground">Drag & Drop Block</div>
+            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
+              {JSON.stringify(block.content, null, 2)}
+            </pre>
+          </div>
+        );
+      case 'ordering':
+        return (
+          <div className={`p-4 border ${className || ''}`}>
+            <div className="text-sm text-muted-foreground">Ordering Block</div>
+            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
+              {JSON.stringify(block.content, null, 2)}
+            </pre>
+          </div>
+        );
+      case 'media_embed':
+        return (
+          <div className={`p-4 border ${className || ''}`}>
+            <div className="text-sm text-muted-foreground">Media Embed Block</div>
+            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
+              {JSON.stringify(block.content, null, 2)}
+            </pre>
+          </div>
+        );
+      case 'divider':
+        return (
+          <div className={`p-4 border ${className || ''}`}>
+            <div className="text-sm text-muted-foreground">Divider Block</div>
+            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
+              {JSON.stringify(block.content, null, 2)}
+            </pre>
+          </div>
         );
       default:
         return (

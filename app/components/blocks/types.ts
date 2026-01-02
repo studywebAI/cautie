@@ -1,13 +1,16 @@
-// Block types for the Notion-inspired block system
+// Block types for the hierarchical learning platform
 
 export type BlockType =
   | 'text'
-  | 'list'
-  | 'media'
-  | 'code'
-  | 'quote'
-  | 'layout'
-  | 'complex';
+  | 'image'
+  | 'video'
+  | 'multiple_choice'
+  | 'open_question'
+  | 'fill_in_blank'
+  | 'drag_drop'
+  | 'ordering'
+  | 'media_embed'
+  | 'divider';
 
 export interface BaseBlock {
   id: string;
@@ -18,87 +21,98 @@ export interface BaseBlock {
   updated_at: string;
 }
 
-// Text Block Types
-export type TextBlockType = 'paragraph' | 'heading1' | 'heading2' | 'heading3';
-
+// 1. TextBlock
 export interface TextBlockContent {
-  type: TextBlockType;
-  text: string;
-  formatting?: {
-    bold?: boolean;
-    italic?: boolean;
-    underline?: boolean;
-    strikethrough?: boolean;
+  content: string;
+  style: 'normal' | 'heading' | 'subheading' | 'quote' | 'note' | 'warning';
+}
+
+// 2. ImageBlock
+export interface ImageBlockContent {
+  url: string;
+  caption: string;
+  transform: {
+    x: number;
+    y: number;
+    scale: number;
+    rotation: number;
   };
 }
 
-// List Block Types
-export type ListBlockType = 'bulleted' | 'numbered' | 'todo';
-
-export interface ListItem {
-  id: string;
-  text: string;
-  checked?: boolean; // For todo lists
-  children?: ListItem[];
+// 3. VideoBlock
+export interface VideoBlockContent {
+  url: string;
+  provider: 'youtube' | 'vimeo' | 'upload';
+  start_seconds: number;
+  end_seconds: number | null;
 }
 
-export interface ListBlockContent {
-  type: ListBlockType;
-  items: ListItem[];
+// 4. MultipleChoiceBlock
+export interface MultipleChoiceContent {
+  question: string;
+  options: Array<{
+    id: string;
+    text: string;
+    correct: boolean;
+  }>;
+  multiple_correct: boolean;
+  shuffle: boolean;
 }
 
-// Media Block Types
-export type MediaBlockType = 'image' | 'embed';
-
-export interface MediaBlockContent {
-  type: MediaBlockType;
-  url?: string;
-  alt?: string;
-  caption?: string;
-  embedType?: 'video' | 'audio' | 'iframe'; // For embeds
+// 5. OpenQuestionBlock (AI grading enabled)
+export interface OpenQuestionContent {
+  question: string;
+  ai_grading: boolean;
+  grading_criteria: string;
+  max_score: number;
 }
 
-// Code Block
-export interface CodeBlockContent {
-  language: string;
-  code: string;
-  showLineNumbers?: boolean;
+// 6. FillInBlankBlock
+export interface FillInBlankContent {
+  text: string; // e.g., "Ik ___ naar school."
+  answers: string[]; // e.g., ["ga", "loop"]
+  case_sensitive: boolean;
 }
 
-// Quote Block
-export interface QuoteBlockContent {
-  text: string;
-  author?: string;
-  source?: string;
+// 7. DragDropBlock
+export interface DragDropContent {
+  prompt: string;
+  pairs: Array<{
+    left: string;
+    right: string;
+  }>;
 }
 
-// Layout Block Types
-export type LayoutBlockType = 'divider' | 'callout';
-
-export interface LayoutBlockContent {
-  type: LayoutBlockType;
-  text?: string; // For callout
-  icon?: string; // For callout
+// 8. OrderingBlock
+export interface OrderingContent {
+  prompt: string;
+  items: string[];
+  correct_order: number[];
 }
 
-// Complex Block (wrapping existing viewers)
-export type ComplexBlockType = 'mindmap' | 'chart' | 'timeline' | 'other';
+// 9. MediaEmbedBlock
+export interface MediaEmbedContent {
+  embed_url: string;
+  description: string;
+}
 
-export interface ComplexBlockContent {
-  type: ComplexBlockType;
-  data: any; // Data specific to the viewer component
-  viewerType: string; // e.g., 'mindmap-professional', 'timeline-professional'
+// 10. DividerBlock
+export interface DividerContent {
+  style: 'line' | 'space' | 'page_break';
 }
 
 // Union type for all block contents
 export type BlockContent =
   | TextBlockContent
-  | ListBlockContent
-  | MediaBlockContent
-  | CodeBlockContent
-  | QuoteBlockContent
-  | LayoutBlockContent
-  | ComplexBlockContent;
+  | ImageBlockContent
+  | VideoBlockContent
+  | MultipleChoiceContent
+  | OpenQuestionContent
+  | FillInBlankContent
+  | DragDropContent
+  | OrderingContent
+  | MediaEmbedContent
+  | DividerContent;
 
 // Props for block components
 export interface BlockProps {
