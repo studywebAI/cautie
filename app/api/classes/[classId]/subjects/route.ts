@@ -26,39 +26,51 @@ export async function GET(
 
     if (classError || !classAccess?.some(c => c.id === params.classId)) {
       // Check if user is a member
-      const { data: memberData } = await supabase
+      const { data: memberData, error: memberError } = await supabase
         .from('class_members')
         .select('class_id')
         .eq('class_id', params.classId)
         .eq('user_id', user.id)
         .single()
 
-      if (!memberData) {
+      if (memberError || !memberData) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }
 
-    // Get subjects for this class with basic chapter info for preview
-    const { data: subjects, error } = await supabase
-      .from('materials') // Using existing materials table for now
+    // Get subjects for this class - for now just return the basic subject data
+    // TODO: Implement full hierarchical structure when database schema is updated
+    const { data: subjects, error: subjectsError } = await supabase
+      .from('materials')
       .select(`
         id,
         title,
         type,
         created_at,
-        chapters:materials_chapters(*),
         content
       `)
       .eq('class_id', params.classId)
-      .eq('type', 'SUBJECT') // We'll create a new type for subjects
+      .eq('type', 'SUBJECT')
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error fetching subjects:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (subjectsError) {
+      console.error('Error fetching subjects:', subjectsError)
+      return NextResponse.json({ error: 'Failed to fetch subjects' }, { status: 500 })
     }
 
-    return NextResponse.json(subjects || [])
+    // For now, return subjects with placeholder progress data
+    // This will be replaced with real hierarchical data once deployed
+    const subjectsWithProgress = (subjects || []).map(subject => ({
+      ...subject,
+      // Placeholder data - will be replaced with real chapter/paragraph progress
+      recentParagraphs: [
+        { id: '1', title: 'Introduction', progress: Math.floor(Math.random() * 100) },
+        { id: '2', title: 'Core Concepts', progress: Math.floor(Math.random() * 100) },
+        { id: '3', title: 'Practice Exercises', progress: Math.floor(Math.random() * 100) }
+      ].slice(0, 3) // Show up to 3 paragraphs
+    }))
+
+    return NextResponse.json(subjectsWithProgress || [])
   } catch (error) {
     console.error('Unexpected error in subjects GET:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

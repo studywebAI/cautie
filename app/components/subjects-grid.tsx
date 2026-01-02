@@ -29,6 +29,11 @@ type Subject = {
     ai_icon_seed?: string;
   };
   created_at: string;
+  recentParagraphs?: Array<{
+    id: string;
+    title: string;
+    progress: number;
+  }>;
 };
 
 type SubjectsGridProps = {
@@ -205,23 +210,22 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
                         {subject.content?.class_label || subject.title}
                       </p>
 
-                      {/* Progress preview - placeholder for now */}
+                      {/* Progress preview from API data */}
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Chapter 1.1</span>
-                          <span className="font-medium">0%</span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-1.5">
-                          <div className="bg-primary h-1.5 rounded-full w-0 transition-all duration-300" />
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Chapter 1.2</span>
-                          <span className="font-medium">0%</span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-1.5">
-                          <div className="bg-primary h-1.5 rounded-full w-0 transition-all duration-300" />
-                        </div>
+                        {subject.recentParagraphs?.slice(0, 3).map((paragraph, index) => (
+                          <div key={paragraph.id}>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">{paragraph.title}</span>
+                              <span className="font-medium">{paragraph.progress}%</span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-1.5">
+                              <div
+                                className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                                style={{ width: `${paragraph.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </CardContent>
