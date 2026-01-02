@@ -16,7 +16,7 @@ type TodaysAgendaProps = {
 
 export function TodaysAgenda({ assignments, personalTasks, classes }: TodaysAgendaProps) {
   const todaysEvents = useMemo(() => {
-    const assignmentEvents = (assignments || [])
+    const assignmentEvents = (Array.isArray(assignments) ? assignments : [])
       .filter(a => a.due_date && isToday(parseISO(a.due_date)))
       .map(a => {
         const className = classes.find(c => c.id === a.class_id)?.name || 'Class';
@@ -30,7 +30,7 @@ export function TodaysAgenda({ assignments, personalTasks, classes }: TodaysAgen
         };
       });
 
-    const personalEvents = (personalTasks || [])
+    const personalEvents = (Array.isArray(personalTasks) ? personalTasks : [])
       .filter(t => t.due_date && isToday(parseISO(t.due_date)))
       .map(t => ({
         id: t.id,

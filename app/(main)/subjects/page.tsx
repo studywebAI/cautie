@@ -35,25 +35,24 @@ export default function SubjectsPage() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const { toast } = useToast();
 
-  // Placeholder data - would be fetched from API
+  // Fetch real subjects from API
   useEffect(() => {
-    // Mock subjects data
-    setSubjects([
-      {
-        id: '1',
-        name: 'Mathematics',
-        description: 'Complete mathematics curriculum with chapters and exercises',
-        is_public: true,
-        created_at: new Date().toISOString()
-      },
-      {
-        id: '2',
-        name: 'Physics',
-        description: 'Physics principles and problem-solving',
-        is_public: false,
-        created_at: new Date().toISOString()
+    const fetchSubjects = async () => {
+      try {
+        const response = await fetch('/api/subjects');
+        if (response.ok) {
+          const data = await response.json();
+          setSubjects(data);
+        } else {
+          console.error('Failed to fetch subjects');
+          // Keep empty array if fetch fails
+        }
+      } catch (error) {
+        console.error('Error fetching subjects:', error);
       }
-    ]);
+    };
+
+    fetchSubjects();
   }, []);
 
   return (
@@ -139,12 +138,52 @@ export default function SubjectsPage() {
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => {
-              toast({
-                title: 'Subject Created',
-                description: 'Your new subject has been created successfully.',
-              });
-              setIsCreateOpen(false);
+            <Button onClick={async () => {
+              const nameInput = document.getElementById('subject-name') as HTMLInputElement;
+              const descInput = document.getElementById('subject-description') as HTMLTextAreaElement;
+
+              if (!nameInput?.value?.trim()) {
+                toast({
+                  title: 'Error',
+                  description: 'Subject name is required.',
+                  variant: 'destructive'
+                });
+                return;
+              }
+
+              try {
+                const response = await fetch('/api/subjects', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    name: nameInput.value.trim(),
+                    description: descInput.value?.trim() || null,
+                    is_public: false // Default to private
+                  })
+                });
+
+                if (response.ok) {
+                  const newSubject = await response.json();
+                  setSubjects(prev => [newSubject, ...prev]);
+                  toast({
+                    title: 'Subject Created',
+                    description: 'Your new subject has been created successfully.',
+                  });
+                  setIsCreateOpen(false);
+                  // Clear form
+                  nameInput.value = '';
+                  descInput.value = '';
+                } else {
+                  throw new Error('Failed to create subject');
+                }
+              } catch (error) {
+                console.error('Error creating subject:', error);
+                toast({
+                  title: 'Error',
+                  description: 'Failed to create subject. Please try again.',
+                  variant: 'destructive'
+                });
+              }
             }}>
               Create Subject
             </Button>

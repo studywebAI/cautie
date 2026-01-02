@@ -39,14 +39,14 @@ function StudentDashboard() {
     return <DashboardSkeleton />;
   }
 
-  const enrolledClasses = (classes || []).filter(c => c.user_id !== session?.user?.id);
+  const enrolledClasses = (Array.isArray(classes) ? classes : []).filter(c => c.user_id !== session?.user?.id);
   const subjects: Subject[] = enrolledClasses.map(c => ({
     id: c.id,
     name: c.name,
     progress: 0 // Placeholder until progress is tracked
   }));
 
-  const alerts: Alert[] = (assignments || [])
+  const alerts: Alert[] = (Array.isArray(assignments) ? assignments : [])
     .filter(a => {
         if (!a.due_date) return false;
         const dueDate = parseISO(a.due_date);
@@ -91,11 +91,11 @@ function TeacherSummaryDashboard() {
     }
 
     // For teacher dashboard, we only care about classes they own.
-    const teacherClasses = (classes || []).filter(c => c.user_id === session?.user.id);
+    const teacherClasses = (Array.isArray(classes) ? classes : []).filter(c => c.user_id === session?.user.id);
 
     const totalStudents = students.length;
 
-    const activeAssignments = (assignments || []).filter(a => {
+    const activeAssignments = (Array.isArray(assignments) ? assignments : []).filter(a => {
         if (!a.due_date) return false;
         const dueDate = parseISO(a.due_date);
         return isFuture(dueDate);

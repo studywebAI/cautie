@@ -61,7 +61,13 @@ const getFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
         if (typeof defaultValue === 'string') {
             return item as T;
         }
-        return JSON.parse(item) as T;
+        const parsed = JSON.parse(item) as T;
+        // Ensure arrays are arrays
+        if (Array.isArray(defaultValue) && !Array.isArray(parsed)) {
+            console.warn(`Corrupted localStorage data for key "${key}", resetting to default`);
+            return defaultValue;
+        }
+        return parsed;
     } catch (error) {
         // If parsing fails, it's likely a plain string that shouldn't have been parsed.
         // This is a recovery mechanism from the previous bug.
