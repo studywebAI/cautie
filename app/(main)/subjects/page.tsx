@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, BookOpen, Users, Import, FileText } from 'lucide-react';
+import { PlusCircle, BookOpen, Users, Import, FileText, Upload } from 'lucide-react';
 import { AppContext } from '@/contexts/app-context';
 import {
   Dialog,
@@ -16,23 +16,40 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
 type Subject = {
   id: string;
   name: string;
-  description: string | null;
-  is_public: boolean;
+  class_id: string;
+  class_name: string;
+  cover_type: string;
+  cover_image_url: string | null;
   created_at: string;
+};
+
+type ClassOption = {
+  id: string;
+  name: string;
 };
 
 export default function SubjectsPage() {
   const context = useContext(AppContext);
   const session = context?.session;
+  const classes = context?.classes || [];
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [coverImage, setCoverImage] = useState<File | null>(null);
   const { toast } = useToast();
 
   // Fetch real subjects from API
@@ -69,7 +86,11 @@ export default function SubjectsPage() {
             <Import className="mr-2 h-4 w-4" />
             Import Content
           </Button>
-          <Button onClick={() => setIsCreateOpen(true)}>
+          <Button onClick={() => {
+            setSelectedClassId('');
+            setCoverImage(null);
+            setIsCreateOpen(true);
+          }}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Subject
           </Button>
@@ -86,13 +107,13 @@ export default function SubjectsPage() {
                   <BookOpen className="h-5 w-5 text-primary" />
                   <CardTitle className="text-lg">{subject.name}</CardTitle>
                 </div>
-                {subject.is_public && (
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                    Public
-                  </span>
-                )}
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                  {subject.class_name}
+                </span>
               </div>
-              <CardDescription>{subject.description}</CardDescription>
+              <CardDescription>
+                Created {new Date(subject.created_at).toLocaleDateString()}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
@@ -126,12 +147,31 @@ export default function SubjectsPage() {
               <Input id="subject-name" placeholder="e.g., Advanced Mathematics" />
             </div>
             <div>
-              <Label htmlFor="subject-description">Description</Label>
-              <Textarea
-                id="subject-description"
-                placeholder="Describe what this subject covers..."
-                rows={3}
+              <Label htmlFor="class-select">Class</Label>
+              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.filter(c => c.user_id === session?.user?.id).map((classItem) => (
+                    <SelectItem key={classItem.id} value={classItem.id}>
+                      {classItem.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="cover-image">Cover Image (Optional)</Label>
+              <Input
+                id="cover-image"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
               />
+              <p className="text-sm text-muted-foreground mt-1">
+                Upload an image to use as the subject cover. If not provided, AI-generated icons will be used.
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -140,7 +180,6 @@ export default function SubjectsPage() {
             </Button>
             <Button onClick={async () => {
               const nameInput = document.getElementById('subject-name') as HTMLInputElement;
-              const descInput = document.getElementById('subject-description') as HTMLTextAreaElement;
 
               if (!nameInput?.value?.trim()) {
                 toast({
@@ -151,14 +190,28 @@ export default function SubjectsPage() {
                 return;
               }
 
+              if (!selectedClassId) {
+                toast({
+                  title: 'Error',
+                  description: 'Please select a class for this subject.',
+                  variant: 'destructive'
+                });
+                return;
+              }
+
               try {
+                // For now, skip image upload - will implement later
+                let coverImageUrl = null;
+                let coverType = 'ai_icons';
+
                 const response = await fetch('/api/subjects', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     name: nameInput.value.trim(),
-                    description: descInput.value?.trim() || null,
-                    is_public: false // Default to private
+                    class_id: selectedClassId,
+                    cover_image_url: coverImageUrl,
+                    cover_type: coverType
                   })
                 });
 
@@ -172,15 +225,17 @@ export default function SubjectsPage() {
                   setIsCreateOpen(false);
                   // Clear form
                   nameInput.value = '';
-                  descInput.value = '';
+                  setSelectedClassId('');
+                  setCoverImage(null);
                 } else {
-                  throw new Error('Failed to create subject');
+                  const errorData = await response.json();
+                  throw new Error(errorData.error || 'Failed to create subject');
                 }
               } catch (error) {
                 console.error('Error creating subject:', error);
                 toast({
                   title: 'Error',
-                  description: 'Failed to create subject. Please try again.',
+                  description: error instanceof Error ? error.message : 'Failed to create subject. Please try again.',
                   variant: 'destructive'
                 });
               }

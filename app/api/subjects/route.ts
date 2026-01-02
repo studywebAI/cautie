@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-// GET /api/subjects - Get all subjects (global study materials)
+// GET /api/subjects - Get all subjects for classes the user has access to
 export async function GET(request: Request) {
   try {
     const cookieStore = cookies()
@@ -15,11 +15,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get materials that can be used as study materials
+    // Get subjects for classes the user owns
     const { data: subjects, error } = await supabase
-      .from('materials')
-      .select('id, title, description, created_at, user_id, is_public')
-      .or(`user_id.eq.${user.id},is_public.eq.true`)
+      .from('subjects')
+      .select('id, title, class_id, cover_type, cover_image_url, created_at, user_id')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -27,12 +27,26 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Get class names for the subjects
+    const classIds = [...new Set(((subjects as any[]) || []).map((s: any) => s.class_id))]
+    const { data: classes, error: classError } = await supabase
+      .from('classes')
+      .select('id, name')
+      .in('id', classIds)
+
+    const classMap = ((classes as any[]) || []).reduce((acc, cls) => {
+      acc[cls.id] = cls.name
+      return acc
+    }, {} as Record<string, string>)
+
     // Transform to match expected format
-    const transformedSubjects = (subjects || []).map(subject => ({
+    const transformedSubjects = ((subjects as any[]) || []).map((subject: any) => ({
       id: subject.id,
       name: subject.title,
-      description: subject.description,
-      is_public: subject.is_public,
+      class_id: subject.class_id,
+      class_name: classMap[subject.class_id] || 'Unknown Class',
+      cover_type: subject.cover_type,
+      cover_image_url: subject.cover_image_url,
       created_at: subject.created_at
     }))
 
@@ -54,23 +68,41 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { name, description, is_public } = await request.json()
+    const { name, description, class_id, cover_image_url, cover_type } = await request.json()
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Subject name is required' }, { status: 400 })
     }
 
+    if (!class_id) {
+      return NextResponse.json({ error: 'Class ID is required' }, { status: 400 })
+    }
+
+    // Verify user owns or teaches the class
+    const { data: classData, error: classError } = await supabase
+      .from('classes')
+      .select('id, user_id, owner_id')
+      .eq('id', class_id)
+      .single()
+
+    if (classError || !classData) {
+      return NextResponse.json({ error: 'Class not found' }, { status: 404 })
+    }
+
+    if (classData.user_id !== user.id && classData.owner_id !== user.id) {
+      return NextResponse.json({ error: 'You do not have permission to create subjects for this class' }, { status: 403 })
+    }
+
     const { data: subject, error: insertError } = await supabase
-      .from('materials')
+      .from('subjects')
       .insert([{
         title: name.trim(),
-        description: description?.trim(),
-        type: 'study_material',
-        content: { type: 'study_material' }, // Empty content for now
-        is_public: is_public || false,
+        class_id: class_id,
+        cover_type: cover_type || 'ai_icons',
+        cover_image_url: cover_image_url || null,
         user_id: user.id
       }])
-      .select('id, title, description, created_at, user_id, is_public')
+      .select('id, title, class_id, cover_type, cover_image_url, created_at, user_id, class_label')
       .single()
 
     if (insertError) {
@@ -79,12 +111,14 @@ export async function POST(request: Request) {
     }
 
     // Transform to match expected format
+    const subjectData = subject as any
     return NextResponse.json({
-      id: subject.id,
-      name: subject.title,
-      description: subject.description,
-      is_public: subject.is_public,
-      created_at: subject.created_at
+      id: subjectData.id,
+      name: subjectData.title,
+      class_id: subjectData.class_id,
+      cover_type: subjectData.cover_type,
+      cover_image_url: subjectData.cover_image_url,
+      created_at: subjectData.created_at
     })
   } catch (error) {
     console.error('Unexpected error in subjects POST:', error)
