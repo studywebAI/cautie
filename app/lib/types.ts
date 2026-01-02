@@ -140,3 +140,22 @@ export type CalendarEvent = {
   chapter_id?: string;
   chapter_title?: string;
 };
+
+// Types for Analytics
+export type QuizPerformance = {
+  totalQuestions: number;
+  correctAnswers: number;
+  averageScore: number;
+};
+
+export type StudentAnalytics = {
+  weeklyStudyTime: ProgressData[];
+  totalStudyTime: number;
+  avgProgress: number;
+  assignmentCompletionRate: number;
+  completedAssignments: number;
+  totalAssignments: number;
+  quizPerformance: QuizPerformance;
+  recommendations: string[];
+  lastUpdated: string;
+};

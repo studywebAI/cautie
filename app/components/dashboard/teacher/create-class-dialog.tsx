@@ -16,8 +16,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Link as LinkIcon, Loader2, Share2 } from 'lucide-react';
+import { Copy, Link as LinkIcon, Loader2, Share2, BookTemplate } from 'lucide-react';
 import type { ClassInfo } from '@/contexts/app-context';
+import { TemplateSelector } from './template-selector';
 
 type CreateClassDialogProps = {
   isOpen: boolean;
@@ -31,6 +32,8 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [createdClass, setCreatedClass] = useState<any>(null);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const { toast } = useToast();
   
   const inviteLink = createdClass?.join_code ? `${window.location.origin}/classes?join_code=${createdClass.join_code}` : '';
@@ -43,7 +46,37 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
       return;
     }
     setIsLoading(true);
-    const result = await onClassCreated({ name, description });
+
+    let result;
+    if (selectedTemplate) {
+      // Use template to create class
+      try {
+        const response = await fetch(`/api/templates/${selectedTemplate.id}/use`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ className: name, classDescription: description })
+        });
+
+        if (response.ok) {
+          result = await response.json();
+        } else {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to create class from template');
+        }
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Failed to create class from template'
+        });
+        setIsLoading(false);
+        return;
+      }
+    } else {
+      // Create blank class
+      result = await onClassCreated({ name, description });
+    }
+
     setIsLoading(false);
     if (result) {
       setCreatedClass(result);
@@ -64,6 +97,8 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
     setDescription('');
     setStep(1);
     setCreatedClass(null);
+    setSelectedTemplate(null);
+    setShowTemplateSelector(false);
     setIsOpen(false);
   };
   
@@ -103,6 +138,37 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
               onChange={(e) => setDescription(e.target.value)}
               disabled={isLoading}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Template (Optional)</Label>
+            {selectedTemplate ? (
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                <div>
+                  <p className="font-medium">{selectedTemplate.name}</p>
+                  {selectedTemplate.description && (
+                    <p className="text-sm text-muted-foreground">{selectedTemplate.description}</p>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedTemplate(null)}
+                  disabled={isLoading}
+                >
+                  Remove
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setShowTemplateSelector(true)}
+                disabled={isLoading}
+                className="w-full"
+              >
+                <BookTemplate className="mr-2 h-4 w-4" />
+                Choose a Template
+              </Button>
+            )}
           </div>
         </div>
         <DialogFooter>
@@ -159,10 +225,18 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg md:max-w-2xl">
-        {step === 1 ? renderStepOne() : renderStepTwo()}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-lg md:max-w-2xl">
+          {step === 1 ? renderStepOne() : renderStepTwo()}
+        </DialogContent>
+      </Dialog>
+
+      <TemplateSelector
+        isOpen={showTemplateSelector}
+        setIsOpen={setShowTemplateSelector}
+        onTemplateSelected={setSelectedTemplate}
+      />
+    </>
   );
 }

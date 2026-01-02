@@ -22,7 +22,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast'
+import { AppContext } from '@/contexts/app-context'
+import { useContext } from 'react'
 import Link from 'next/link';
 
 type Chapter = {
@@ -58,52 +60,40 @@ export default function SubjectDetailPage() {
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Mock data - would be fetched from API
+  // Fetch subject and chapters from API
   useEffect(() => {
-    setSubject({
-      id: subjectId,
-      name: 'Mathematics',
-      description: 'Complete mathematics curriculum with chapters and exercises',
-      is_public: true
-    });
+    const fetchSubjectData = async () => {
+      try {
+        // Fetch subject info
+        const subjectResponse = await fetch(`/api/subjects/${subjectId}`);
+        if (subjectResponse.ok) {
+          const subjectData = await subjectResponse.json();
+          setSubject({
+            id: subjectData.id,
+            name: subjectData.title,
+            description: subjectData.description || 'Subject description',
+            is_public: true
+          });
+        }
 
-    setChapters([
-      {
-        id: '1',
-        title: 'Algebra Basics',
-        description: 'Introduction to algebraic concepts and operations',
-        order_index: 1,
-        subchapters: [
-          {
-            id: '1a',
-            title: 'Variables and Expressions',
-            description: 'Understanding variables and basic expressions',
-            order_index: 1
-          },
-          {
-            id: '1b',
-            title: 'Solving Equations',
-            description: 'Methods for solving linear equations',
-            order_index: 2
-          }
-        ]
-      },
-      {
-        id: '2',
-        title: 'Geometry',
-        description: 'Geometric shapes, theorems, and proofs',
-        order_index: 2,
-        subchapters: [
-          {
-            id: '2a',
-            title: 'Points, Lines, and Planes',
-            description: 'Basic geometric elements',
-            order_index: 1
-          }
-        ]
+        // Fetch chapters
+        const chaptersResponse = await fetch(`/api/subjects/${subjectId}/chapters`);
+        if (chaptersResponse.ok) {
+          const chaptersData = await chaptersResponse.json();
+          setChapters(chaptersData);
+        }
+      } catch (error) {
+        console.error('Error fetching subject data:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load subject data.',
+          variant: 'destructive'
+        });
       }
-    ]);
-  }, [subjectId]);
+    };
+
+    fetchSubjectData();
+  }, [subjectId, toast]);
 
   if (!subject) {
     return <div>Loading...</div>;
@@ -218,12 +208,52 @@ export default function SubjectDetailPage() {
             <Button variant="outline" onClick={() => setIsCreateChapterOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => {
-              toast({
-                title: 'Chapter Created',
-                description: 'The new chapter has been added to your subject.',
-              });
-              setIsCreateChapterOpen(false);
+            <Button onClick={async () => {
+              const titleInput = document.getElementById('chapter-title') as HTMLInputElement;
+              const descriptionInput = document.getElementById('chapter-description') as HTMLTextAreaElement;
+
+              if (!titleInput?.value?.trim()) {
+                toast({
+                  title: 'Error',
+                  description: 'Chapter title is required.',
+                  variant: 'destructive'
+                });
+                return;
+              }
+
+              try {
+                const response = await fetch(`/api/subjects/${subjectId}/chapters`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    title: titleInput.value.trim(),
+                    description: descriptionInput.value.trim() || null
+                  })
+                });
+
+                if (response.ok) {
+                  const newChapter = await response.json();
+                  setChapters(prev => [...prev, { ...newChapter, subchapters: [] }]);
+                  toast({
+                    title: 'Chapter Created',
+                    description: 'The new chapter has been added to your subject.',
+                  });
+                  setIsCreateChapterOpen(false);
+                  // Clear form
+                  titleInput.value = '';
+                  descriptionInput.value = '';
+                } else {
+                  const errorData = await response.json();
+                  throw new Error(errorData.error || 'Failed to create chapter');
+                }
+              } catch (error) {
+                console.error('Error creating chapter:', error);
+                toast({
+                  title: 'Error',
+                  description: error instanceof Error ? error.message : 'Failed to create chapter. Please try again.',
+                  variant: 'destructive'
+                });
+              }
             }}>
               Create Chapter
             </Button>
@@ -275,13 +305,71 @@ export default function SubjectDetailPage() {
             <Button variant="outline" onClick={() => setIsCreateSubchapterOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => {
-              toast({
-                title: 'Subchapter Created',
-                description: 'The subchapter has been added to the chapter.',
-              });
-              setIsCreateSubchapterOpen(false);
-              setSelectedChapterId(null);
+            <Button onClick={async () => {
+              const titleInput = document.getElementById('subchapter-title') as HTMLInputElement;
+              const descriptionInput = document.getElementById('subchapter-description') as HTMLTextAreaElement;
+
+              if (!titleInput?.value?.trim()) {
+                toast({
+                  title: 'Error',
+                  description: 'Subchapter title is required.',
+                  variant: 'destructive'
+                });
+                return;
+              }
+
+              if (!selectedChapterId) {
+                toast({
+                  title: 'Error',
+                  description: 'No chapter selected.',
+                  variant: 'destructive'
+                });
+                return;
+              }
+
+              try {
+                const response = await fetch(`/api/subjects/${subjectId}/chapters/${selectedChapterId}/subchapters`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    title: titleInput.value.trim(),
+                    description: descriptionInput.value.trim() || null,
+                    content: null // TODO: Implement content creation
+                  })
+                });
+
+                if (response.ok) {
+                  const newSubchapter = await response.json();
+                  // Update the chapters state to include the new subchapter
+                  setChapters(prev => prev.map(chapter =>
+                    chapter.id === selectedChapterId
+                      ? {
+                          ...chapter,
+                          subchapters: [...(chapter.subchapters || []), newSubchapter]
+                        }
+                      : chapter
+                  ));
+                  toast({
+                    title: 'Subchapter Created',
+                    description: 'The subchapter has been added to the chapter.',
+                  });
+                  setIsCreateSubchapterOpen(false);
+                  setSelectedChapterId(null);
+                  // Clear form
+                  titleInput.value = '';
+                  descriptionInput.value = '';
+                } else {
+                  const errorData = await response.json();
+                  throw new Error(errorData.error || 'Failed to create subchapter');
+                }
+              } catch (error) {
+                console.error('Error creating subchapter:', error);
+                toast({
+                  title: 'Error',
+                  description: error instanceof Error ? error.message : 'Failed to create subchapter. Please try again.',
+                  variant: 'destructive'
+                });
+              }
             }}>
               Create Subchapter
             </Button>

@@ -3,6 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Users, BookCheck, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
@@ -15,9 +16,19 @@ type ClassCardProps = {
   classInfo: ClassInfo;
   onArchive?: () => void;
   isArchived?: boolean;
+  isBulkMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (classId: string) => void;
 };
 
-export function ClassCard({ classInfo, onArchive, isArchived = false }: ClassCardProps) {
+export function ClassCard({
+  classInfo,
+  onArchive,
+  isArchived = false,
+  isBulkMode = false,
+  isSelected = false,
+  onToggleSelect
+}: ClassCardProps) {
   const [students, setStudents] = useState<Student[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,74 +82,135 @@ export function ClassCard({ classInfo, onArchive, isArchived = false }: ClassCar
     const dueDate = parseISO(a.due_date);
     return isFuture(dueDate) && differenceInDays(dueDate, new Date()) <= 7;
   }).length;
-  
-  const averageProgress = 0; // Placeholder until progress tracking is implemented
+
+  // Calculate actual average progress from submissions
+  const [averageProgress, setAverageProgress] = useState(0);
+
+  useEffect(() => {
+    const calculateProgress = async () => {
+      if (!classInfo.id || classInfo.id.startsWith('local-') || isArchived) {
+        setAverageProgress(0);
+        return;
+      }
+
+      try {
+        // Get all submissions for this class's assignments
+        const assignmentIds = assignments.map(a => a.id);
+        if (assignmentIds.length === 0) {
+          setAverageProgress(0);
+          return;
+        }
+
+        const submissionsRes = await fetch('/api/submissions?assignmentIds=' + assignmentIds.join(','));
+        if (submissionsRes.ok) {
+          const allSubmissions = await submissionsRes.json();
+          const classSubmissions = allSubmissions.filter((s: any) =>
+            assignments.some(a => a.id === s.assignment_id)
+          );
+
+          if (students.length === 0 || assignments.length === 0) {
+            setAverageProgress(0);
+            return;
+          }
+
+          // Calculate completion rate
+          const totalPossible = students.length * assignments.length;
+          const completed = classSubmissions.filter((s: any) =>
+            s.status === 'submitted' || s.grade !== null
+          ).length;
+
+          const progress = totalPossible > 0 ? (completed / totalPossible) * 100 : 0;
+          setAverageProgress(Math.round(progress));
+        }
+      } catch (error) {
+        console.error('Failed to calculate progress:', error);
+        setAverageProgress(0);
+      }
+    };
+
+    calculateProgress();
+  }, [classInfo.id, assignments, students, isArchived]);
   
   const alerts: string[] = [];
   if (assignmentsDue > 0) {
     alerts.push(`${assignmentsDue} assignment${assignmentsDue > 1 ? 's are' : ' is'} due this week.`);
   }
 
+  const card = (
+    <Card className={`h-full flex flex-col hover:border-primary transition-all ${isArchived ? 'opacity-75' : ''} ${isBulkMode ? 'cursor-default' : ''}`}>
+      <CardHeader>
+        <CardTitle className="font-headline text-xl flex items-center gap-2">
+          {isBulkMode && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelect?.(classInfo.id)}
+              className="mr-2"
+            />
+          )}
+          {classInfo.name}
+          {isArchived && (
+            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+              Archived
+            </span>
+          )}
+        </CardTitle>
+        <div className="flex items-center text-sm text-muted-foreground pt-1 gap-4">
+          {isArchived ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground italic">Archived class - data not available</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5">
+                <Users className="h-4 w-4" />
+                <span>{studentCount} Student{studentCount !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <BookCheck className="h-4 w-4" />
+                <span>{assignmentsDue} Due Soon</span>
+              </div>
+            </>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="flex-grow space-y-4">
+        <div>
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm font-medium text-muted-foreground">Average Progress</span>
+            <span className="text-sm font-bold text-primary">{averageProgress}%</span>
+          </div>
+          <Progress value={averageProgress} className="h-2" />
+        </div>
+        {alerts.length > 0 && (
+          <div>
+            <Separator className="my-3" />
+            <div className="space-y-2">
+              {alerts.map((alert, index) => (
+                <div key={index} className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-500">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <p>{alert}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="justify-end">
+        <div className={`flex items-center text-sm font-medium text-primary transition-opacity ${isBulkMode ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
+          <span>Manage Class</span>
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </div>
+      </CardFooter>
+    </Card>
+  );
+
+  if (isBulkMode) {
+    return card;
+  }
+
   return (
     <Link href={`/class/${classInfo.id}`} className="group">
-      <Card className={`h-full flex flex-col hover:border-primary transition-all ${isArchived ? 'opacity-75' : ''}`}>
-        <CardHeader>
-          <CardTitle className="font-headline text-xl flex items-center gap-2">
-            {classInfo.name}
-            {isArchived && (
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                Archived
-              </span>
-            )}
-          </CardTitle>
-          <div className="flex items-center text-sm text-muted-foreground pt-1 gap-4">
-            {isArchived ? (
-              <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground italic">Archived class - data not available</span>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-1.5">
-                  <Users className="h-4 w-4" />
-                  <span>{studentCount} Student{studentCount !== 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <BookCheck className="h-4 w-4" />
-                  <span>{assignmentsDue} Due Soon</span>
-                </div>
-              </>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="flex-grow space-y-4">
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-sm font-medium text-muted-foreground">Average Progress</span>
-              <span className="text-sm font-bold text-primary">{averageProgress}%</span>
-            </div>
-            <Progress value={averageProgress} className="h-2" />
-          </div>
-          {alerts.length > 0 && (
-            <div>
-              <Separator className="my-3" />
-              <div className="space-y-2">
-                {alerts.map((alert, index) => (
-                  <div key={index} className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-500">
-                    <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <p>{alert}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="justify-end">
-          <div className="flex items-center text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-            <span>Manage Class</span>
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </div>
-        </CardFooter>
-      </Card>
+      {card}
     </Link>
   );
 }

@@ -4,12 +4,13 @@
 import { useState, useContext, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { PlusCircle, Search, ChevronDown, ChevronUp, Archive, Trash2, Copy, CheckSquare, Square } from 'lucide-react';
 import { ClassCard } from './class-card';
 import { CreateClassDialog } from './create-class-dialog';
 import { AppContext, AppContextType, ClassInfo } from '@/contexts/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function TeacherDashboard() {
   const { classes, createClass, isLoading, refetchClasses } = useContext(AppContext) as AppContextType;
@@ -18,6 +19,8 @@ export function TeacherDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [allClasses, setAllClasses] = useState<ClassInfo[]>([]);
   const [archivedClassesCount, setArchivedClassesCount] = useState(0);
+  const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set());
+  const [isBulkMode, setIsBulkMode] = useState(false);
   const { toast } = useToast();
 
   // Fetch all classes including archived when toggling
@@ -77,6 +80,54 @@ export function TeacherDashboard() {
     }
     setShowArchived(!showArchived);
   };
+
+  // Bulk operations handlers
+  const handleSelectAll = () => {
+    const allIds = new Set(activeClasses.map(cls => cls.id));
+    setSelectedClasses(allIds);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedClasses(new Set());
+  };
+
+  const handleBulkAction = async (action: string) => {
+    if (selectedClasses.size === 0) return;
+
+    try {
+      const response = await fetch('/api/classes/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          classIds: Array.from(selectedClasses)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Bulk operation failed');
+      }
+
+      toast({
+        title: 'Success',
+        description: `${action.charAt(0).toUpperCase() + action.slice(1)} operation completed for ${selectedClasses.size} classes`,
+      });
+
+      setSelectedClasses(new Set());
+      await refetchClasses();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Bulk operation failed. Please try again.',
+      });
+    }
+  };
+
+  const toggleBulkMode = () => {
+    setIsBulkMode(!isBulkMode);
+    setSelectedClasses(new Set());
+  };
   
   if (isLoading || !classes) {
       return (
@@ -112,21 +163,80 @@ export function TeacherDashboard() {
             An overview of all your classes, assignments, and student progress.
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create New Class
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={isBulkMode ? "default" : "outline"}
+            onClick={toggleBulkMode}
+          >
+            {isBulkMode ? <Square className="mr-2 h-4 w-4" /> : <CheckSquare className="mr-2 h-4 w-4" />}
+            {isBulkMode ? 'Exit Bulk Mode' : 'Bulk Actions'}
+          </Button>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create New Class
+          </Button>
+        </div>
       </header>
 
-      {/* Search Bar */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input
-          placeholder="Search classes..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 rounded-full"
-        />
+      {/* Search Bar and Bulk Actions */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search classes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 rounded-full"
+          />
+        </div>
+
+        {isBulkMode && (
+          <div className="flex items-center gap-2">
+            {selectedClasses.size > 0 && (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  {selectedClasses.size} selected
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkAction('archive')}
+                >
+                  <Archive className="mr-1 h-3 w-3" />
+                  Archive
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkAction('duplicate')}
+                >
+                  <Copy className="mr-1 h-3 w-3" />
+                  Duplicate
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleBulkAction('delete')}
+                >
+                  <Trash2 className="mr-1 h-3 w-3" />
+                  Delete
+                </Button>
+              </>
+            )}
+            {selectedClasses.size === 0 && activeClasses.length > 0 && (
+              <>
+                <Button variant="ghost" size="sm" onClick={handleSelectAll}>
+                  Select All
+                </Button>
+              </>
+            )}
+            {selectedClasses.size > 0 && (
+              <Button variant="ghost" size="sm" onClick={handleDeselectAll}>
+                Deselect All
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {activeClasses.length === 0 && archivedClasses.length === 0 ? (
@@ -154,6 +264,17 @@ export function TeacherDashboard() {
                   key={classInfo.id}
                   classInfo={classInfo}
                   isArchived={false}
+                  isBulkMode={isBulkMode}
+                  isSelected={selectedClasses.has(classInfo.id)}
+                  onToggleSelect={(classId) => {
+                    const newSelected = new Set(selectedClasses);
+                    if (newSelected.has(classId)) {
+                      newSelected.delete(classId);
+                    } else {
+                      newSelected.add(classId);
+                    }
+                    setSelectedClasses(newSelected);
+                  }}
                 />
               ))}
             </div>
@@ -188,6 +309,18 @@ export function TeacherDashboard() {
                       <ClassCard
                         key={classInfo.id}
                         classInfo={classInfo}
+                        isArchived={true}
+                        isBulkMode={isBulkMode}
+                        isSelected={selectedClasses.has(classInfo.id)}
+                        onToggleSelect={(classId) => {
+                          const newSelected = new Set(selectedClasses);
+                          if (newSelected.has(classId)) {
+                            newSelected.delete(classId);
+                          } else {
+                            newSelected.add(classId);
+                          }
+                          setSelectedClasses(newSelected);
+                        }}
                       />
                     ))}
                   </div>
