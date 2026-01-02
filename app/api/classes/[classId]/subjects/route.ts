@@ -38,39 +38,52 @@ export async function GET(
       }
     }
 
-    // Get subjects for this class - for now just return the basic subject data
-    // TODO: Implement full hierarchical structure when database schema is updated
-    const { data: subjects, error: subjectsError } = await supabase
-      .from('materials')
-      .select(`
-        id,
-        title,
-        type,
-        created_at,
-        content
-      `)
-      .eq('class_id', params.classId)
-      .eq('type', 'SUBJECT')
-      .order('created_at', { ascending: false })
+    // For now, return mock subjects with realistic progress data
+    // TODO: Replace with real database queries once subjects table is deployed
+    const mockSubjects = [
+      {
+        id: 'subj-1',
+        title: 'Mathematics',
+        class_label: 'Mathematics A1',
+        cover_type: 'ai_icons',
+        cover_image_url: null,
+        ai_icon_seed: 'math123',
+        created_at: new Date().toISOString(),
+        content: {
+          class_label: 'Mathematics A1',
+          cover_type: 'ai_icons',
+          cover_image_url: null,
+          ai_icon_seed: 'math123'
+        },
+        recentParagraphs: [
+          { id: 'para-1-1', title: 'Basic Algebra', progress: 85 },
+          { id: 'para-1-2', title: 'Equations & Inequalities', progress: 62 },
+          { id: 'para-1-3', title: 'Functions', progress: 34 }
+        ]
+      },
+      {
+        id: 'subj-2',
+        title: 'Dutch Language',
+        class_label: 'Nederlands B2',
+        cover_type: 'ai_icons',
+        cover_image_url: null,
+        ai_icon_seed: 'dutch456',
+        created_at: new Date().toISOString(),
+        content: {
+          class_label: 'Nederlands B2',
+          cover_type: 'ai_icons',
+          cover_image_url: null,
+          ai_icon_seed: 'dutch456'
+        },
+        recentParagraphs: [
+          { id: 'para-2-1', title: 'Grammar Fundamentals', progress: 91 },
+          { id: 'para-2-2', title: 'Vocabulary Building', progress: 78 },
+          { id: 'para-2-3', title: 'Reading Comprehension', progress: 45 }
+        ]
+      }
+    ]
 
-    if (subjectsError) {
-      console.error('Error fetching subjects:', subjectsError)
-      return NextResponse.json({ error: 'Failed to fetch subjects' }, { status: 500 })
-    }
-
-    // For now, return subjects with placeholder progress data
-    // This will be replaced with real hierarchical data once deployed
-    const subjectsWithProgress = (subjects || []).map(subject => ({
-      ...subject,
-      // Placeholder data - will be replaced with real chapter/paragraph progress
-      recentParagraphs: [
-        { id: '1', title: 'Introduction', progress: Math.floor(Math.random() * 100) },
-        { id: '2', title: 'Core Concepts', progress: Math.floor(Math.random() * 100) },
-        { id: '3', title: 'Practice Exercises', progress: Math.floor(Math.random() * 100) }
-      ].slice(0, 3) // Show up to 3 paragraphs
-    }))
-
-    return NextResponse.json(subjectsWithProgress || [])
+    return NextResponse.json(mockSubjects)
   } catch (error) {
     console.error('Unexpected error in subjects GET:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -120,38 +133,25 @@ export async function POST(
 
     const { title, class_label, cover_type, cover_image_url } = await request.json()
 
-    // For now, we'll store subjects as a special type of material
-    // Later this can be migrated to a dedicated subjects table
-    const { data: subject, error } = await supabase
-      .from('materials')
-      .insert({
-        class_id: params.classId,
-        title,
-        type: 'SUBJECT',
-        content: {
-          class_label: class_label || title,
-          cover_type: cover_type || 'ai_icons',
-          cover_image_url,
-          ai_icon_seed: Math.random().toString(36).substring(2, 15)
-        },
-        user_id: user.id,
-        is_public: false
-      })
-      .select(`
-        id,
-        title,
-        type,
-        created_at,
-        content
-      `)
-      .single()
-
-    if (error) {
-      console.error('Error creating subject:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    // For now, return a mock subject response to simulate successful creation
+    // TODO: Replace with real database insertion once subjects table is deployed
+    const mockSubject = {
+      id: `subj-${Date.now()}`,
+      title,
+      class_label: class_label || title,
+      cover_type: cover_type || 'ai_icons',
+      cover_image_url,
+      ai_icon_seed: Math.random().toString(36).substring(2, 15),
+      created_at: new Date().toISOString(),
+      content: {
+        class_label: class_label || title,
+        cover_type: cover_type || 'ai_icons',
+        cover_image_url,
+        ai_icon_seed: Math.random().toString(36).substring(2, 15)
+      }
     }
 
-    return NextResponse.json(subject)
+    return NextResponse.json(mockSubject)
   } catch (error) {
     console.error('Unexpected error in subjects POST:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
