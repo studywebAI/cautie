@@ -15,12 +15,40 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get subjects for classes the user owns
-    const { data: subjects, error } = await supabase
+    // Get user profile to determine role
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const userRole = profile?.role || 'student'
+
+    let subjectsQuery = supabase
       .from('subjects')
       .select('id, title, class_id, cover_type, cover_image_url, created_at, user_id')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
+
+    if (userRole === 'teacher') {
+      // Teachers see subjects for classes they own
+      const { data: ownedClassIds } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('user_id', user.id)
+
+      const classIds = ((ownedClassIds as any[]) || []).map(c => c.id)
+      subjectsQuery = subjectsQuery.in('class_id', classIds)
+    } else {
+      // Students see subjects for classes they are members of
+      const { data: memberClasses } = await supabase
+        .from('class_members')
+        .select('class_id')
+        .eq('user_id', user.id)
+
+      const classIds = ((memberClasses as any[]) || []).map(c => c.class_id)
+      subjectsQuery = subjectsQuery.in('class_id', classIds)
+    }
+
+    const { data: subjects, error } = await subjectsQuery.order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching subjects:', error)

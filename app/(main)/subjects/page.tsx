@@ -45,6 +45,7 @@ export default function SubjectsPage() {
   const context = useContext(AppContext);
   const session = context?.session;
   const classes = context?.classes || [];
+  const role = context?.role || 'student';
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -76,30 +77,51 @@ export default function SubjectsPage() {
     <div className="flex flex-col gap-8">
       <header className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Study Materials</h1>
+          <h1 className="text-3xl font-bold font-headline">
+            {role === 'teacher' ? 'My Subjects' : 'Enrolled Subjects'}
+          </h1>
           <p className="text-muted-foreground">
-            Organize your learning content by subject with chapters and sub-chapters.
+            {role === 'teacher'
+              ? 'Manage subjects for your classes with chapters and sub-chapters.'
+              : 'Access subjects from the classes you\'re enrolled in.'
+            }
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsImportOpen(true)}>
-            <Import className="mr-2 h-4 w-4" />
-            Import Content
-          </Button>
-          <Button onClick={() => {
-            setSelectedClassId('');
-            setCoverImage(null);
-            setIsCreateOpen(true);
-          }}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Subject
-          </Button>
-        </div>
+        {role === 'teacher' && (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+              <Import className="mr-2 h-4 w-4" />
+              Import Content
+            </Button>
+            <Button onClick={() => {
+              setSelectedClassId('');
+              setCoverImage(null);
+              setIsCreateOpen(true);
+            }}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create Subject
+            </Button>
+          </div>
+        )}
       </header>
 
       {/* Subject Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {subjects.map((subject) => (
+        {subjects.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">
+              {role === 'teacher' ? 'No subjects created yet' : 'No subjects available'}
+            </h3>
+            <p className="text-muted-foreground">
+              {role === 'teacher'
+                ? 'Create your first subject to organize learning materials for your classes.'
+                : 'Your enrolled classes don\'t have subjects yet. Ask your teacher to create some.'
+              }
+            </p>
+          </div>
+        ) : (
+          subjects.map((subject) => (
           <Card key={subject.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -129,7 +151,8 @@ export default function SubjectsPage() {
               </div>
             </CardContent>
           </Card>
-        ))}
+        )))
+        }
       </div>
 
       {/* Create Subject Dialog */}
