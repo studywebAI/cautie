@@ -38,52 +38,66 @@ export async function GET(
       }
     }
 
-    // For now, return mock subjects with realistic progress data
-    // TODO: Replace with real database queries once subjects table is deployed
-    const mockSubjects = [
-      {
-        id: 'subj-1',
-        title: 'Mathematics',
-        class_label: 'Mathematics A1',
-        cover_type: 'ai_icons',
-        cover_image_url: null,
-        ai_icon_seed: 'math123',
-        created_at: new Date().toISOString(),
-        content: {
-          class_label: 'Mathematics A1',
-          cover_type: 'ai_icons',
-          cover_image_url: null,
-          ai_icon_seed: 'math123'
-        },
-        recentParagraphs: [
-          { id: 'para-1-1', title: 'Basic Algebra', progress: 85 },
-          { id: 'para-1-2', title: 'Equations & Inequalities', progress: 62 },
-          { id: 'para-1-3', title: 'Functions', progress: 34 }
-        ]
-      },
-      {
-        id: 'subj-2',
-        title: 'Dutch Language',
-        class_label: 'Nederlands B2',
-        cover_type: 'ai_icons',
-        cover_image_url: null,
-        ai_icon_seed: 'dutch456',
-        created_at: new Date().toISOString(),
-        content: {
-          class_label: 'Nederlands B2',
-          cover_type: 'ai_icons',
-          cover_image_url: null,
-          ai_icon_seed: 'dutch456'
-        },
-        recentParagraphs: [
-          { id: 'para-2-1', title: 'Grammar Fundamentals', progress: 91 },
-          { id: 'para-2-2', title: 'Vocabulary Building', progress: 78 },
-          { id: 'para-2-3', title: 'Reading Comprehension', progress: 45 }
-        ]
-      }
-    ]
+    // Get real subjects from database
+    const { data: subjects, error: subjectsError } = await supabase
+      .from('subjects')
+      .select(`
+        *,
+        chapters(
+          id,
+          title,
+          paragraphs(
+            id,
+            title,
+            progress_snapshots!inner(
+              completion_percent
+            )
+          )
+        )
+      `)
+      .eq('class_id', params.classId)
+      .order('created_at', { ascending: false })
 
-    return NextResponse.json(mockSubjects)
+    if (subjectsError) {
+      console.error('Error fetching subjects:', subjectsError)
+      return NextResponse.json({ error: subjectsError.message }, { status: 500 })
+    }
+
+    // Transform the data to match expected format
+    const transformedSubjects = subjects?.map(subject => {
+      // Get recent paragraphs (last 3 from each subject)
+      const allParagraphs = subject.chapters?.flatMap(chapter =>
+        chapter.paragraphs?.map(para => ({
+          id: para.id,
+          title: para.title,
+          progress: para.progress_snapshots?.[0]?.completion_percent || 0
+        })) || []
+      ) || []
+
+      // Sort by progress (highest first) and take top 3
+      const recentParagraphs = allParagraphs
+        .sort((a, b) => b.progress - a.progress)
+        .slice(0, 3)
+
+      return {
+        id: subject.id,
+        title: subject.title,
+        class_label: subject.class_label || subject.title,
+        cover_type: subject.cover_type,
+        cover_image_url: subject.cover_image_url,
+        ai_icon_seed: subject.ai_icon_seed,
+        created_at: subject.created_at,
+        content: {
+          class_label: subject.class_label || subject.title,
+          cover_type: subject.cover_type,
+          cover_image_url: subject.cover_image_url,
+          ai_icon_seed: subject.ai_icon_seed
+        },
+        recentParagraphs
+      }
+    }) || []
+
+    return NextResponse.json(transformedSubjects)
   } catch (error) {
     console.error('Unexpected error in subjects GET:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -133,25 +147,40 @@ export async function POST(
 
     const { title, class_label, cover_type, cover_image_url } = await request.json()
 
-    // For now, return a mock subject response to simulate successful creation
-    // TODO: Replace with real database insertion once subjects table is deployed
-    const mockSubject = {
-      id: `subj-${Date.now()}`,
-      title,
-      class_label: class_label || title,
-      cover_type: cover_type || 'ai_icons',
-      cover_image_url,
-      ai_icon_seed: Math.random().toString(36).substring(2, 15),
-      created_at: new Date().toISOString(),
-      content: {
+    // Insert real subject into database
+    const { data: subject, error: insertError } = await supabase
+      .from('subjects')
+      .insert([{
+        class_id: params.classId,
+        title,
         class_label: class_label || title,
         cover_type: cover_type || 'ai_icons',
         cover_image_url,
         ai_icon_seed: Math.random().toString(36).substring(2, 15)
-      }
+      }])
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Error creating subject:', insertError)
+      return NextResponse.json({ error: insertError.message }, { status: 500 })
     }
 
-    return NextResponse.json(mockSubject)
+    return NextResponse.json({
+      id: subject.id,
+      title: subject.title,
+      class_label: subject.class_label || subject.title,
+      cover_type: subject.cover_type,
+      cover_image_url: subject.cover_image_url,
+      ai_icon_seed: subject.ai_icon_seed,
+      created_at: subject.created_at,
+      content: {
+        class_label: subject.class_label || subject.title,
+        cover_type: subject.cover_type,
+        cover_image_url: subject.cover_image_url,
+        ai_icon_seed: subject.ai_icon_seed
+      }
+    })
   } catch (error) {
     console.error('Unexpected error in subjects POST:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

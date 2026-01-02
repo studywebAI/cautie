@@ -49,12 +49,17 @@ export async function GET(
       }
     }
 
-    // Get chapters ordered by order_index
+    // Get chapters that belong to subjects in this class (hierarchical schema)
     const { data: chapters, error } = await supabase
-      .from('class_chapters')
-      .select('*')
-      .eq('class_id', classId)
-      .order('order_index', { ascending: true })
+      .from('chapters')
+      .select(`
+        *,
+        subjects!inner(
+          class_id
+        )
+      `)
+      .eq('subjects.class_id', classId)
+      .order('chapter_number', { ascending: true })
 
     if (error) {
       console.error('Error fetching chapters:', error)
@@ -68,7 +73,7 @@ export async function GET(
   }
 }
 
-// POST /api/classes/[classId]/chapters - Create a new chapter
+// POST /api/classes/[classId]/chapters - Create a new chapter under a subject
 export async function POST(
   request: Request,
   { params }: { params: { classId: string } }
@@ -99,31 +104,43 @@ export async function POST(
       return NextResponse.json({ error: 'Only class owners can create chapters' }, { status: 403 })
     }
 
-    const { title, description } = await request.json()
+    const { title, subject_id } = await request.json()
 
     if (!title || !title.trim()) {
       return NextResponse.json({ error: 'Chapter title is required' }, { status: 400 })
     }
 
-    // Get the highest order_index for this class
-    const { data: lastChapter } = await supabase
-      .from('class_chapters')
-      .select('order_index')
+    if (!subject_id) {
+      return NextResponse.json({ error: 'subject_id is required' }, { status: 400 })
+    }
+
+    // Verify subject belongs to this class
+    const { data: subjectCheck, error: subjectError } = await supabase
+      .from('subjects')
+      .select('id')
+      .eq('id', subject_id)
       .eq('class_id', classId)
-      .order('order_index', { ascending: false })
-      .limit(1)
       .single()
 
-    const nextOrderIndex = (lastChapter?.order_index || 0) + 1
+    if (subjectError || !subjectCheck) {
+      return NextResponse.json({ error: 'Subject not found in this class' }, { status: 404 })
+    }
+
+    // Use database function to get next chapter number
+    const { data: nextChapterNumber, error: funcError } = await supabase
+      .rpc('get_next_chapter_number', { subject_uuid: subject_id })
+
+    if (funcError) {
+      console.error('Error getting next chapter number:', funcError)
+      return NextResponse.json({ error: 'Failed to generate chapter number' }, { status: 500 })
+    }
 
     const { data: chapter, error } = await supabase
-      .from('class_chapters')
+      .from('chapters')
       .insert({
-        class_id: classId,
-        title: title.trim(),
-        description: description?.trim(),
-        order_index: nextOrderIndex,
-        user_id: user.id
+        subject_id,
+        chapter_number: nextChapterNumber,
+        title: title.trim()
       })
       .select()
       .single()
