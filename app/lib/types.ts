@@ -163,3 +163,53 @@ export type StudentAnalytics = {
   recommendations: string[];
   lastUpdated: string;
 };
+
+// Types for Class Analytics
+export type EngagementMetrics = {
+  averageStudyTime: number;
+  attendanceRate: number;
+  assignmentParticipation: number;
+  quizParticipation: number;
+  activeStudentsCount: number;
+};
+
+export type PerformanceTrend = {
+  date: string;
+  averageScore: number;
+  completionRate: number;
+  submissionsCount: number;
+};
+
+export type AtRiskStudent = {
+  id: string;
+  name: string;
+  riskLevel: 'low' | 'medium' | 'high';
+  reasons: string[];
+  engagementScore: number;
+  performanceScore: number;
+  lastActivity: string;
+};
+
+export type ComparativeData = {
+  className: string;
+  averageScore: number;
+  completionRate: number;
+  engagementRate: number;
+  studentCount: number;
+};
+
+export type ClassAnalytics = {
+  engagementMetrics: EngagementMetrics;
+  performanceTrends: PerformanceTrend[];
+  atRiskStudents: AtRiskStudent[];
+  comparativeAnalysis: ComparativeData[];
+  classOverview: {
+    totalStudents: number;
+    activeStudents: number;
+    totalAssignments: number;
+    averageClassScore: number;
+    overallCompletionRate: number;
+  };
+  insights: string[];
+  lastUpdated: string;
+};

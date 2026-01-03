@@ -10,12 +10,13 @@ import type { Student } from '@/lib/teacher-types';
 import { MaterialList } from '@/components/dashboard/teacher/material-list';
 import { ClassSettings } from '@/components/dashboard/teacher/class-settings';
 import { AnnouncementManager } from '@/components/dashboard/teacher/announcement-manager';
+import { ClassAnalyticsDashboard } from '@/components/dashboard/teacher/class-analytics-dashboard';
 import { ChapterNavigation } from '@/components/class/ChapterNavigation';
 import { ChapterContentViewer } from '@/components/class/ChapterContentViewer';
 import { ChapterEditor } from '@/components/class/ChapterEditor';
 import { SubjectsGrid } from '@/components/subjects-grid';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, FileText, Settings, GraduationCap, Library, Bell } from 'lucide-react';
+import { BookOpen, Users, FileText, Settings, GraduationCap, Library, Bell, BarChart3 } from 'lucide-react';
 
 
 export default function ClassDetailsPage() {
@@ -132,13 +133,14 @@ export default function ClassDetailsPage() {
       </header>
 
       <Tabs defaultValue="subjects" className="w-full">
-        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-6' : 'grid-cols-5'}`}>
+        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-7' : 'grid-cols-5'}`}>
           <TabsTrigger value="subjects"><Library className="mr-2 h-4 w-4" /> Subjects</TabsTrigger>
           <TabsTrigger value="assignments"><FileText className="mr-2 h-4 w-4" /> Assignments</TabsTrigger>
           <TabsTrigger value="materials"><BookOpen className="mr-2 h-4 w-4" /> Materials</TabsTrigger>
           <TabsTrigger value="announcements"><Bell className="mr-2 h-4 w-4" /> Announcements</TabsTrigger>
           {isTeacher && (
             <>
+              <TabsTrigger value="analytics"><BarChart3 className="mr-2 h-4 w-4" /> Analytics</TabsTrigger>
               <TabsTrigger value="students"><Users className="mr-2 h-4 w-4" /> Students</TabsTrigger>
               <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
             </>
@@ -153,6 +155,11 @@ export default function ClassDetailsPage() {
         <TabsContent value="announcements">
           <AnnouncementManager classId={classId} isTeacher={isTeacher} />
         </TabsContent>
+        {isTeacher && (
+          <TabsContent value="analytics">
+            <ClassAnalyticsDashboard classId={classId} />
+          </TabsContent>
+        )}
            <TabsContent value="materials">
             <MaterialList materials={materials} classId={classId} isLoading={!!isLoading} isTeacher={isTeacher} />
           </TabsContent>
