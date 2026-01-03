@@ -25,6 +25,9 @@ const fontAtkinsonHyperlegible = Atkinson_Hyperlegible({
 export const metadata: Metadata = {
   title: "cautie",
   description: "The future of learning, powered by AI.",
+  manifest: "/manifest.json",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  themeColor: "#007bff",
 };
 
 export default function RootLayout({
