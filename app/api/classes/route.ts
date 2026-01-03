@@ -96,26 +96,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Generate unique join code
-    let joinCode;
-    let attempts = 0;
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    do {
-      joinCode = '';
-      for (let i = 0; i < 6; i++) {
-        joinCode += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      const { data: existing, error } = await supabase
-        .from('classes')
-        .select('id')
-        .eq('join_code', joinCode)
-        .maybeSingle();
-      if (!existing && !error) break;
-      attempts++;
-    } while (attempts < 10);
-
-    if (attempts >= 10) {
-      return NextResponse.json({ error: 'Failed to generate unique join code' }, { status: 500 });
+    // Generate unique join code instantly using database function (PERFORMANCE FIX #1)
+    const { data: joinCode, error: codeError } = await supabase.rpc('generate_join_code');
+    if (codeError || !joinCode) {
+       console.error('Join code generation error:', codeError);
+       return NextResponse.json({ error: 'Failed to generate join code' }, { status: 500 });
     }
 
     // Cast to correct insert type
