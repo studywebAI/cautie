@@ -2,6 +2,7 @@
 
 export type BlockType =
   | 'text'
+  | 'code'
   | 'image'
   | 'video'
   | 'multiple_choice'
@@ -10,7 +11,13 @@ export type BlockType =
   | 'drag_drop'
   | 'ordering'
   | 'media_embed'
-  | 'divider';
+  | 'divider'
+  | 'list'
+  | 'quote'
+  | 'layout'
+  | 'complex'
+  | 'rich_text'
+  | 'executable_code';
 
 export interface BaseBlock {
   id: string;
@@ -101,9 +108,67 @@ export interface DividerContent {
   style: 'line' | 'space' | 'page_break';
 }
 
+// 11. CodeBlock
+export interface CodeBlockContent {
+  language: string;
+  code: string;
+  showLineNumbers?: boolean;
+}
+
+// 12. ListBlock
+export interface ListBlockContent {
+  type: 'bulleted' | 'numbered';
+  items: Array<{
+    id: string;
+    text: string;
+  }>;
+}
+
+// 13. QuoteBlock
+export interface QuoteBlockContent {
+  text: string;
+  author?: string;
+}
+
+// 14. LayoutBlock
+export interface LayoutBlockContent {
+  type: 'divider' | 'spacer' | 'columns';
+  columns?: number;
+}
+
+// 15. ComplexBlock (for advanced content like mindmaps)
+export interface ComplexBlockContent {
+  type: 'mindmap' | 'timeline' | 'diagram';
+  data: any; // JSON data for the complex content
+  viewerType?: string;
+}
+
+// 16. RichTextBlock (AI-powered rich text editor)
+export interface RichTextBlockContent {
+  html: string;
+  plainText: string;
+  aiSuggestions?: Array<{
+    id: string;
+    type: 'grammar' | 'style' | 'content';
+    suggestion: string;
+    applied: boolean;
+  }>;
+}
+
+// 17. ExecutableCodeBlock (code execution environment)
+export interface ExecutableCodeBlockContent {
+  language: string;
+  code: string;
+  output?: string;
+  error?: string;
+  executionTime?: number;
+  canExecute: boolean;
+}
+
 // Union type for all block contents
 export type BlockContent =
   | TextBlockContent
+  | CodeBlockContent
   | ImageBlockContent
   | VideoBlockContent
   | MultipleChoiceContent
@@ -112,7 +177,13 @@ export type BlockContent =
   | DragDropContent
   | OrderingContent
   | MediaEmbedContent
-  | DividerContent;
+  | DividerContent
+  | ListBlockContent
+  | QuoteBlockContent
+  | LayoutBlockContent
+  | ComplexBlockContent
+  | RichTextBlockContent
+  | ExecutableCodeBlockContent;
 
 // Props for block components
 export interface BlockProps {

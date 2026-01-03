@@ -14,7 +14,23 @@ export type UserRole = 'student' | 'teacher';
 export type ThemeType = 'light' | 'dark' | 'pastel';
 export type ClassInfo = Tables<'classes'>;
 export type ClassAssignment = Tables<'assignments'>;
-export type PersonalTask = Tables<'personal_tasks'>;
+export type PersonalTask = {
+  id: string;
+  title: string;
+  description?: string;
+  date?: string;
+  subject?: string;
+  created_at: string;
+  updated_at?: string;
+  user_id: string;
+  priority?: 'low' | 'medium' | 'high';
+  estimated_duration?: number;
+  tags?: string[];
+  dependencies?: string[];
+  status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  completed_at?: string;
+  recurrence?: any;
+};
 
 export type AppContextType = {
   session: Session | null;

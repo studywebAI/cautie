@@ -11,6 +11,7 @@ import { BookUser, User, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { NotificationCenter } from './notifications/notification-center';
 
 
 
@@ -68,6 +69,8 @@ export function AppHeader() {
                       <BookUser className={`h-5 w-5 transition-colors ${!isStudent ? 'text-primary' : 'text-muted-foreground'}`} />
                     </Label>
                 </div>
+
+                <NotificationCenter />
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

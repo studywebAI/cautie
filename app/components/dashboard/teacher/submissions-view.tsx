@@ -33,6 +33,18 @@ type Submission = {
   };
 };
 
+type SubmissionComment = {
+  id: string;
+  comment: string;
+  created_at: string;
+  user_id: string;
+  profiles: {
+    full_name: string | null;
+    avatar_url: string | null;
+    role: string | null;
+  } | null;
+};
+
 type SubmissionsViewProps = {
   assignmentId?: string;
 };
@@ -43,6 +55,8 @@ export function SubmissionsView({ assignmentId }: SubmissionsViewProps) {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [grade, setGrade] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [comments, setComments] = useState<Record<string, SubmissionComment[]>>({});
+  const [newComment, setNewComment] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,11 +73,30 @@ export function SubmissionsView({ assignmentId }: SubmissionsViewProps) {
       if (response.ok) {
         const data = await response.json();
         setSubmissions(data);
+        // Fetch comments for each submission
+        data.forEach((submission: Submission) => {
+          fetchCommentsForSubmission(submission.id);
+        });
       }
     } catch (error) {
       console.error('Failed to fetch submissions:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCommentsForSubmission = async (submissionId: string) => {
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}/comments`);
+      if (response.ok) {
+        const data = await response.json();
+        setComments(prev => ({
+          ...prev,
+          [submissionId]: data
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch comments:', error);
     }
   };
 
@@ -99,6 +132,37 @@ export function SubmissionsView({ assignmentId }: SubmissionsViewProps) {
       toast({
         variant: 'destructive',
         title: 'Grading Failed',
+        description: error.message,
+      });
+    }
+  };
+
+  const handleAddComment = async (submissionId: string) => {
+    if (!newComment.trim()) return;
+
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: newComment.trim() })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add comment');
+      }
+
+      toast({
+        title: 'Comment Added',
+        description: 'Your comment has been added to the submission.',
+      });
+
+      setNewComment('');
+      await fetchCommentsForSubmission(submissionId);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to Add Comment',
         description: error.message,
       });
     }
@@ -172,6 +236,46 @@ export function SubmissionsView({ assignmentId }: SubmissionsViewProps) {
                         </div>
                       </div>
                     )}
+
+                    {/* Comments Section */}
+                    <div>
+                      <Label className="text-sm font-medium">Comments</Label>
+                      <div className="mt-2 space-y-2">
+                        {(comments[submission.id] || []).map((comment) => (
+                          <div key={comment.id} className="p-3 bg-gray-50 rounded-md">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">
+                                {comment.profiles?.full_name || 'Unknown'} ({comment.profiles?.role})
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(comment.created_at), 'MMM d, HH:mm')}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-sm whitespace-pre-wrap">{comment.comment}</p>
+                          </div>
+                        ))}
+                        {/* Add new comment */}
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Add a comment..."
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleAddComment(submission.id);
+                              }
+                            }}
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => handleAddComment(submission.id)}
+                            disabled={!newComment.trim()}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
 
                     <div className="flex gap-2">
                       <Button

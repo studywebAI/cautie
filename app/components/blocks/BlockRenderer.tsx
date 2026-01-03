@@ -2,6 +2,16 @@
 
 import React from 'react';
 import { BaseBlock, BlockProps } from './types';
+import { TextBlock } from './TextBlock';
+import { RichTextBlock } from './RichTextBlock';
+import { ExecutableCodeBlock } from './ExecutableCodeBlock';
+import { MultipleChoiceBlock } from './MultipleChoiceBlock';
+import { CodeBlock } from './CodeBlock';
+import { ListBlock } from './ListBlock';
+import { MediaBlock } from './MediaBlock';
+import { QuoteBlock } from './QuoteBlock';
+import { LayoutBlock } from './LayoutBlock';
+import { ComplexBlock } from './ComplexBlock';
 
 interface BlockRendererProps extends Omit<BlockProps, 'block'> {
   block: BaseBlock;
@@ -15,82 +25,45 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
   className,
 }) => {
   const renderBlock = () => {
+    const commonProps = {
+      block: block as any, // Type assertion for now
+      onUpdate,
+      onDelete,
+      isEditing,
+      className,
+    };
+
     switch (block.type) {
       case 'text':
-        return (
-          <div className={`p-4 border ${className || ''}`}>
-            <pre className="whitespace-pre-wrap font-mono text-sm">
-              {JSON.stringify(block.content, null, 2)}
-            </pre>
-          </div>
-        );
+        return <TextBlock {...commonProps} />;
+      case 'rich_text':
+        return <RichTextBlock {...commonProps} />;
+      case 'code':
+        return <CodeBlock {...commonProps} />;
+      case 'executable_code':
+        return <ExecutableCodeBlock {...commonProps} />;
+      case 'list':
+        return <ListBlock {...commonProps} />;
+      case 'quote':
+        return <QuoteBlock {...commonProps} />;
+      case 'layout':
+        return <LayoutBlock {...commonProps} />;
+      case 'complex':
+        return <ComplexBlock {...commonProps} />;
       case 'image':
-        return (
-          <div className={`p-4 border ${className || ''}`}>
-            <div className="text-sm text-muted-foreground">Image Block</div>
-            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
-              {JSON.stringify(block.content, null, 2)}
-            </pre>
-          </div>
-        );
       case 'video':
-        return (
-          <div className={`p-4 border ${className || ''}`}>
-            <div className="text-sm text-muted-foreground">Video Block</div>
-            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
-              {JSON.stringify(block.content, null, 2)}
-            </pre>
-          </div>
-        );
-      case 'multiple_choice':
-        return (
-          <div className={`p-4 border ${className || ''}`}>
-            <div className="text-sm text-muted-foreground">Multiple Choice Block</div>
-            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
-              {JSON.stringify(block.content, null, 2)}
-            </pre>
-          </div>
-        );
-      case 'open_question':
-        return (
-          <div className={`p-4 border ${className || ''}`}>
-            <div className="text-sm text-muted-foreground">Open Question Block</div>
-            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
-              {JSON.stringify(block.content, null, 2)}
-            </pre>
-          </div>
-        );
-      case 'fill_in_blank':
-        return (
-          <div className={`p-4 border ${className || ''}`}>
-            <div className="text-sm text-muted-foreground">Fill in Blank Block</div>
-            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
-              {JSON.stringify(block.content, null, 2)}
-            </pre>
-          </div>
-        );
-      case 'drag_drop':
-        return (
-          <div className={`p-4 border ${className || ''}`}>
-            <div className="text-sm text-muted-foreground">Drag & Drop Block</div>
-            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
-              {JSON.stringify(block.content, null, 2)}
-            </pre>
-          </div>
-        );
-      case 'ordering':
-        return (
-          <div className={`p-4 border ${className || ''}`}>
-            <div className="text-sm text-muted-foreground">Ordering Block</div>
-            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
-              {JSON.stringify(block.content, null, 2)}
-            </pre>
-          </div>
-        );
       case 'media_embed':
+        return <MediaBlock {...commonProps} />;
+      case 'multiple_choice':
+        return <MultipleChoiceBlock {...commonProps} />;
+      case 'open_question':
+      case 'fill_in_blank':
+      case 'drag_drop':
+      case 'ordering':
+        // For now, show JSON - we'll implement more quiz components next
         return (
           <div className={`p-4 border ${className || ''}`}>
-            <div className="text-sm text-muted-foreground">Media Embed Block</div>
+            <div className="text-sm text-muted-foreground">{block.type.replace('_', ' ').toUpperCase()} Block</div>
             <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
               {JSON.stringify(block.content, null, 2)}
             </pre>
@@ -100,6 +73,17 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
         return (
           <div className={`p-4 border ${className || ''}`}>
             <div className="text-sm text-muted-foreground">Divider Block</div>
+            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
+              {JSON.stringify(block.content, null, 2)}
+            </pre>
+          </div>
+        );
+      case 'rich_text':
+      case 'executable_code':
+        // New types - will implement components for these
+        return (
+          <div className={`p-4 border ${className || ''}`}>
+            <div className="text-sm text-muted-foreground">{block.type.replace('_', ' ').toUpperCase()} Block</div>
             <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
               {JSON.stringify(block.content, null, 2)}
             </pre>

@@ -114,21 +114,41 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ materialId, className 
   const getDefaultContent = (type: BlockType): BlockContent => {
     switch (type) {
       case 'text':
-        return { type: 'paragraph', text: '' };
+        return { content: '', style: 'normal' };
+      case 'code':
+        return { language: 'javascript', code: '', showLineNumbers: false };
       case 'list':
         return { type: 'bulleted', items: [{ id: '1', text: '' }] };
-      case 'media':
-        return { type: 'image', url: '', alt: '' };
-      case 'code':
-        return { language: 'javascript', code: '' };
+      case 'image':
+        return { url: '', caption: '', transform: { x: 0, y: 0, scale: 1, rotation: 0 } };
+      case 'video':
+        return { url: '', provider: 'youtube', start_seconds: 0, end_seconds: null };
       case 'quote':
         return { text: '', author: '' };
       case 'layout':
         return { type: 'divider' };
       case 'complex':
         return { type: 'mindmap', data: {}, viewerType: 'mindmap-professional' };
+      case 'rich_text':
+        return { html: '', plainText: '', aiSuggestions: [] };
+      case 'executable_code':
+        return { language: 'javascript', code: '', output: '', canExecute: true };
+      case 'media_embed':
+        return { embed_url: '', description: '' };
+      case 'divider':
+        return { style: 'line' };
+      case 'multiple_choice':
+        return { question: '', options: [{ id: '1', text: '', correct: false }], multiple_correct: false, shuffle: false };
+      case 'open_question':
+        return { question: '', ai_grading: true, grading_criteria: '', max_score: 10 };
+      case 'fill_in_blank':
+        return { text: '', answers: [], case_sensitive: false };
+      case 'drag_drop':
+        return { prompt: '', pairs: [{ left: '', right: '' }] };
+      case 'ordering':
+        return { prompt: '', items: [], correct_order: [] };
       default:
-        return { type: 'paragraph', text: '' };
+        return { content: '', style: 'normal' };
     }
   };
 
@@ -220,8 +240,8 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ materialId, className 
                 <DropdownMenuItem onClick={() => handleBlockTypeChange(block.id, 'list')}>
                   <List className="h-4 w-4 mr-2" /> List
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBlockTypeChange(block.id, 'media')}>
-                  <Image className="h-4 w-4 mr-2" /> Media
+                <DropdownMenuItem onClick={() => handleBlockTypeChange(block.id, 'image')}>
+                  <Image className="h-4 w-4 mr-2" /> Image
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleBlockTypeChange(block.id, 'code')}>
                   <Code className="h-4 w-4 mr-2" /> Code
@@ -253,14 +273,23 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({ materialId, className 
             <DropdownMenuItem onClick={() => handleAddBlock('text')}>
               <Type className="h-4 w-4 mr-2" /> Text
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAddBlock('rich_text')}>
+              <Type className="h-4 w-4 mr-2" /> Rich Text
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAddBlock('multiple_choice')}>
+              <Zap className="h-4 w-4 mr-2" /> Multiple Choice
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleAddBlock('list')}>
               <List className="h-4 w-4 mr-2" /> List
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddBlock('media')}>
-              <Image className="h-4 w-4 mr-2" /> Media
+            <DropdownMenuItem onClick={() => handleAddBlock('image')}>
+              <Image className="h-4 w-4 mr-2" /> Image
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleAddBlock('code')}>
               <Code className="h-4 w-4 mr-2" /> Code
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAddBlock('executable_code')}>
+              <Code className="h-4 w-4 mr-2" /> Executable Code
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleAddBlock('quote')}>
               <Quote className="h-4 w-4 mr-2" /> Quote

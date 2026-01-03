@@ -9,12 +9,13 @@ import { StudentList } from '@/components/dashboard/teacher/student-list';
 import type { Student } from '@/lib/teacher-types';
 import { MaterialList } from '@/components/dashboard/teacher/material-list';
 import { ClassSettings } from '@/components/dashboard/teacher/class-settings';
+import { AnnouncementManager } from '@/components/dashboard/teacher/announcement-manager';
 import { ChapterNavigation } from '@/components/class/ChapterNavigation';
 import { ChapterContentViewer } from '@/components/class/ChapterContentViewer';
 import { ChapterEditor } from '@/components/class/ChapterEditor';
 import { SubjectsGrid } from '@/components/subjects-grid';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, FileText, Settings, GraduationCap, Library } from 'lucide-react';
+import { BookOpen, Users, FileText, Settings, GraduationCap, Library, Bell } from 'lucide-react';
 
 
 export default function ClassDetailsPage() {
@@ -131,10 +132,11 @@ export default function ClassDetailsPage() {
       </header>
 
       <Tabs defaultValue="subjects" className="w-full">
-        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-5' : 'grid-cols-4'}`}>
+        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-6' : 'grid-cols-5'}`}>
           <TabsTrigger value="subjects"><Library className="mr-2 h-4 w-4" /> Subjects</TabsTrigger>
           <TabsTrigger value="assignments"><FileText className="mr-2 h-4 w-4" /> Assignments</TabsTrigger>
           <TabsTrigger value="materials"><BookOpen className="mr-2 h-4 w-4" /> Materials</TabsTrigger>
+          <TabsTrigger value="announcements"><Bell className="mr-2 h-4 w-4" /> Announcements</TabsTrigger>
           {isTeacher && (
             <>
               <TabsTrigger value="students"><Users className="mr-2 h-4 w-4" /> Students</TabsTrigger>
@@ -147,6 +149,9 @@ export default function ClassDetailsPage() {
         </TabsContent>
         <TabsContent value="assignments">
           <AssignmentList assignments={classAssignments} classId={classId} isTeacher={isTeacher} />
+        </TabsContent>
+        <TabsContent value="announcements">
+          <AnnouncementManager classId={classId} isTeacher={isTeacher} />
         </TabsContent>
            <TabsContent value="materials">
             <MaterialList materials={materials} classId={classId} isLoading={!!isLoading} isTeacher={isTeacher} />

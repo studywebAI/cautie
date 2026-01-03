@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { BlockProps, TextBlockContent, TextBlockType } from './types';
+import { BlockProps, TextBlockContent } from './types';
 import { cn } from '@/lib/utils';
 
 interface TextBlockProps extends BlockProps {
@@ -16,13 +16,15 @@ export const TextBlock: React.FC<TextBlockProps> = ({
   className,
 }) => {
   const [isEditingState, setIsEditingState] = useState(isEditing);
-  const [text, setText] = useState(block.content.text || '');
+  const [content, setContent] = useState(block.content.content || '');
+  const [style, setStyle] = useState(block.content.style || 'normal');
 
   const handleSave = () => {
     if (onUpdate) {
       onUpdate({
         ...block.content,
-        text,
+        content,
+        style,
       });
     }
     setIsEditingState(false);
@@ -34,38 +36,51 @@ export const TextBlock: React.FC<TextBlockProps> = ({
       handleSave();
     }
     if (e.key === 'Escape') {
-      setText(block.content.text || '');
+      setContent(block.content.content || '');
+      setStyle(block.content.style || 'normal');
       setIsEditingState(false);
     }
   };
 
   const renderDisplay = () => {
-    const { type, text: displayText } = block.content;
+    const { content: displayContent, style } = block.content;
 
-    switch (type) {
-      case 'heading1':
+    switch (style) {
+      case 'heading':
         return (
           <h1 className="text-3xl font-bold mb-4 text-foreground">
-            {displayText || 'Heading 1'}
+            {displayContent || 'Heading'}
           </h1>
         );
-      case 'heading2':
+      case 'subheading':
         return (
           <h2 className="text-2xl font-semibold mb-3 text-foreground">
-            {displayText || 'Heading 2'}
+            {displayContent || 'Subheading'}
           </h2>
         );
-      case 'heading3':
+      case 'quote':
         return (
-          <h3 className="text-xl font-medium mb-2 text-foreground">
-            {displayText || 'Heading 3'}
-          </h3>
+          <blockquote className="text-lg italic border-l-4 border-primary pl-4 mb-4 text-foreground">
+            {displayContent || 'Quote'}
+          </blockquote>
         );
-      case 'paragraph':
+      case 'note':
+        return (
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+            <p className="text-blue-800">{displayContent || 'Note'}</p>
+          </div>
+        );
+      case 'warning':
+        return (
+          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
+            <p className="text-yellow-800">{displayContent || 'Warning'}</p>
+          </div>
+        );
+      case 'normal':
       default:
         return (
           <p className="text-base leading-relaxed text-foreground mb-4">
-            {displayText || 'Start writing...'}
+            {displayContent || 'Start writing...'}
           </p>
         );
     }
@@ -74,17 +89,19 @@ export const TextBlock: React.FC<TextBlockProps> = ({
   const renderEditor = () => {
     return (
       <Textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={handleSave}
-        placeholder={`Enter ${block.content.type} text...`}
+        placeholder="Enter text..."
         className={cn(
           'min-h-[60px] resize-none border-none shadow-none focus-visible:ring-0 p-0',
-          block.content.type === 'heading1' && 'text-3xl font-bold',
-          block.content.type === 'heading2' && 'text-2xl font-semibold',
-          block.content.type === 'heading3' && 'text-xl font-medium',
-          block.content.type === 'paragraph' && 'text-base',
+          style === 'heading' && 'text-3xl font-bold',
+          style === 'subheading' && 'text-2xl font-semibold',
+          style === 'quote' && 'text-lg italic',
+          style === 'note' && 'text-base',
+          style === 'warning' && 'text-base',
+          style === 'normal' && 'text-base',
           className
         )}
         autoFocus

@@ -27,6 +27,14 @@ const flowMap: Record<
     import("@/ai/flows/generate-study-plan-from-task")
       .then(m => m.generateStudyPlanFromTask),
 
+  generateDailyScheduleRecommendations: () =>
+    import("@/ai/flows/generate-daily-schedule-recommendations")
+      .then(m => m.generateDailyScheduleRecommendations),
+
+  detectScheduleConflicts: () =>
+    import("@/ai/flows/detect-schedule-conflicts")
+      .then(m => m.detectScheduleConflicts),
+
   generateSingleQuestion: () =>
     import("@/ai/flows/generate-single-question")
       .then(m => m.generateSingleQuestion),

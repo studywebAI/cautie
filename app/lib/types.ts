@@ -139,6 +139,10 @@ export type CalendarEvent = {
   href: string;
   chapter_id?: string;
   chapter_title?: string;
+  priority?: 'low' | 'medium' | 'high';
+  estimated_duration?: number;
+  tags?: string[];
+  status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
 };
 
 // Types for Analytics

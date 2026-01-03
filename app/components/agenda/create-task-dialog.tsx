@@ -17,12 +17,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, Wand2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Wand2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import type { PersonalTask } from '@/contexts/app-context';
 import { Switch } from '../ui/switch';
 import { Separator } from '../ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Badge } from '../ui/badge';
 // import { generateStudyPlanFromTask } from '@/ai/flows/generate-study-plan-from-task'; // Removed direct import
 
 
@@ -38,6 +40,10 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
   const [description, setDescription] = useState('');
   const [date, setDate] = useState<Date | undefined>(initialDate);
   const [subject, setSubject] = useState('');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [estimatedDuration, setEstimatedDuration] = useState(60);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [useAiHelper, setUseAiHelper] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -45,6 +51,24 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
   useEffect(() => {
     setDate(initialDate);
   }, [initialDate]);
+
+  const addTag = () => {
+    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
+    }
+  };
 
   const handleCreateTask = async () => {
     if (!title || !date) {
@@ -83,6 +107,9 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
                     description: `AI-generated step for "${title}"`,
                     date: subTask.date,
                     subject: subject,
+                    priority: priority,
+                    estimated_duration: estimatedDuration,
+                    tags: tags,
                 });
             }
 
@@ -98,11 +125,27 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
                 description: 'Could not generate a study plan. The main task was added instead.',
             });
             // Fallback to creating the single main task
-            await onTaskCreated({ title, description, date: format(date, 'yyyy-MM-dd'), subject });
+            await onTaskCreated({
+              title,
+              description,
+              date: format(date, 'yyyy-MM-dd'),
+              subject,
+              priority,
+              estimated_duration: estimatedDuration,
+              tags,
+            });
         }
     } else {
       // Non-AI task creation
-      await onTaskCreated({ title, description, date: format(date, 'yyyy-MM-dd'), subject });
+      await onTaskCreated({
+        title,
+        description,
+        date: format(date, 'yyyy-MM-dd'),
+        subject,
+        priority,
+        estimated_duration: estimatedDuration,
+        tags,
+      });
       toast({
         title: 'Task Created',
         description: `"${title}" has been added to your agenda.`,
@@ -118,6 +161,10 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreated, initialDate
     setDescription('');
     setDate(initialDate);
     setSubject('');
+    setPriority('medium');
+    setEstimatedDuration(60);
+    setTags([]);
+    setTagInput('');
     setUseAiHelper(false);
     setIsOpen(false);
   }
