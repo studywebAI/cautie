@@ -60,40 +60,9 @@ export default withPWA({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  runtimeCaching: [
-    {
-      urlPattern: /^https:\/\/.*\.supabase\.co\/.*/, // Cache Supabase API calls
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'supabase-cache',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24, // 1 day
-        },
-      },
-    },
-    {
-      urlPattern: /\/api\/.*quiz.*/, // Cache quiz API responses for offline access
-      handler: 'StaleWhileRevalidate',
-      options: {
-        cacheName: 'quiz-cache',
-        expiration: {
-          maxEntries: 20,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
-        },
-      },
-    },
-    {
-      urlPattern: /\/materials\/.*/, // Cache materials for offline viewing
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'materials-cache',
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-        },
-      },
-    },
-  ],
+  buildExcludes: [/manifest\.json$/],
+  workboxOptions: {
+    importScripts: [], // Clear any problematic imports
+  },
   ...(nextConfig as any),
 });
