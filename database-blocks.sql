@@ -1,5 +1,8 @@
 -- Blocks Table: Stores blocks within materials
-CREATE TABLE IF NOT EXISTS public.blocks (
+-- Drop existing table if it exists (clean slate approach)
+DROP TABLE IF EXISTS public.blocks CASCADE;
+
+CREATE TABLE public.blocks (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
     material_id uuid NOT NULL,
     content jsonb NOT NULL,

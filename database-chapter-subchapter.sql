@@ -1,8 +1,23 @@
 -- Chapters and Sub-chapters Management for Subjects
 -- This schema provides hierarchical content organization within subjects
 
+-- Function to update updated_at timestamp (create if not exists)
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Drop existing tables if they exist (clean slate approach)
+DROP TABLE IF EXISTS subchapters CASCADE;
+DROP TABLE IF EXISTS chapters CASCADE;
+
 -- Chapters table: Represents major sections within a subject
-CREATE TABLE IF NOT EXISTS chapters (
+CREATE TABLE chapters (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     subject_id uuid NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
     title text NOT NULL,
@@ -14,7 +29,7 @@ CREATE TABLE IF NOT EXISTS chapters (
 );
 
 -- Sub-chapters table: Represents detailed sections within a chapter
-CREATE TABLE IF NOT EXISTS subchapters (
+CREATE TABLE subchapters (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     chapter_id uuid NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
     title text NOT NULL,
