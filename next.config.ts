@@ -55,14 +55,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  buildExcludes: [/manifest\.json$/],
-  workboxOptions: {
-    importScripts: [], // Clear any problematic imports
-  },
-  ...(nextConfig as any),
-});
+// Temporarily disable PWA to fix build
+export default nextConfig;
