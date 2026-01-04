@@ -18,6 +18,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type Subject = {
   id: string;
@@ -37,7 +44,7 @@ type Subject = {
 };
 
 type SubjectsGridProps = {
-  classId?: string; // Optional - if provided, filter subjects by class
+  classId?: string; // Optional - if provided, filter subjects by class, otherwise show all subjects
   isTeacher?: boolean;
 };
 
@@ -46,6 +53,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newSubjectTitle, setNewSubjectTitle] = useState('');
+  const [selectedCreateClassId, setSelectedCreateClassId] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
 
@@ -58,12 +66,36 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
     try {
       setIsLoading(true);
       console.log('DEBUG: Fetching subjects for classId:', classId);
-      const response = await fetch(`/api/classes/${classId}/subjects`);
+
+      // If classId is provided, fetch subjects for that specific class
+      // Otherwise, fetch all subjects the user has access to
+      const apiUrl = classId ? `/api/classes/${classId}/subjects` : '/api/subjects';
+
+      const response = await fetch(apiUrl);
       console.log('DEBUG: Subjects response:', response.status, response.ok);
       if (!response.ok) throw new Error('Failed to fetch subjects');
       const data = await response.json();
       console.log('DEBUG: Subjects data:', data);
-      setSubjects(data || []);
+
+      // Transform data to match expected format
+      const transformedData = data.map((subject: any) => ({
+        id: subject.id,
+        title: subject.name || subject.title,
+        class_label: subject.class_label || subject.title,
+        cover_type: subject.cover_type,
+        cover_image_url: subject.cover_image_url,
+        ai_icon_seed: subject.ai_icon_seed,
+        created_at: subject.created_at,
+        content: {
+          class_label: subject.class_label || subject.title,
+          cover_type: subject.cover_type,
+          cover_image_url: subject.cover_image_url,
+          ai_icon_seed: subject.ai_icon_seed
+        },
+        recentParagraphs: [] // Empty for now
+      }));
+
+      setSubjects(transformedData || []);
     } catch (error) {
       console.error('Error fetching subjects:', error);
       setSubjects([]);
@@ -87,16 +119,35 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
       return;
     }
 
+    // If no classId provided, require class selection
+    if (!classId && !selectedCreateClassId) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing class',
+        description: 'Please select a class for this subject.',
+      });
+      return;
+    }
+
     setIsCreating(true);
     try {
-      const response = await fetch(`/api/classes/${classId}/subjects`, {
+      const apiUrl = classId ? `/api/classes/${classId}/subjects` : '/api/subjects';
+      const requestBody = classId
+        ? {
+            title: newSubjectTitle,
+            class_label: newSubjectTitle,
+            cover_type: 'ai_icons',
+          }
+        : {
+            name: newSubjectTitle,
+            class_id: selectedCreateClassId,
+            cover_type: 'ai_icons',
+          };
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newSubjectTitle,
-          class_label: newSubjectTitle,
-          cover_type: 'ai_icons',
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -106,13 +157,16 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
 
       const newSubject = await response.json();
 
-      setSubjects(prev => [newSubject, ...prev]);
+      // Refresh subjects list
+      fetchSubjects();
+
       setNewSubjectTitle('');
+      setSelectedCreateClassId('');
       setIsCreateOpen(false);
 
       toast({
         title: 'Subject Created',
-        description: `"${newSubject.title}" has been added to your class.`,
+        description: `"${newSubject.title || newSubject.name}" has been created successfully.`,
       });
     } catch (error: any) {
       toast({
@@ -185,7 +239,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {subjects.map((subject) => (
               <Card key={subject.id} className="group hover:shadow-lg transition-shadow cursor-pointer">
-                <Link href={`/class/${classId}/subject/${subject.id}`}>
+                <Link href={classId ? `/class/${classId}/subject/${subject.id}` : `/subjects/${subject.id}`}>
                   <CardContent className="p-0">
                     {/* Top half - Cover/Icon */}
                     <div className="aspect-[4/3] bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 flex items-center justify-center relative overflow-hidden">

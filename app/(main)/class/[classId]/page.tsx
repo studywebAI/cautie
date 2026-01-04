@@ -14,6 +14,7 @@ import { ClassAnalyticsDashboard } from '@/components/dashboard/teacher/class-an
 import { ChapterNavigation } from '@/components/class/ChapterNavigation';
 import { ChapterContentViewer } from '@/components/class/ChapterContentViewer';
 import { ChapterEditor } from '@/components/class/ChapterEditor';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Users, FileText, Settings, GraduationCap, Bell, BarChart3, Library } from 'lucide-react';
 

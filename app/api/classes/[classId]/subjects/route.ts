@@ -43,26 +43,11 @@ export async function GET(
       }
     }
 
-    // Get subjects with real progress data
+    // Get subjects with progress data
     console.log('Fetching subjects for classId:', params.classId)
     const { data: subjects, error: subjectsError } = await supabase
       .from('subjects')
-      .select(`
-        *,
-        chapters(
-          id,
-          title,
-          chapter_number,
-          paragraphs(
-            id,
-            title,
-            paragraph_number,
-            progress_snapshots!inner(
-              completion_percent
-            )
-          )
-        )
-      `)
+      .select('*')
       .eq('class_id', params.classId)
       .order('created_at', { ascending: false })
 
@@ -73,44 +58,24 @@ export async function GET(
       return NextResponse.json({ error: subjectsError.message }, { status: 500 })
     }
 
-    // Transform the data to match expected format with real progress
-    const transformedSubjects = subjects?.map(subject => {
-      // Get recent paragraphs with real progress data
-      let recentParagraphs = [];
-
-      if (subject.chapters && Array.isArray(subject.chapters)) {
-        // Flatten all paragraphs from all chapters and sort by most recent
-        const allParagraphs = subject.chapters.flatMap((chapter: any) =>
-          chapter.paragraphs?.map((para: any) => ({
-            id: para.id,
-            title: para.title,
-            progress: para.progress_snapshots?.[0]?.completion_percent || 0
-          })) || []
-        );
-
-        // Sort by progress (most completed first) and take top 3
-        recentParagraphs = allParagraphs
-          .sort((a, b) => b.progress - a.progress)
-          .slice(0, 3);
-      }
-
-      return {
-        id: subject.id,
-        title: subject.title,
+    // For now, return basic subject data without complex progress calculation
+    // This will be enhanced after the hierarchical schema is applied
+    const transformedSubjects = subjects?.map(subject => ({
+      id: subject.id,
+      title: subject.title,
+      class_label: subject.class_label || subject.title,
+      cover_type: subject.cover_type,
+      cover_image_url: subject.cover_image_url,
+      ai_icon_seed: subject.ai_icon_seed,
+      created_at: subject.created_at,
+      content: {
         class_label: subject.class_label || subject.title,
         cover_type: subject.cover_type,
         cover_image_url: subject.cover_image_url,
-        ai_icon_seed: subject.ai_icon_seed,
-        created_at: subject.created_at,
-        content: {
-          class_label: subject.class_label || subject.title,
-          cover_type: subject.cover_type,
-          cover_image_url: subject.cover_image_url,
-          ai_icon_seed: subject.ai_icon_seed
-        },
-        recentParagraphs
-      };
-    }) || []
+        ai_icon_seed: subject.ai_icon_seed
+      },
+      recentParagraphs: [] // Empty for now until schema is migrated
+    })) || []
 
     return NextResponse.json(transformedSubjects)
   } catch (error) {
@@ -166,6 +131,7 @@ export async function POST(
     // Insert real subject into database
     const subjectData = {
       class_id: params.classId,
+      user_id: user.id,
       title,
       class_label: class_label || title,
       cover_type: cover_type || 'ai_icons',

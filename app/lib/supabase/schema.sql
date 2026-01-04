@@ -222,37 +222,56 @@ CREATE TABLE "public"."subjects" (
     "cover_type" text,
     "cover_image_url" text,
     "ai_icon_seed" text,
+    "user_id" uuid NOT NULL,
     CONSTRAINT "subjects_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "subjects_class_id_fkey" FOREIGN KEY ("class_id") REFERENCES "public"."classes"("id") ON DELETE CASCADE
+    CONSTRAINT "subjects_class_id_fkey" FOREIGN KEY ("class_id") REFERENCES "public"."classes"("id") ON DELETE CASCADE,
+    CONSTRAINT "subjects_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE
 );
 ALTER TABLE "public"."subjects" OWNER TO "postgres";
 
 -- Subjects RLS policies
 ALTER TABLE "public"."subjects" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow authenticated read" ON "public"."subjects" FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM classes
-    WHERE classes.id = subjects.class_id AND (
-      classes.owner_id = auth.uid() OR
-      EXISTS (
-        SELECT 1 FROM class_members
-        WHERE class_members.class_id = classes.id AND class_members.user_id = auth.uid()
-      )
-    )
-  )
-);
-CREATE POLICY "Allow authenticated insert" ON "public"."subjects" FOR INSERT WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM classes WHERE classes.id = subjects.class_id AND classes.owner_id = auth.uid()
-  )
-);
-CREATE POLICY "Allow authenticated update for owners" ON "public"."subjects" FOR UPDATE USING (
-  EXISTS (
-    SELECT 1 FROM classes WHERE classes.id = subjects.class_id AND classes.owner_id = auth.uid()
-  )
-);
-CREATE POLICY "Allow authenticated delete for owners" ON "public"."subjects" FOR DELETE USING (
-  EXISTS (
-    SELECT 1 FROM classes WHERE classes.id = subjects.class_id AND classes.owner_id = auth.uid()
-  )
-);
+CREATE POLICY "subjects_select_policy" ON subjects
+    FOR SELECT USING (
+        user_id = auth.uid()
+        OR
+        EXISTS (
+            SELECT 1 FROM classes c
+            JOIN class_members cm ON cm.class_id = c.id
+            WHERE c.id = subjects.class_id
+            AND cm.user_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "subjects_insert_policy" ON subjects
+    FOR INSERT WITH CHECK (
+        user_id = auth.uid()
+        AND
+        EXISTS (
+            SELECT 1 FROM classes c
+            WHERE c.id = class_id
+            AND (c.owner_id = auth.uid())
+        )
+    );
+
+CREATE POLICY "subjects_update_policy" ON subjects
+    FOR UPDATE USING (
+        user_id = auth.uid()
+        OR
+        EXISTS (
+            SELECT 1 FROM classes c
+            WHERE c.id = class_id
+            AND c.owner_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "subjects_delete_policy" ON subjects
+    FOR DELETE USING (
+        user_id = auth.uid()
+        OR
+        EXISTS (
+            SELECT 1 FROM classes c
+            WHERE c.id = class_id
+            AND c.owner_id = auth.uid()
+        )
+    );
