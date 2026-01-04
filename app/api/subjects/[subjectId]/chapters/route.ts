@@ -52,7 +52,7 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Get chapters with subchapters
+    // Get chapters with paragraphs
     const { data: chapters, error } = await supabase
       .from('chapters')
       .select(`
@@ -61,12 +61,11 @@ export async function GET(
         chapter_number,
         ai_summary,
         created_at,
-        subject_subchapters (
+        paragraphs (
           id,
           title,
-          description,
-          order_index,
-          content
+          paragraph_number,
+          created_at
         )
       `)
       .eq('subject_id', params.subjectId)
@@ -83,12 +82,12 @@ export async function GET(
       title: chapter.title,
       description: chapter.ai_summary, // Use ai_summary as description
       order_index: chapter.chapter_number,
-      subchapters: (chapter.subject_subchapters || []).map((sub: any) => ({
-        id: sub.id,
-        title: sub.title,
-        description: sub.description,
-        order_index: sub.order_index,
-        content: sub.content
+      created_at: chapter.created_at,
+      paragraphs: (chapter.paragraphs || []).map((para: any) => ({
+        id: para.id,
+        title: para.title,
+        order_index: para.paragraph_number,
+        created_at: para.created_at
       }))
     }))
 

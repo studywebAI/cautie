@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-// GET /api/subjects/[subjectId]/chapters/[chapterId]/subchapters - Get all subchapters for a chapter
+// GET /api/subjects/[subjectId]/chapters/[chapterId]/paragraphs - Get all paragraphs for a chapter
 export async function GET(
   request: Request,
   { params }: { params: { subjectId: string; chapterId: string } }
@@ -30,26 +30,34 @@ export async function GET(
       return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
     }
 
-    // Get subchapters
-    const { data: subchapters, error } = await supabase
-      .from('subject_subchapters')
-      .select('id, title, description, order_index, content, created_at')
+    // Get paragraphs
+    const { data: paragraphs, error } = await supabase
+      .from('paragraphs')
+      .select('id, title, paragraph_number, created_at')
       .eq('chapter_id', params.chapterId)
-      .order('order_index', { ascending: true })
+      .order('paragraph_number', { ascending: true })
 
     if (error) {
-      console.error('Error fetching subchapters:', error)
+      console.error('Error fetching paragraphs:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(subchapters || [])
+    // Transform to match expected format
+    const transformedParagraphs = (paragraphs || []).map(para => ({
+      id: para.id,
+      title: para.title,
+      order_index: para.paragraph_number,
+      created_at: para.created_at
+    }))
+
+    return NextResponse.json(transformedParagraphs)
   } catch (error) {
-    console.error('Unexpected error in subchapters GET:', error)
+    console.error('Unexpected error in paragraphs GET:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// POST /api/subjects/[subjectId]/chapters/[chapterId]/subchapters - Create a new subchapter
+// POST /api/subjects/[subjectId]/chapters/[chapterId]/paragraphs - Create a new paragraph
 export async function POST(
   request: Request,
   { params }: { params: { subjectId: string; chapterId: string } }
@@ -63,10 +71,10 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { title, description, content } = await request.json()
+    const { title } = await request.json()
 
     if (!title || !title.trim()) {
-      return NextResponse.json({ error: 'Subchapter title is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Paragraph title is required' }, { status: 400 })
     }
 
     // Verify chapter exists and user has access
@@ -95,7 +103,7 @@ export async function POST(
     // Check if user owns the class
     const { data: classData, error: classError } = await supabase
       .from('classes')
-      .select('owner_id')
+      .select('owner_id, user_id')
       .eq('id', subject.class_id)
       .single()
 
@@ -103,41 +111,47 @@ export async function POST(
       return NextResponse.json({ error: 'Class not found' }, { status: 404 })
     }
 
-    if (classData.owner_id !== user.id) {
-      return NextResponse.json({ error: 'Only class owners can create subchapters' }, { status: 403 })
+    const isOwner = classData.owner_id === user.id || classData.user_id === user.id
+
+    if (!isOwner) {
+      return NextResponse.json({ error: 'Only class owners can create paragraphs' }, { status: 403 })
     }
 
-    // Get the next order_index
-    const { data: lastSubchapter } = await supabase
-      .from('subject_subchapters')
-      .select('order_index')
+    // Get the next paragraph_number
+    const { data: lastParagraph } = await supabase
+      .from('paragraphs')
+      .select('paragraph_number')
       .eq('chapter_id', params.chapterId)
-      .order('order_index', { ascending: false })
+      .order('paragraph_number', { ascending: false })
       .limit(1)
       .single()
 
-    const nextOrderIndex = lastSubchapter && lastSubchapter.order_index ? lastSubchapter.order_index + 1 : 1
+    const nextParagraphNumber = lastParagraph ? lastParagraph.paragraph_number + 1 : 1
 
-    const { data: subchapter, error: insertError } = await supabase
-      .from('subject_subchapters')
+    const { data: paragraph, error: insertError } = await supabase
+      .from('paragraphs')
       .insert([{
         chapter_id: params.chapterId,
         title: title.trim(),
-        description: description?.trim() || null,
-        content: content || null,
-        order_index: nextOrderIndex
+        paragraph_number: nextParagraphNumber
       }])
-      .select('id, title, description, content, order_index, created_at')
+      .select('id, title, paragraph_number, created_at')
       .single()
 
     if (insertError) {
-      console.error('Error creating subchapter:', insertError)
+      console.error('Error creating paragraph:', insertError)
       return NextResponse.json({ error: insertError.message }, { status: 500 })
     }
 
-    return NextResponse.json(subchapter)
+    // Transform to match expected format
+    return NextResponse.json({
+      id: paragraph.id,
+      title: paragraph.title,
+      order_index: paragraph.paragraph_number,
+      created_at: paragraph.created_at
+    })
   } catch (error) {
-    console.error('Unexpected error in subchapters POST:', error)
+    console.error('Unexpected error in paragraphs POST:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

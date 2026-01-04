@@ -43,7 +43,7 @@ export async function GET(
       }
     }
 
-    // Get real subjects from database with progress data
+    // Get subjects with real progress data
     console.log('Fetching subjects for classId:', params.classId)
     const { data: subjects, error: subjectsError } = await supabase
       .from('subjects')
@@ -52,9 +52,11 @@ export async function GET(
         chapters(
           id,
           title,
+          chapter_number,
           paragraphs(
             id,
             title,
+            paragraph_number,
             progress_snapshots!inner(
               completion_percent
             )
@@ -68,94 +70,28 @@ export async function GET(
 
     if (subjectsError) {
       console.error('Error fetching subjects:', subjectsError)
-      // Fallback to simple query without relations if tables don't exist yet
-      const { data: fallbackSubjects, error: fallbackError } = await supabase
-        .from('subjects')
-        .select('*')
-        .eq('class_id', params.classId)
-        .order('created_at', { ascending: false })
-
-      if (fallbackError) {
-        return NextResponse.json({ error: fallbackError.message }, { status: 500 })
-      }
-
-      // Return with mock progress for backward compatibility
-      const transformedSubjects = fallbackSubjects?.map((subject, index) => {
-        const baseProgress = (index * 20) % 100;
-        return {
-          id: subject.id,
-          title: subject.title,
-          class_label: subject.class_label || subject.title,
-          cover_type: subject.cover_type,
-          cover_image_url: subject.cover_image_url,
-          ai_icon_seed: subject.ai_icon_seed,
-          created_at: subject.created_at,
-          content: {
-            class_label: subject.class_label || subject.title,
-            cover_type: subject.cover_type,
-            cover_image_url: subject.cover_image_url,
-            ai_icon_seed: subject.ai_icon_seed
-          },
-          recentParagraphs: [
-            {
-              id: `${subject.id}-1`,
-              title: 'Introduction & Overview',
-              progress: Math.min(baseProgress + 10, 100)
-            },
-            {
-              id: `${subject.id}-2`,
-              title: 'Key Concepts',
-              progress: Math.min(baseProgress + 30, 100)
-            },
-            {
-              id: `${subject.id}-3`,
-              title: 'Practice & Application',
-              progress: Math.min(baseProgress + 60, 100)
-            }
-          ]
-        };
-      }) || []
-
-      return NextResponse.json(transformedSubjects)
+      return NextResponse.json({ error: subjectsError.message }, { status: 500 })
     }
 
-    // Transform the data to match expected format
+    // Transform the data to match expected format with real progress
     const transformedSubjects = subjects?.map(subject => {
-      // Try to get real progress data from chapters/paragraphs
+      // Get recent paragraphs with real progress data
       let recentParagraphs = [];
 
-      if (subject.chapters && subject.chapters.length > 0) {
-        // Get paragraphs from the most recent chapter
-        const latestChapter = subject.chapters?.[subject.chapters.length - 1];
-        if (latestChapter?.paragraphs && Array.isArray(latestChapter.paragraphs) && latestChapter.paragraphs.length > 0) {
-          recentParagraphs = latestChapter.paragraphs.slice(0, 3).map((para: any) => ({
+      if (subject.chapters && Array.isArray(subject.chapters)) {
+        // Flatten all paragraphs from all chapters and sort by most recent
+        const allParagraphs = subject.chapters.flatMap((chapter: any) =>
+          chapter.paragraphs?.map((para: any) => ({
             id: para.id,
             title: para.title,
             progress: para.progress_snapshots?.[0]?.completion_percent || 0
-          }));
-        }
-      }
+          })) || []
+        );
 
-      // If no real data, use mock data
-      if (recentParagraphs.length === 0) {
-        const baseProgress = (Date.now() % 100); // Random-ish progress
-        recentParagraphs = [
-          {
-            id: `${subject.id}-1`,
-            title: 'Introduction & Overview',
-            progress: Math.min(baseProgress + 10, 100)
-          },
-          {
-            id: `${subject.id}-2`,
-            title: 'Key Concepts',
-            progress: Math.min(baseProgress + 30, 100)
-          },
-          {
-            id: `${subject.id}-3`,
-            title: 'Practice & Application',
-            progress: Math.min(baseProgress + 60, 100)
-          }
-        ];
+        // Sort by progress (most completed first) and take top 3
+        recentParagraphs = allParagraphs
+          .sort((a, b) => b.progress - a.progress)
+          .slice(0, 3);
       }
 
       return {

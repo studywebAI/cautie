@@ -106,17 +106,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
 
       const newSubject = await response.json();
 
-      // Add mock progress data to the new subject
-      const subjectWithProgress = {
-        ...newSubject,
-        recentParagraphs: [
-          { id: `${newSubject.id}-1`, title: 'Introduction & Overview', progress: 0 },
-          { id: `${newSubject.id}-2`, title: 'Key Concepts', progress: 0 },
-          { id: `${newSubject.id}-3`, title: 'Practice & Application', progress: 0 }
-        ]
-      };
-
-      setSubjects(prev => [subjectWithProgress, ...prev]);
+      setSubjects(prev => [newSubject, ...prev]);
       setNewSubjectTitle('');
       setIsCreateOpen(false);
 

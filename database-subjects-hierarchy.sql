@@ -35,12 +35,13 @@ CREATE TABLE IF NOT EXISTS public.paragraphs (
 -- Assignments table (using numeric index, convert to letters in app)
 CREATE TABLE IF NOT EXISTS public.assignments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    paragraph_id UUID NOT NULL,
+    class_id UUID NOT NULL, -- Keep for compatibility
+    paragraph_id UUID,
     assignment_index INTEGER NOT NULL, -- 0=a, 1=b, 26=aa, etc.
     title TEXT NOT NULL,
     answers_enabled BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(paragraph_id, assignment_index)
+    UNIQUE(COALESCE(paragraph_id, class_id), assignment_index)
 );
 
 -- Blocks table (flexible content system)
