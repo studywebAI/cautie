@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-// GET /api/subjects/[subjectId]/chapters - Get all chapters for a subject
+// GET chapters for a subject
 export async function GET(
   request: Request,
   { params }: { params: { subjectId: string } }
@@ -18,22 +18,22 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Verify user has access to this subject
-    const { data: subject, error: subjectError } = await supabase
+    // Check if user has access to this subject
+    const { data: subjectAccess, error: subjectError } = await supabase
       .from('subjects')
       .select('id, class_id')
       .eq('id', params.subjectId)
       .single()
 
-    if (subjectError || !subject) {
+    if (subjectError || !subjectAccess) {
       return NextResponse.json({ error: 'Subject not found' }, { status: 404 })
     }
 
-    // Check if user has access to the class
+    // Check class access
     const { data: classAccess, error: classError } = await supabase
       .from('classes')
       .select('id, owner_id')
-      .eq('id', subject.class_id)
+      .eq('id', subjectAccess.class_id)
       .single()
 
     if (classError || !classAccess) {
@@ -41,54 +41,55 @@ export async function GET(
     }
 
     const isOwner = classAccess.owner_id === user.id
-    const { data: isMember } = await supabase
-      .from('class_members')
-      .select('user_id')
-      .eq('class_id', subject.class_id)
-      .eq('user_id', user.id)
-      .single()
 
-    if (!isOwner && !isMember) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    if (!isOwner) {
+      // Check if user is a member
+      const { data: memberData, error: memberError } = await supabase
+        .from('class_members')
+        .select('class_id')
+        .eq('class_id', subjectAccess.class_id)
+        .eq('user_id', user.id)
+        .single()
+
+      if (memberError || !memberData) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
     }
 
-    // Get chapters with paragraphs
-    const { data: chapters, error } = await supabase
+    // Get chapters
+    const { data: chapters, error: chaptersError } = await supabase
       .from('chapters')
-      .select(`
-        id,
-        title,
-        chapter_number,
-        ai_summary,
-        created_at,
-        paragraphs (
-          id,
-          title,
-          paragraph_number,
-          created_at
-        )
-      `)
+      .select('*')
       .eq('subject_id', params.subjectId)
       .order('chapter_number', { ascending: true })
 
-    if (error) {
-      console.error('Error fetching chapters:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (chaptersError) {
+      console.error('Error fetching chapters:', chaptersError)
+      return NextResponse.json({ error: chaptersError.message }, { status: 500 })
     }
 
-    // Transform data to match expected format
-    const transformedChapters = (chapters || []).map((chapter: any) => ({
-      id: chapter.id,
-      title: chapter.title,
-      description: chapter.ai_summary, // Use ai_summary as description
-      order_index: chapter.chapter_number,
-      created_at: chapter.created_at,
-      paragraphs: (chapter.paragraphs || []).map((para: any) => ({
-        id: para.id,
-        title: para.title,
-        order_index: para.paragraph_number,
-        created_at: para.created_at
-      }))
+    // Get subchapter counts for each chapter
+    const chapterIds = (chapters || []).map(c => c.id)
+    let subchapterCounts: Record<string, number> = {}
+
+    if (chapterIds.length > 0) {
+      const { data: counts, error: countError } = await supabase
+        .from('subchapters')
+        .select('chapter_id')
+        .in('chapter_id', chapterIds)
+
+      if (!countError && counts) {
+        subchapterCounts = counts.reduce((acc, subchapter) => {
+          acc[subchapter.chapter_id] = (acc[subchapter.chapter_id] || 0) + 1
+          return acc
+        }, {} as Record<string, number>)
+      }
+    }
+
+    // Transform data to include subchapter_count
+    const transformedChapters = (chapters || []).map(chapter => ({
+      ...chapter,
+      subchapter_count: subchapterCounts[chapter.id] || 0
     }))
 
     return NextResponse.json(transformedChapters)
@@ -98,7 +99,7 @@ export async function GET(
   }
 }
 
-// POST /api/subjects/[subjectId]/chapters - Create a new chapter
+// POST create new chapter
 export async function POST(
   request: Request,
   { params }: { params: { subjectId: string } }
@@ -112,28 +113,21 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { title, description } = await request.json()
-
-    if (!title || !title.trim()) {
-      return NextResponse.json({ error: 'Chapter title is required' }, { status: 400 })
-    }
-
-    // Verify user has access to create chapters for this subject
-    const { data: subject, error: subjectError } = await supabase
+    // Check if user owns the class for this subject
+    const { data: subjectData, error: subjectError } = await supabase
       .from('subjects')
-      .select('id, class_id')
+      .select('class_id')
       .eq('id', params.subjectId)
       .single()
 
-    if (subjectError || !subject) {
+    if (subjectError || !subjectData) {
       return NextResponse.json({ error: 'Subject not found' }, { status: 404 })
     }
 
-    // Check if user owns the class
     const { data: classData, error: classError } = await supabase
       .from('classes')
       .select('owner_id')
-      .eq('id', subject.class_id)
+      .eq('id', subjectData.class_id)
       .single()
 
     if (classError || !classData) {
@@ -144,26 +138,28 @@ export async function POST(
       return NextResponse.json({ error: 'Only class owners can create chapters' }, { status: 403 })
     }
 
-    // Get the next chapter_number
-    const { data: lastChapter } = await supabase
-      .from('chapters')
-      .select('chapter_number')
-      .eq('subject_id', params.subjectId)
-      .order('chapter_number', { ascending: false })
-      .limit(1)
-      .single()
+    const { title } = await request.json()
 
-    const nextChapterNumber = lastChapter ? lastChapter.chapter_number + 1 : 1
+    // Get next chapter number
+    const { data: nextNumber, error: numberError } = await supabase
+      .rpc('get_next_chapter_number', { subject_uuid: params.subjectId })
 
+    if (numberError) {
+      console.error('Error getting next chapter number:', numberError)
+      return NextResponse.json({ error: 'Failed to generate chapter number' }, { status: 500 })
+    }
+
+    // Create chapter
     const { data: chapter, error: insertError } = await supabase
       .from('chapters')
-      .insert([{
+      .insert({
         subject_id: params.subjectId,
-        title: title.trim(),
-        ai_summary: description?.trim() || null,
-        chapter_number: nextChapterNumber
-      }])
-      .select('id, title, ai_summary, chapter_number, created_at')
+        chapter_number: nextNumber,
+        title,
+        ai_summary: null, // Will be generated later
+        summary_overridden: false
+      })
+      .select()
       .single()
 
     if (insertError) {
@@ -171,13 +167,9 @@ export async function POST(
       return NextResponse.json({ error: insertError.message }, { status: 500 })
     }
 
-    // Transform to match expected format
     return NextResponse.json({
-      id: chapter.id,
-      title: chapter.title,
-      description: chapter.ai_summary,
-      order_index: chapter.chapter_number,
-      created_at: chapter.created_at
+      ...chapter,
+      subchapter_count: 0
     })
   } catch (error) {
     console.error('Unexpected error in chapters POST:', error)
