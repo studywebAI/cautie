@@ -1,7 +1,12 @@
--- SUBJECTS HIERARCHY SCHEMA - COMPLETE VERSION
--- Real data implementation for subjects with chapters, paragraphs, assignments, blocks
+-- COMPLETE HIERARCHY SETUP - Single File Migration
+-- Run this entire file to set up the full subjects hierarchy system
 
--- Drop existing tables if they exist (to avoid constraint conflicts)
+-- 1. Disable RLS temporarily for setup
+ALTER TABLE public.classes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subjects DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.class_members DISABLE ROW LEVEL SECURITY;
+
+-- 2. Drop existing hierarchy tables if they exist
 DROP TABLE IF EXISTS public.student_answers CASCADE;
 DROP TABLE IF EXISTS public.session_logs CASCADE;
 DROP TABLE IF EXISTS public.progress_snapshots CASCADE;
@@ -9,6 +14,8 @@ DROP TABLE IF EXISTS public.blocks CASCADE;
 DROP TABLE IF EXISTS public.assignments CASCADE;
 DROP TABLE IF EXISTS public.paragraphs CASCADE;
 DROP TABLE IF EXISTS public.chapters CASCADE;
+
+-- 3. Create hierarchy tables
 
 -- Chapters table
 CREATE TABLE IF NOT EXISTS public.chapters (
@@ -92,7 +99,7 @@ CREATE TABLE IF NOT EXISTS public.student_answers (
     graded_at TIMESTAMPTZ
 );
 
--- Enable RLS
+-- 4. Enable RLS
 ALTER TABLE public.chapters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.paragraphs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
@@ -101,7 +108,7 @@ ALTER TABLE public.progress_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.session_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_answers ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies - Teachers can manage their class content, students can access their enrolled classes
+-- 5. RLS Policies - Teachers can manage their class content, students can access their enrolled classes
 CREATE POLICY "Teachers can manage chapters" ON public.chapters FOR ALL USING (
     EXISTS (
         SELECT 1 FROM public.subjects s
@@ -182,7 +189,7 @@ CREATE POLICY "Students can manage their progress" ON public.progress_snapshots 
 CREATE POLICY "Students can manage their sessions" ON public.session_logs FOR ALL USING (auth.uid() = student_id);
 CREATE POLICY "Students can manage their answers" ON public.student_answers FOR ALL USING (auth.uid() = student_id);
 
--- Function to convert index to letters (0=a, 1=b, 26=aa, etc.)
+-- 6. Function to convert index to letters (0=a, 1=b, 26=aa, etc.)
 CREATE OR REPLACE FUNCTION assignment_index_to_letters(index INTEGER)
 RETURNS TEXT AS $$
 DECLARE
@@ -201,38 +208,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
--- Function to get student progress for a subject
-CREATE OR REPLACE FUNCTION get_subject_progress(student_uuid UUID, subject_uuid UUID)
-RETURNS TABLE (
-    chapter_id UUID,
-    chapter_title TEXT,
-    chapter_number INTEGER,
-    paragraph_count INTEGER,
-    completed_paragraphs INTEGER,
-    progress_percent INTEGER
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT
-        ch.id,
-        ch.title,
-        ch.chapter_number,
-        COUNT(p.id)::INTEGER as paragraph_count,
-        COUNT(ps.paragraph_id)::INTEGER as completed_paragraphs,
-        CASE
-            WHEN COUNT(p.id) = 0 THEN 0
-            ELSE ROUND((COUNT(ps.paragraph_id)::FLOAT / COUNT(p.id)::FLOAT) * 100)::INTEGER
-        END as progress_percent
-    FROM public.chapters ch
-    LEFT JOIN public.paragraphs p ON p.chapter_id = ch.id
-    LEFT JOIN public.progress_snapshots ps ON ps.paragraph_id = p.id AND ps.student_id = student_uuid
-    WHERE ch.subject_id = subject_uuid
-    GROUP BY ch.id, ch.title, ch.chapter_number
-    ORDER BY ch.chapter_number;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Indexes for performance
+-- 7. Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_chapters_subject_id ON public.chapters(subject_id);
 CREATE INDEX IF NOT EXISTS idx_paragraphs_chapter_id ON public.paragraphs(chapter_id);
 CREATE INDEX IF NOT EXISTS idx_assignments_paragraph_id ON public.assignments(paragraph_id);
@@ -241,3 +217,16 @@ CREATE INDEX IF NOT EXISTS idx_blocks_assignment_id ON public.blocks(assignment_
 CREATE INDEX IF NOT EXISTS idx_progress_snapshots_student_paragraph ON public.progress_snapshots(student_id, paragraph_id);
 CREATE INDEX IF NOT EXISTS idx_session_logs_student_paragraph ON public.session_logs(student_id, paragraph_id);
 CREATE INDEX IF NOT EXISTS idx_student_answers_student_block ON public.student_answers(student_id, block_id);
+
+-- 8. Re-enable RLS on modified tables
+ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.class_members ENABLE ROW LEVEL SECURITY;
+
+-- 9. Verification
+SELECT
+    'Migration completed successfully!' as status,
+    COUNT(*) as tables_created
+FROM information_schema.tables
+WHERE table_schema = 'public'
+AND table_name IN ('chapters', 'paragraphs', 'assignments', 'blocks', 'progress_snapshots', 'session_logs', 'student_answers');
