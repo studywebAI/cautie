@@ -19,7 +19,7 @@ import { Copy, Link as LinkIcon, Loader2, Share2, BookTemplate } from 'lucide-re
 import type { ClassInfo } from '@/contexts/app-context';
 import { TemplateSelector } from './template-selector';
 
-// Import QR code library for client-side generation (PERFORMANCE FIX #2)
+// Import QR code library for client-side generation (PERFORMANCE FIX 2)
 import QRCode from 'qrcode';
 
 type CreateClassDialogProps = {
