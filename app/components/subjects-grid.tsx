@@ -79,25 +79,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
       const data = await response.json();
       console.log('DEBUG: Subjects data:', data);
 
-      // Transform data to match expected format
-      const transformedData = data.map((subject: any) => ({
-        id: subject.id,
-        title: subject.name || subject.title,
-        class_label: subject.class_label || subject.title,
-        cover_type: subject.cover_type,
-        cover_image_url: subject.cover_image_url,
-        ai_icon_seed: subject.ai_icon_seed,
-        created_at: subject.created_at,
-        content: {
-          class_label: subject.class_label || subject.title,
-          cover_type: subject.cover_type,
-          cover_image_url: subject.cover_image_url,
-          ai_icon_seed: subject.ai_icon_seed
-        },
-        recentParagraphs: [] // Empty for now
-      }));
-
-      setSubjects(transformedData || []);
+      setSubjects(data || []);
     } catch (error) {
       console.error('Error fetching subjects:', error);
       setSubjects([]);

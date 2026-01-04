@@ -24,19 +24,25 @@ export async function GET(request: Request) {
 
     const userRole = profile?.role || 'student'
 
-    let subjectsQuery = supabase
-      .from('subjects')
-      .select('id, title, class_id, cover_type, cover_image_url, created_at, user_id')
+    // Get all class IDs the user has access to
+    let accessibleClassIds: string[] = []
 
     if (userRole === 'teacher') {
-      // Teachers see subjects for classes they own
-      const { data: ownedClassIds } = await supabase
+      // Teachers see subjects for classes they own OR teach in
+      const { data: ownedClasses } = await supabase
         .from('classes')
         .select('id')
-        .eq('user_id', user.id)
+        .or(`user_id.eq.${user.id},owner_id.eq.${user.id}`)
 
-      const classIds = ((ownedClassIds as any[]) || []).map(c => c.id)
-      subjectsQuery = subjectsQuery.in('class_id', classIds)
+      const { data: taughtClasses } = await supabase
+        .from('class_members')
+        .select('class_id')
+        .eq('user_id', user.id)
+        .eq('role', 'teacher')
+
+      const ownedIds = ((ownedClasses as any[]) || []).map(c => c.id)
+      const taughtIds = ((taughtClasses as any[]) || []).map(c => c.class_id)
+      accessibleClassIds = [...new Set([...ownedIds, ...taughtIds])]
     } else {
       // Students see subjects for classes they are members of
       const { data: memberClasses } = await supabase
@@ -44,11 +50,15 @@ export async function GET(request: Request) {
         .select('class_id')
         .eq('user_id', user.id)
 
-      const classIds = ((memberClasses as any[]) || []).map(c => c.class_id)
-      subjectsQuery = subjectsQuery.in('class_id', classIds)
+      accessibleClassIds = ((memberClasses as any[]) || []).map(c => c.class_id)
     }
 
-    const { data: subjects, error } = await subjectsQuery.order('created_at', { ascending: false })
+    // Get subjects for accessible classes
+    const { data: subjects, error } = await supabase
+      .from('subjects')
+      .select('id, title, class_id, cover_type, cover_image_url, created_at, user_id, class_label, ai_icon_seed')
+      .in('class_id', accessibleClassIds)
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching subjects:', error)
@@ -70,12 +80,22 @@ export async function GET(request: Request) {
     // Transform to match expected format
     const transformedSubjects = ((subjects as any[]) || []).map((subject: any) => ({
       id: subject.id,
+      title: subject.title,
       name: subject.title,
       class_id: subject.class_id,
+      class_label: classMap[subject.class_id] || 'Unknown Class',
       class_name: classMap[subject.class_id] || 'Unknown Class',
       cover_type: subject.cover_type,
       cover_image_url: subject.cover_image_url,
-      created_at: subject.created_at
+      ai_icon_seed: subject.ai_icon_seed,
+      created_at: subject.created_at,
+      content: {
+        class_label: classMap[subject.class_id] || 'Unknown Class',
+        cover_type: subject.cover_type,
+        cover_image_url: subject.cover_image_url,
+        ai_icon_seed: subject.ai_icon_seed
+      },
+      recentParagraphs: []
     }))
 
     return NextResponse.json(transformedSubjects)
@@ -138,15 +158,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: insertError.message }, { status: 500 })
     }
 
+    // Get class name for the response
+    const { data: classInfo } = await supabase
+      .from('classes')
+      .select('name')
+      .eq('id', class_id)
+      .single()
+
     // Transform to match expected format
     const subjectData = subject as any
     return NextResponse.json({
       id: subjectData.id,
+      title: subjectData.title,
       name: subjectData.title,
       class_id: subjectData.class_id,
+      class_label: classInfo?.name || 'Unknown Class',
+      class_name: classInfo?.name || 'Unknown Class',
       cover_type: subjectData.cover_type,
       cover_image_url: subjectData.cover_image_url,
-      created_at: subjectData.created_at
+      ai_icon_seed: subjectData.ai_icon_seed,
+      created_at: subjectData.created_at,
+      content: {
+        class_label: classInfo?.name || 'Unknown Class',
+        cover_type: subjectData.cover_type,
+        cover_image_url: subjectData.cover_image_url,
+        ai_icon_seed: subjectData.ai_icon_seed
+      },
+      recentParagraphs: []
     })
   } catch (error) {
     console.error('Unexpected error in subjects POST:', error)
