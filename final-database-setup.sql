@@ -1,7 +1,7 @@
--- COMPLETE SYSTEM SETUP - All Tables and Relations
--- Run this entire file to set up the complete Cautie system
+-- FINAL DATABASE SETUP - Complete Cautie System Migration
+-- Copy and paste this entire file into Supabase SQL Editor and run it
 
--- 1. Drop existing tables and policies
+-- 1. Drop all existing policies and triggers
 DROP POLICY IF EXISTS "Allow authenticated insert" ON "public"."assignments";
 DROP POLICY IF EXISTS "Allow authenticated read" ON "public"."assignments";
 DROP POLICY IF EXISTS "Allow authenticated delete for owners" ON "public"."assignments";
@@ -24,11 +24,10 @@ DROP POLICY IF EXISTS "Students can update their own submissions" ON "public"."s
 DROP POLICY IF EXISTS "Teachers can view submissions for their assignments" ON "public"."submissions";
 DROP POLICY IF EXISTS "Teachers can grade submissions for their assignments" ON "public"."submissions";
 
--- Drop triggers and functions
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
 
--- Drop all tables with CASCADE
+-- 2. Drop all tables (CASCADE will handle dependencies)
 DROP TABLE IF EXISTS "public"."submissions" CASCADE;
 DROP TABLE IF EXISTS "public"."student_answers" CASCADE;
 DROP TABLE IF EXISTS "public"."session_logs" CASCADE;
@@ -43,7 +42,7 @@ DROP TABLE IF EXISTS "public"."class_members" CASCADE;
 DROP TABLE IF EXISTS "public"."classes" CASCADE;
 DROP TABLE IF EXISTS "public"."profiles" CASCADE;
 
--- 2. Create base tables
+-- 3. Create all tables
 
 -- Profiles Table
 CREATE TABLE "public"."profiles" (
@@ -105,31 +104,6 @@ CREATE TABLE "public"."subjects" (
     CONSTRAINT "subjects_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE SET NULL
 );
 
--- Assignments Table
-CREATE TABLE "public"."assignments" (
-    "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-    "class_id" uuid NOT NULL,
-    "paragraph_id" uuid,
-    "assignment_index" integer NOT NULL DEFAULT 0,
-    "title" text NOT NULL,
-    "content" json,
-    "due_date" timestamp with time zone,
-    "answers_enabled" boolean DEFAULT false,
-    "owner_type" text DEFAULT 'user' CHECK (owner_type IN ('user', 'guest')),
-    "guest_id" text,
-    "user_id" uuid,
-    "created_at" timestamp with time zone NOT NULL DEFAULT now(),
-    CONSTRAINT "assignments_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "assignments_class_id_fkey" FOREIGN KEY (class_id) REFERENCES classes (id) ON DELETE CASCADE,
-    CONSTRAINT "assignments_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE SET NULL
-);
-
--- Create unique index for assignments
-CREATE UNIQUE INDEX idx_assignments_unique ON public.assignments(
-    COALESCE(paragraph_id::text, 'class-' || class_id::text),
-    assignment_index
-);
-
 -- Chapters Table
 CREATE TABLE "public"."chapters" (
     "id" uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -156,8 +130,33 @@ CREATE TABLE "public"."paragraphs" (
     CONSTRAINT "paragraphs_chapter_id_paragraph_number_key" UNIQUE (chapter_id, paragraph_number)
 );
 
+-- Assignments Table
+CREATE TABLE "public"."assignments" (
+    "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+    "class_id" uuid NOT NULL,
+    "paragraph_id" uuid,
+    "assignment_index" integer NOT NULL DEFAULT 0,
+    "title" text NOT NULL,
+    "content" json,
+    "due_date" timestamp with time zone,
+    "answers_enabled" boolean DEFAULT false,
+    "owner_type" text DEFAULT 'user' CHECK (owner_type IN ('user', 'guest')),
+    "guest_id" text,
+    "user_id" uuid,
+    "created_at" timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT "assignments_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "assignments_class_id_fkey" FOREIGN KEY (class_id) REFERENCES classes (id) ON DELETE CASCADE,
+    CONSTRAINT "assignments_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE SET NULL
+);
+
 -- Add paragraph_id foreign key to assignments
 ALTER TABLE "public"."assignments" ADD CONSTRAINT "assignments_paragraph_id_fkey" FOREIGN KEY (paragraph_id) REFERENCES paragraphs (id) ON DELETE CASCADE;
+
+-- Create unique index for assignments
+CREATE UNIQUE INDEX idx_assignments_unique ON public.assignments(
+    COALESCE(paragraph_id::text, 'class-' || class_id::text),
+    assignment_index
+);
 
 -- Blocks Table
 CREATE TABLE "public"."blocks" (
@@ -253,46 +252,22 @@ CREATE TABLE "public"."materials" (
     CONSTRAINT "materials_class_id_fkey" FOREIGN KEY (class_id) REFERENCES classes (id) ON DELETE CASCADE
 );
 
--- 3. Create functions and triggers
-
--- Function to create a profile when a new user signs up
+-- 4. Create function and trigger
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public
-AS $
-BEGIN
+AS 'BEGIN
   INSERT INTO public.profiles (id, full_name, avatar_url, role, theme, language, high_contrast, dyslexia_font, reduced_motion)
-  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url', 'student', 'pastel', 'en', false, false, false);
+  VALUES (new.id, new.raw_user_meta_data->>''full_name'', new.raw_user_meta_data->>''avatar_url'', ''student'', ''pastel'', ''en'', false, false, false);
   return new;
-END;
-$;
+END;';
 
--- Trigger to call handle_new_user on new user creation
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- Function to convert index to letters (0=a, 1=b, 26=aa, etc.)
-CREATE OR REPLACE FUNCTION assignment_index_to_letters(index INTEGER)
-RETURNS TEXT AS $$
-DECLARE
-    result TEXT := '';
-    num INTEGER := index;
-BEGIN
-    IF num = 0 THEN RETURN 'a'; END IF;
-
-    WHILE num >= 0 LOOP
-        result := CHR(97 + (num % 26)) || result;
-        num := num / 26 - 1;
-        IF num < 0 THEN EXIT; END IF;
-    END LOOP;
-
-    RETURN result;
-END;
-$$ LANGUAGE plpgsql IMMUTABLE;
-
--- 4. Create indexes
+-- 5. Create indexes
 CREATE INDEX IF NOT EXISTS "idx_chapters_subject_id" ON "public"."chapters"("subject_id");
 CREATE INDEX IF NOT EXISTS "idx_paragraphs_chapter_id" ON "public"."paragraphs"("chapter_id");
 CREATE INDEX IF NOT EXISTS "idx_assignments_paragraph_id" ON "public"."assignments"("paragraph_id");
@@ -304,7 +279,7 @@ CREATE INDEX IF NOT EXISTS "idx_student_answers_student_block" ON "public"."stud
 CREATE INDEX IF NOT EXISTS "submissions_assignment_id_idx" ON "public"."submissions"("assignment_id");
 CREATE INDEX IF NOT EXISTS "submissions_user_id_idx" ON "public"."submissions"("user_id");
 
--- 5. Enable RLS
+-- 6. Enable RLS
 ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."classes" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."class_members" ENABLE ROW LEVEL SECURITY;
@@ -319,41 +294,26 @@ ALTER TABLE "public"."student_answers" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."submissions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."materials" ENABLE ROW LEVEL SECURITY;
 
--- 6. Create RLS Policies
-
--- Profiles
+-- 7. Create RLS Policies (simplified to avoid recursion)
 CREATE POLICY "Allow individual read access" ON "public"."profiles" FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Allow individual insert access" ON "public"."profiles" FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Allow individual update access" ON "public"."profiles" FOR UPDATE USING (auth.uid() = id);
 
--- Classes - Simplified policies to avoid recursion
 CREATE POLICY "Allow authenticated users for classes" ON "public"."classes" FOR ALL USING (auth.uid() IS NOT NULL);
-
--- Class Members - Simplified policies to avoid recursion
 CREATE POLICY "Allow authenticated users for class_members" ON "public"."class_members" FOR ALL USING (auth.uid() IS NOT NULL);
-
--- Subjects
 CREATE POLICY "Allow authenticated users for subjects" ON "public"."subjects" FOR ALL USING (auth.uid() IS NOT NULL);
-
--- Assignments - Simplified policies to avoid recursion
 CREATE POLICY "Allow authenticated users for assignments" ON "public"."assignments" FOR ALL USING (auth.uid() IS NOT NULL);
-
--- Hierarchy tables (simplified - access control handled in API)
 CREATE POLICY "Allow authenticated users for chapters" ON "public"."chapters" FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Allow authenticated users for paragraphs" ON "public"."paragraphs" FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Allow authenticated users for blocks" ON "public"."blocks" FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Students can manage their progress" ON "public"."progress_snapshots" FOR ALL USING (auth.uid() = student_id);
 CREATE POLICY "Students can manage their sessions" ON "public"."session_logs" FOR ALL USING (auth.uid() = student_id);
 CREATE POLICY "Students can manage their answers" ON "public"."student_answers" FOR ALL USING (auth.uid() = student_id);
-
--- Submissions - Simplified policies
 CREATE POLICY "Allow authenticated users for submissions" ON "public"."submissions" FOR ALL USING (auth.uid() IS NOT NULL);
-
--- Materials
 CREATE POLICY "Users can manage their own materials" ON "public"."materials" FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can view public materials" ON "public"."materials" FOR SELECT USING (is_public = true);
 
--- 7. Verification
+-- 8. Verification
 SELECT
     'Migration completed successfully!' as status,
     COUNT(*) as tables_created
