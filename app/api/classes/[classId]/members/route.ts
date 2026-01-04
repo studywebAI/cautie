@@ -25,8 +25,27 @@ export async function GET(request: Request, { params }: { params: { classId: str
 
   console.log('DEBUG: Members GET - Class data:', { classData, classError, classId, userId: user.id })
 
-  if (classError || !classData || (classData.owner_id !== user.id && classData.user_id !== user.id)) {
-    console.log('DEBUG: Members GET - Access denied:', { classData, userId: user.id })
+  let hasAccess = false;
+  if (!classError && classData && (classData.owner_id === user.id || classData.user_id === user.id)) {
+    hasAccess = true;
+  } else {
+    // Check if user is a teacher member
+    const { data: memberData, error: memberError } = await supabase
+      .from('class_members')
+      .select('role')
+      .eq('class_id', classId)
+      .eq('user_id', user.id)
+      .single()
+
+    console.log('DEBUG: Members GET - Member check:', { memberData, memberError })
+
+    if (!memberError && memberData && memberData.role === 'teacher') {
+      hasAccess = true;
+    }
+  }
+
+  if (!hasAccess) {
+    console.log('DEBUG: Members GET - Access denied')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
