@@ -14,7 +14,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 export function TeacherDashboard() {
   const { classes, createClass, isLoading, refetchClasses } = useContext(AppContext) as AppContextType;
-  console.log('DEBUG: TeacherDashboard render, classes length:', classes?.length)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -260,13 +259,14 @@ export function TeacherDashboard() {
           {/* Active Classes - Always Visible */}
           <div className="min-h-[400px]">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activeClasses.map((classInfo) => (
+              {activeClasses.map((classInfo, index) => (
                 <ClassCard
                   key={classInfo.id}
                   classInfo={classInfo}
                   isArchived={false}
                   isBulkMode={isBulkMode}
                   isSelected={selectedClasses.has(classInfo.id)}
+                  priority={index < 12} // Load first 12 classes immediately
                   onToggleSelect={(classId) => {
                     const newSelected = new Set(selectedClasses);
                     if (newSelected.has(classId)) {

@@ -19,6 +19,7 @@ type ClassCardProps = {
   isBulkMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (classId: string) => void;
+  priority?: boolean; // Whether to load student data immediately
 };
 
 export function ClassCard({
@@ -27,37 +28,30 @@ export function ClassCard({
   isArchived = false,
   isBulkMode = false,
   isSelected = false,
-  onToggleSelect
+  onToggleSelect,
+  priority = false
 }: ClassCardProps) {
   const [students, setStudents] = useState<Student[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
+    const fetchData = async () => {
         if (!classInfo.id || classInfo.id.startsWith('local-') || isArchived) {
             setIsLoading(false);
             return;
         }
         setIsLoading(true);
         try {
-            console.log('DEBUG: ClassCard fetching for class:', classInfo.id);
             const [studentsRes, assignmentsRes] = await Promise.all([
                 fetch(`/api/classes/${classInfo.id}/members`),
                 fetch(`/api/assignments`)
             ]);
 
-            console.log('DEBUG: ClassCard students response:', studentsRes.status, studentsRes.ok);
-            if (!studentsRes.ok) {
-                const errorText = await studentsRes.text();
-                console.log('DEBUG: Students error response:', errorText);
-            }
-
             // Handle 404 errors gracefully - class might not exist or have no members yet
             let studentsData = [];
             if (studentsRes.ok) {
                 studentsData = await studentsRes.json();
-                console.log('DEBUG: Students data:', studentsData);
             } else if (studentsRes.status === 404) {
                 console.warn(`Class ${classInfo.id} not found or no members yet`);
                 studentsData = [];
@@ -78,9 +72,17 @@ export function ClassCard({
         } finally {
             setIsLoading(false);
         }
+    };
+
+    if (priority) {
+      // Load immediately for priority cards
+      fetchData();
+    } else {
+      // Delay loading for non-priority cards to prevent overwhelming the server
+      const timer = setTimeout(fetchData, 2000); // 2 second delay
+      return () => clearTimeout(timer);
     }
-    fetchData();
-  }, [classInfo.id, isArchived]);
+  }, [classInfo.id, isArchived, priority]);
 
 
   const studentCount = students.length;
