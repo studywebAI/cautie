@@ -25,8 +25,18 @@ export async function GET(request: Request, { params }: { params: { classId: str
 
   console.log('DEBUG: Members GET - Class data:', { classData, classError, classId, userId: user.id })
 
+  if (classError) {
+    console.log('DEBUG: Members GET - Class not found')
+    return NextResponse.json({ error: 'Class not found' }, { status: 404 })
+  }
+
+  if (!classData) {
+    console.log('DEBUG: Members GET - Class not found')
+    return NextResponse.json({ error: 'Class not found' }, { status: 404 })
+  }
+
   let hasAccess = false;
-  if (!classError && classData && (classData.owner_id === user.id || classData.user_id === user.id)) {
+  if (classData.owner_id === user.id || classData.user_id === user.id) {
     hasAccess = true;
   } else {
     // Check if user is a teacher member

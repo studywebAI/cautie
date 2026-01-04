@@ -63,8 +63,8 @@ export async function GET(request: Request) {
 
     if (memberError) return NextResponse.json({ error: memberError.message }, { status: 500 });
 
-    // Filter out classes where the user is the owner to avoid duplicates
-    memberClasses = memberClassesData?.map((member: any) => member.classes).filter((cls: any) => cls.owner_id !== user.id && cls.user_id !== user.id) || [];
+    // Filter out classes where the user is the owner to avoid duplicates, and ensure class exists
+    memberClasses = memberClassesData?.map((member: any) => member.classes).filter((cls: any) => cls && cls.owner_id !== user.id && cls.user_id !== user.id) || [];
   }
 
   console.log('DEBUG: ownedClasses:', ownedClasses.map(c => ({id: c.id, name: c.name, owner_id: c.owner_id, user_id: c.user_id})));

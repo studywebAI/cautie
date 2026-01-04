@@ -38,7 +38,7 @@ export type AppContextType = {
   language: Locale; // Use Locale type
   setLanguage: (language: Locale) => void; // Use Locale type
   dictionary: Dictionary;
-  role: UserRole;
+  role: UserRole | undefined;
   setRole: (role: UserRole) => void;
   highContrast: boolean;
   setHighContrast: (enabled: boolean) => void;
@@ -113,7 +113,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
   const [language, setLanguageState] = useState<Locale>('en'); // Initialized with full type
   const [dictionary, setDictionary] = useState<Dictionary>(() => getDictionary(language));
-  const [role, setRoleState] = useState<UserRole>(() => getFromLocalStorage('studyweb-role', 'student'));
+  const [role, setRoleState] = useState<UserRole | undefined>(undefined);
   const [highContrast, setHighContrastState] = useState(false);
   const [dyslexiaFont, setDyslexiaFontState] = useState(false);
   const [reducedMotion, setReducedMotionState] = useState(false);
@@ -249,6 +249,31 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       if (session) {
           // User is logged in, fetch from Supabase
+
+          // First, fetch user profile to set role
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('role, theme, language, high_contrast, dyslexia_font, reduced_motion')
+              .eq('id', session.user.id)
+              .single();
+
+            if (profileError) {
+              console.error('Error fetching profile role:', profileError);
+              setRoleState('student'); // Default to student if profile fetch fails
+            } else if (profileData && profileData.role) {
+              setRoleState(profileData.role as UserRole);
+              saveToLocalStorage('studyweb-role', profileData.role);
+            } else {
+              setRoleState('student'); // Default if role is null in profile
+              saveToLocalStorage('studyweb-role', 'student');
+            }
+          } catch (error) {
+            console.error('Error fetching profile:', error);
+            setRoleState('student');
+          }
+
+          // Then fetch data
           try {
               const [classesRes, assignmentsRes, personalTasksRes] = await Promise.all([
                   fetch('/api/classes'),
@@ -264,24 +289,6 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
               setClasses(classesData || []);
               setAssignments(assignmentsData || []);
               setPersonalTasks(personalTasksData || []);
-
-              // Fetch user profile to get authoritative role
-              const { data: profileData, error: profileError } = await supabase
-                .from('profiles')
-                .select('role, theme, language, high_contrast, dyslexia_font, reduced_motion')
-                .eq('id', session.user.id)
-                .single();
-
-              if (profileError) {
-                console.error('Error fetching profile role:', profileError);
-                setRoleState('student'); // Default to student if profile fetch fails
-              } else if (profileData && profileData.role) {
-                setRoleState(profileData.role as UserRole);
-                saveToLocalStorage('studyweb-role', profileData.role);
-              } else {
-                setRoleState('student'); // Default if role is null in profile
-                saveToLocalStorage('studyweb-role', 'student');
-              }
 
               // Fetch all students for all classes owned by the teacher
               const ownedClassIds = (classesData as ClassInfo[] || []).filter((c: ClassInfo) => c.user_id === session.user.id).map((c: ClassInfo) => c.id);
