@@ -54,8 +54,10 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newSubjectTitle, setNewSubjectTitle] = useState('');
   const [selectedCreateClassId, setSelectedCreateClassId] = useState<string>('');
+  const [coverImage, setCoverImage] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
+  const { classes } = useContext(AppContext) as AppContextType;
 
   // Fetch subjects on mount
   React.useEffect(() => {
@@ -211,7 +213,12 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
               <h2 className="text-2xl font-bold">Subjects</h2>
               <p className="text-muted-foreground">Organize your class content into structured subjects</p>
             </div>
-            <Button onClick={() => setIsCreateOpen(true)}>
+            <Button onClick={() => {
+              setNewSubjectTitle('');
+              setSelectedCreateClassId('');
+              setCoverImage(null);
+              setIsCreateOpen(true);
+            }}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Create Subject
             </Button>
@@ -318,6 +325,35 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
                 value={newSubjectTitle}
                 onChange={(e) => setNewSubjectTitle(e.target.value)}
               />
+            </div>
+            {!classId && (
+              <div className="space-y-2">
+                <Label htmlFor="class-select">Class</Label>
+                <Select value={selectedCreateClassId} onValueChange={setSelectedCreateClassId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.filter(c => c.user_id === (useContext(AppContext) as AppContextType)?.session?.user?.id || c.owner_id === (useContext(AppContext) as AppContextType)?.session?.user?.id).map((classItem) => (
+                      <SelectItem key={classItem.id} value={classItem.id}>
+                        {classItem.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="cover-image">Cover Image (Optional)</Label>
+              <Input
+                id="cover-image"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Upload an image to use as the subject cover. If no image is uploaded then an automatic icon-based cover will be used.
+              </p>
             </div>
           </div>
 
