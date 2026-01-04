@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +19,9 @@ import { Copy, Link as LinkIcon, Loader2, Share2, BookTemplate } from 'lucide-re
 import type { ClassInfo } from '@/contexts/app-context';
 import { TemplateSelector } from './template-selector';
 
+// Import QR code library for client-side generation (PERFORMANCE FIX #2)
+import QRCode from 'qrcode';
+
 type CreateClassDialogProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -34,10 +36,26 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
   const [createdClass, setCreatedClass] = useState<any>(null);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
   const { toast } = useToast();
-  
+
   const inviteLink = createdClass?.join_code ? `${window.location.origin}/classes?join_code=${createdClass.join_code}` : '';
-  const qrCodeUrl = inviteLink ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteLink)}&format=png` : '';
+
+  // Generate QR code client-side when class is created (PERFORMANCE FIX #2)
+  useEffect(() => {
+    if (inviteLink) {
+      QRCode.toDataURL(inviteLink, {
+        width: 200,
+        margin: 1
+      }).then((url: string) => {
+        setQrCodeDataURL(url);
+      }).catch((error: any) => {
+        console.error('QR code generation failed:', error);
+        // Fallback to showing text-only
+        setQrCodeDataURL('');
+      });
+    }
+  }, [inviteLink]);
 
 
   const handleCreate = async () => {
@@ -191,9 +209,9 @@ export function CreateClassDialog({ isOpen, setIsOpen, onClassCreated }: CreateC
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-6 items-center py-4">
             <div className="flex flex-col items-center gap-4">
-                {qrCodeUrl && (
+                {qrCodeDataURL && (
                     <div className="p-4 bg-white rounded-lg border">
-                        <img src={qrCodeUrl} alt="Class Invite QR Code" width={200} height={200} className="rounded" />
+                        <img src={qrCodeDataURL} alt="Class Invite QR Code" width={200} height={200} className="rounded" />
                     </div>
                 )}
             </div>

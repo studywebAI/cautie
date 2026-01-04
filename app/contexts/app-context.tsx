@@ -358,6 +358,10 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Failed to create class in Supabase');
       }
       const savedClass = await response.json();
+
+      // Optimistic update: Add to local state immediately (PERFORMANCE FIX #3)
+      setClasses(prev => [...prev, savedClass]);
+
       return savedClass;
     } else {
       // Guest user: save to localStorage
