@@ -260,7 +260,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
             if (profileError) {
               console.error('Error fetching profile role:', profileError);
-              setRoleState('student'); // Default to student if profile fetch fails
+              setRoleState(undefined); // Don't default to student on error - keep loading
             } else if (profileData && profileData.role) {
               setRoleState(profileData.role as UserRole);
               saveToLocalStorage('studyweb-role', profileData.role);
