@@ -254,7 +254,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
           try {
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
-              .select('role, theme, language, high_contrast, dyslexia_font, reduced_motion')
+              .select('role')
               .eq('id', session.user.id)
               .single();
 
