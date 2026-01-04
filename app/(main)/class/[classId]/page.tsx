@@ -14,9 +14,8 @@ import { ClassAnalyticsDashboard } from '@/components/dashboard/teacher/class-an
 import { ChapterNavigation } from '@/components/class/ChapterNavigation';
 import { ChapterContentViewer } from '@/components/class/ChapterContentViewer';
 import { ChapterEditor } from '@/components/class/ChapterEditor';
-import { SubjectsGrid } from '@/components/subjects-grid';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Users, FileText, Settings, GraduationCap, Library, Bell, BarChart3 } from 'lucide-react';
+import { BookOpen, Users, FileText, Settings, GraduationCap, Bell, BarChart3 } from 'lucide-react';
 
 
 export default function ClassDetailsPage() {
@@ -132,9 +131,8 @@ export default function ClassDetailsPage() {
         <p className="text-muted-foreground">{classInfo.description || 'Manage assignments, students, and settings for this class.'}</p>
       </header>
 
-      <Tabs defaultValue="subjects" className="w-full">
-        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-7' : 'grid-cols-5'}`}>
-          <TabsTrigger value="subjects"><Library className="mr-2 h-4 w-4" /> Subjects</TabsTrigger>
+      <Tabs defaultValue="assignments" className="w-full">
+        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-6' : 'grid-cols-4'}`}>
           <TabsTrigger value="assignments"><FileText className="mr-2 h-4 w-4" /> Assignments</TabsTrigger>
           <TabsTrigger value="materials"><BookOpen className="mr-2 h-4 w-4" /> Materials</TabsTrigger>
           <TabsTrigger value="announcements"><Bell className="mr-2 h-4 w-4" /> Announcements</TabsTrigger>
@@ -146,9 +144,6 @@ export default function ClassDetailsPage() {
             </>
           )}
         </TabsList>
-        <TabsContent value="subjects">
-          <SubjectsGrid classId={classId} isTeacher={isTeacher} />
-        </TabsContent>
         <TabsContent value="assignments">
           <AssignmentList assignments={classAssignments} classId={classId} isTeacher={isTeacher} />
         </TabsContent>
