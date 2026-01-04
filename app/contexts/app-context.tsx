@@ -36,7 +36,7 @@ export type AppContextType = {
   session: Session | null;
   isLoading: boolean;
   language: Locale; // Use Locale type
-  setLanguage: (language: Locale) => void; // Use Locale type
+  setLanguage: (language: Locale) => void; // Use Locale type.
   dictionary: Dictionary;
   role: UserRole;
   setRole: (role: UserRole) => void;
