@@ -241,7 +241,7 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const { role, isLoading, session } = useContext(AppContext) as AppContextType;
 
-  if (isLoading || role === undefined) {
+  if (isLoading) {
     return <DashboardSkeleton />;
   }
 

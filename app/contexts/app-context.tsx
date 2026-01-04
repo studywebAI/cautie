@@ -38,7 +38,7 @@ export type AppContextType = {
   language: Locale; // Use Locale type
   setLanguage: (language: Locale) => void; // Use Locale type
   dictionary: Dictionary;
-  role: UserRole | undefined;
+  role: UserRole;
   setRole: (role: UserRole) => void;
   highContrast: boolean;
   setHighContrast: (enabled: boolean) => void;
@@ -113,7 +113,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
   const [language, setLanguageState] = useState<Locale>('en'); // Initialized with full type
   const [dictionary, setDictionary] = useState<Dictionary>(() => getDictionary(language));
-  const [role, setRoleState] = useState<UserRole | undefined>(undefined);
+  const [role, setRoleState] = useState<UserRole>('student');
   const [highContrast, setHighContrastState] = useState(false);
   const [dyslexiaFont, setDyslexiaFontState] = useState(false);
   const [reducedMotion, setReducedMotionState] = useState(false);
@@ -250,55 +250,68 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       if (session) {
           // User is logged in, fetch from Supabase
 
-          // First, fetch user profile to set role
+          // First fetch classes to determine role
           try {
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .single();
+              const classesRes = await fetch('/api/classes');
+              if (!classesRes.ok) {
+                throw new Error('Failed to fetch classes from API');
+              }
+              const classesData = await classesRes.json();
+              setClasses(classesData || []);
 
-            if (profileError) {
-              console.error('Error fetching profile role:', profileError);
-              setRoleState(undefined); // Don't default to student on error - keep loading
-            } else if (profileData && profileData.role) {
-              setRoleState(profileData.role as UserRole);
-              saveToLocalStorage('studyweb-role', profileData.role);
-            } else {
-              setRoleState('student'); // Default if role is null in profile
-              saveToLocalStorage('studyweb-role', 'student');
-            }
-          } catch (error) {
-            console.error('Error fetching profile:', error);
-            setRoleState('student');
-          }
+              // Determine role based on class ownership/membership (SECURITY FIX)
+              let userRole: UserRole = 'student';
+              try {
+                // Check if user owns any classes (teacher)
+                const ownedClasses = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
+                  c.owner_id === session.user.id || c.user_id === session.user.id
+                );
+                if (ownedClasses.length > 0) {
+                  userRole = 'teacher';
+                } else {
+                  // Check if user is a member of any classes (student)
+                  const memberClasses = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
+                    c.user_id !== session.user.id && c.owner_id !== session.user.id
+                  );
+                  if (memberClasses.length > 0) {
+                    userRole = 'student';
+                  }
+                  // If no classes at all, stay as student (default)
+                }
+              } catch (roleError) {
+                console.error('Error determining user role:', roleError);
+                userRole = 'student'; // Default to student on error
+              }
 
-          // Then fetch data
-          try {
-              const [classesRes, assignmentsRes, personalTasksRes] = await Promise.all([
-                  fetch('/api/classes'),
+              setRoleState(userRole);
+              saveToLocalStorage('studyweb-role', userRole);
+
+              // Then fetch assignments and personal tasks
+              const [assignmentsRes, personalTasksRes] = await Promise.all([
                   fetch('/api/assignments'),
                   fetch('/api/personal-tasks'),
               ]);
-              if (!classesRes.ok || !assignmentsRes.ok || !personalTasksRes.ok) {
-                throw new Error('Failed to fetch data from API');
+              if (!assignmentsRes.ok || !personalTasksRes.ok) {
+                throw new Error('Failed to fetch assignments or personal tasks');
               }
-              const classesData = await classesRes.json();
               const assignmentsData = await assignmentsRes.json();
               const personalTasksData = await personalTasksRes.json();
-              setClasses(classesData || []);
               setAssignments(assignmentsData || []);
               setPersonalTasks(personalTasksData || []);
 
               // Fetch all students for all classes owned by the teacher
-              const ownedClassIds = (classesData as ClassInfo[] || []).filter((c: ClassInfo) => c.user_id === session.user.id).map((c: ClassInfo) => c.id);
-              if (ownedClassIds.length > 0 && ownedClassIds.length <= 10) { // Limit to prevent spam
-                 const studentPromises = ownedClassIds.map((id: string) => fetch(`/api/classes/${id}/members`).then(res => res.json()));
-                 const studentsPerClass = await Promise.all(studentPromises);
-                 const allStudents = studentsPerClass.flat();
-                 // Remove duplicates
-                 const uniqueStudents = Array.from(new Set(allStudents.map(s => s.id))).map(id => allStudents.find(s => s.id === id));
-                 setStudents(uniqueStudents || []);
+              if (userRole === 'teacher') {
+                const ownedClassIds = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
+                  c.owner_id === session.user.id || c.user_id === session.user.id
+                ).map((c: ClassInfo) => c.id);
+                if (ownedClassIds.length > 0 && ownedClassIds.length <= 10) { // Limit to prevent spam
+                   const studentPromises = ownedClassIds.map((id: string) => fetch(`/api/classes/${id}/members`).then(res => res.json()));
+                   const studentsPerClass = await Promise.all(studentPromises);
+                   const allStudents = studentsPerClass.flat();
+                   // Remove duplicates
+                   const uniqueStudents = Array.from(new Set(allStudents.map(s => s.id))).map(id => allStudents.find(s => s.id === id));
+                   setStudents(uniqueStudents || []);
+                }
               }
 
           } catch (error) {
@@ -534,11 +547,11 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     setDictionary(newDict);
   };
 
-  // Role is now read-only and determined by class ownership/membership
-  // Remove client-side role toggle - this is a critical security fix
+  // Allow manual role switching for UI purposes, but log that it's client-side only
   const setRole = async (newRole: UserRole) => {
-    console.warn('Role cannot be changed by client. Role is determined by class ownership.');
-    // Do nothing - role is read-only
+    console.log('Manually setting role to:', newRole, '(client-side only - actual permissions determined by class ownership)');
+    setRoleState(newRole);
+    saveToLocalStorage('studyweb-role', newRole);
   };
 
   const setHighContrast = (enabled: boolean) => {
