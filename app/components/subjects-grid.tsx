@@ -37,7 +37,7 @@ type Subject = {
 };
 
 type SubjectsGridProps = {
-  classId: string;
+  classId?: string; // Optional - if provided, filter subjects by class
   isTeacher?: boolean;
 };
 
@@ -170,7 +170,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
             <h3 className="text-lg font-semibold mb-2">No subjects yet</h3>
             <p className="text-muted-foreground mb-4">
               {isTeacher
-                ? "Create your first subject to start organizing your class content."
+                ? "The image will be used as cover for your subject. If no image is uploaded then an automatic icon-based cover will be used."
                 : "Your teacher hasn't created any subjects yet."
               }
             </p>
@@ -188,7 +188,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
                 <Link href={`/class/${classId}/subject/${subject.id}`}>
                   <CardContent className="p-0">
                     {/* Top half - Cover/Icon */}
-                    <div className="aspect-[4/3] bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 rounded-t-lg flex items-center justify-center relative overflow-hidden">
+                    <div className="aspect-[4/3] bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 flex items-center justify-center relative overflow-hidden">
                       {subject.content?.cover_image_url ? (
                         <img
                           src={subject.content.cover_image_url}
@@ -201,26 +201,27 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
                         </div>
                       )}
 
+                      {/* Title and class label overlay on left side */}
+                      <div className="absolute left-4 top-4 max-w-[60%]">
+                        <h3 className="font-semibold text-lg text-white drop-shadow-lg mb-1">
+                          {subject.title}
+                        </h3>
+                        <p className="text-sm text-white/80 drop-shadow">
+                          {subject.content?.class_label || subject.title}
+                        </p>
+                      </div>
+
                       {/* Overlay gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     </div>
 
-                    {/* Bottom half - Content */}
-                    <div className="p-4">
-                      <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
-                        {subject.title}
-                      </h3>
-
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {subject.content?.class_label || subject.title}
-                      </p>
-
-                      {/* Progress preview from API data */}
+                    {/* Progress preview in bottom section */}
+                    <div className="p-4 bg-white dark:bg-gray-900">
                       <div className="space-y-2">
                         {subject.recentParagraphs?.slice(0, 3).map((paragraph, index) => (
                           <div key={paragraph.id}>
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">{paragraph.title}</span>
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="text-muted-foreground truncate">{paragraph.title}</span>
                               <span className="font-medium">{paragraph.progress}%</span>
                             </div>
                             <div className="w-full bg-muted rounded-full h-1.5">
@@ -231,6 +232,9 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
                             </div>
                           </div>
                         ))}
+                        {(!subject.recentParagraphs || subject.recentParagraphs.length === 0) && (
+                          <p className="text-xs text-muted-foreground text-center py-2">No progress yet</p>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -247,7 +251,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
           <DialogHeader>
             <DialogTitle>Create New Subject</DialogTitle>
             <DialogDescription>
-              Create a new subject to organize your class content. You can add chapters, paragraphs, and assignments to structure your curriculum.
+              The image will be used as cover for your subject. If no image is uploaded then an automatic icon-based cover will be used.
             </DialogDescription>
           </DialogHeader>
 
