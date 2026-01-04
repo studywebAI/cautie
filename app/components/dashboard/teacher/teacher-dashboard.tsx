@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 export function TeacherDashboard() {
   const { classes, createClass, isLoading, refetchClasses } = useContext(AppContext) as AppContextType;
+  console.log('DEBUG: TeacherDashboard render, classes length:', classes?.length)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

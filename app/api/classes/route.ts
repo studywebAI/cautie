@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
+  console.log('DEBUG: Classes GET called')
   const cookieStore = cookies()
   const supabase = await createClient(cookieStore)
 
