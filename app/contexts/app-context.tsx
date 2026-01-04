@@ -534,29 +534,11 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     setDictionary(newDict);
   };
 
+  // Role is now read-only and determined by class ownership/membership
+  // Remove client-side role toggle - this is a critical security fix
   const setRole = async (newRole: UserRole) => {
-    setRoleState(newRole);
-    saveToLocalStorage('studyweb-role', newRole);
-
-    if (session?.user?.id) {
-      try {
-        const response = await fetch('/api/user/role', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: session.user.id, newRole }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to update role in Supabase');
-        }
-        // Optionally re-fetch profile data to ensure consistency, or trust the response
-      } catch (error) {
-        console.error('Error updating Supabase role:', error);
-        // Revert client-side role if Supabase update fails
-        setRoleState(getFromLocalStorage('studyweb-role', 'student'));
-        // Consider a toast notification for the user
-      }
-    }
+    console.warn('Role cannot be changed by client. Role is determined by class ownership.');
+    // Do nothing - role is read-only
   };
 
   const setHighContrast = (enabled: boolean) => {

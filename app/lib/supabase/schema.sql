@@ -124,7 +124,21 @@ CREATE TRIGGER on_auth_user_created
 
 -- Profiles
 ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow individual read access" ON "public"."profiles" FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Allow read access for users and teachers" ON "public"."profiles" FOR SELECT USING (
+  auth.uid() = id OR
+  EXISTS (
+    SELECT 1 FROM class_members cm
+    INNER JOIN classes c ON cm.class_id = c.id
+    WHERE cm.user_id = profiles.id
+    AND (
+      c.owner_id = auth.uid() OR
+      EXISTS (
+        SELECT 1 FROM class_members cm2
+        WHERE cm2.class_id = c.id AND cm2.user_id = auth.uid() AND (cm2.role = 'teacher' OR cm2.role = 'student')
+      )
+    )
+  )
+);
 CREATE POLICY "Allow individual insert access" ON "public"."profiles" FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Allow individual update access" ON "public"."profiles" FOR UPDATE USING (auth.uid() = id);
 
@@ -194,5 +208,50 @@ CREATE POLICY "Allow authenticated insert" ON "public"."class_members" FOR INSER
 CREATE POLICY "Allow authenticated delete for owners" ON "public"."class_members" FOR DELETE USING (
   EXISTS (
     SELECT 1 FROM classes WHERE classes.id = class_members.class_id AND classes.owner_id = auth.uid()
+  )
+);
+
+-- Subjects Table: Stores subjects for classes
+CREATE TABLE "public"."subjects" (
+    "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+    "created_at" timestamp with time zone NOT NULL DEFAULT now(),
+    "title" text NOT NULL,
+    "class_id" uuid NOT NULL,
+    "class_label" text,
+    "cover_type" text,
+    "cover_image_url" text,
+    "ai_icon_seed" text,
+    CONSTRAINT "subjects_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "subjects_class_id_fkey" FOREIGN KEY ("class_id") REFERENCES "public"."classes"("id") ON DELETE CASCADE
+);
+ALTER TABLE "public"."subjects" OWNER TO "postgres";
+
+-- Subjects RLS policies
+ALTER TABLE "public"."subjects" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated read" ON "public"."subjects" FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM classes
+    WHERE classes.id = subjects.class_id AND (
+      classes.owner_id = auth.uid() OR
+      EXISTS (
+        SELECT 1 FROM class_members
+        WHERE class_members.class_id = classes.id AND class_members.user_id = auth.uid()
+      )
+    )
+  )
+);
+CREATE POLICY "Allow authenticated insert" ON "public"."subjects" FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM classes WHERE classes.id = subjects.class_id AND classes.owner_id = auth.uid()
+  )
+);
+CREATE POLICY "Allow authenticated update for owners" ON "public"."subjects" FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM classes WHERE classes.id = subjects.class_id AND classes.owner_id = auth.uid()
+  )
+);
+CREATE POLICY "Allow authenticated delete for owners" ON "public"."subjects" FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM classes WHERE classes.id = subjects.class_id AND classes.owner_id = auth.uid()
   )
 );
