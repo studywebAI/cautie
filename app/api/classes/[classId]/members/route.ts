@@ -74,20 +74,34 @@ export async function GET(request: Request, { params }: { params: { classId: str
   const userIds = data.map(m => m.user_id)
   const { data: profiles, error: profilesError } = await supabase
     .from('profiles')
-    .select('id, full_name')
+    .select('id, full_name, email')
     .in('id', userIds)
 
   if (profilesError) {
     console.error('Error fetching profiles:', profilesError)
   }
 
-  // Transform data
+  // Transform data to match Student type
   const members = data.map(member => {
     const profile = profiles?.find(p => p.id === member.user_id)
+    let name = profile?.full_name
+
+    // If no full_name, derive from email
+    if (!name && profile?.email) {
+      name = profile.email.split('@')[0] // Take part before @
+    }
+
+    // Final fallback
+    if (!name) {
+      name = `Student ${member.user_id.slice(-4)}`
+    }
+
     return {
       id: member.user_id,
-      full_name: profile?.full_name || 'Unknown',
-      email: member.user_id, // Placeholder
+      name: name,
+      email: profile?.email || `${member.user_id.slice(-4)}@example.com`,
+      avatarUrl: null,
+      overallProgress: 0, // Placeholder - would calculate from assignments
       role: member.role
     }
   })

@@ -14,7 +14,6 @@ import { ClassAnalyticsDashboard } from '@/components/dashboard/teacher/class-an
 import { ChapterNavigation } from '@/components/class/ChapterNavigation';
 import { ChapterContentViewer } from '@/components/class/ChapterContentViewer';
 import { ChapterEditor } from '@/components/class/ChapterEditor';
-import { SubjectsGrid } from '@/components/subjects-grid';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Users, FileText, Settings, GraduationCap, Bell, BarChart3, Library } from 'lucide-react';
 
@@ -23,10 +22,10 @@ export default function ClassDetailsPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const { classId } = params as { classId: string };
-  const { classes, assignments, isLoading: isAppLoading, materials, refetchMaterials, role } = useContext(AppContext) as AppContextType;
+  const { classes, assignments, isLoading: isAppLoading, materials, refetchMaterials, role, students: allStudents } = useContext(AppContext) as AppContextType;
 
-  const [students, setStudents] = useState<Student[]>([]);
-  const [isStudentsLoading, setIsStudentsLoading] = useState(true);
+  // Use students from app context instead of individual fetching
+  const students = allStudents || [];
 
   const [directClassInfo, setDirectClassInfo] = useState<ClassInfo | null>(null);
   const [selectedChapterId, setSelectedChapterId] = useState<string | undefined>(undefined);
@@ -43,30 +42,7 @@ export default function ClassDetailsPage() {
 
 
   useEffect(() => {
-    if (!classId || classId.startsWith('local-')) {
-        setIsStudentsLoading(false);
-        setStudents([]);
-        return;
-    }
-
-    const fetchStudents = async () => {
-      setIsStudentsLoading(true);
-      try {
-        const response = await fetch(`/api/classes/${classId}/members`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch students');
-        }
-        const data = await response.json();
-        setStudents(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsStudentsLoading(false);
-      }
-    };
-
-    if(classId) {
-        fetchStudents();
+    if (classId && !classId.startsWith('local-')) {
         refetchMaterials(classId);
     }
   }, [classId, refetchMaterials]);
@@ -93,7 +69,7 @@ export default function ClassDetailsPage() {
     fetchClassInfo();
   }, [classId, classes, directClassInfo]);
 
-  const isLoading = !!isAppLoading || (isStudentsLoading && classId && !classId.startsWith('local-'));
+  const isLoading = !!isAppLoading;
 
   // Check if user is a teacher (global role)
   const isTeacher = role === 'teacher';
@@ -134,10 +110,9 @@ export default function ClassDetailsPage() {
       </header>
 
       <Tabs defaultValue={searchParams.get('tab') || "assignments"} className="w-full">
-        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-7' : 'grid-cols-5'}`}>
+        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-6' : 'grid-cols-4'}`}>
           <TabsTrigger value="assignments"><FileText className="mr-2 h-4 w-4" /> Assignments</TabsTrigger>
           <TabsTrigger value="materials"><BookOpen className="mr-2 h-4 w-4" /> Materials</TabsTrigger>
-          <TabsTrigger value="subjects"><Library className="mr-2 h-4 w-4" /> Subjects</TabsTrigger>
           <TabsTrigger value="announcements"><Bell className="mr-2 h-4 w-4" /> Announcements</TabsTrigger>
           {isTeacher && (
             <>

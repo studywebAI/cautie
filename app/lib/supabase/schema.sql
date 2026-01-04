@@ -50,6 +50,7 @@ CREATE TABLE "public"."profiles" (
     "updated_at" timestamp with time zone,
     "full_name" text,
     "avatar_url" text,
+    "email" text,
     "role" text DEFAULT 'student'::text,
     CONSTRAINT "profiles_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE
@@ -104,13 +105,13 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public
-AS $$
+AS $
 BEGIN
-  INSERT INTO public.profiles (id, full_name, avatar_url, role)
-  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url', 'student');
+  INSERT INTO public.profiles (id, full_name, avatar_url, email, role)
+  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url', new.email, 'student');
   return new;
 END;
-$$;
+$;
 
 -- Trigger to call handle_new_user on new user creation
 CREATE TRIGGER on_auth_user_created

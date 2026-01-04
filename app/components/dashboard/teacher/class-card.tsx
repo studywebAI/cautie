@@ -10,8 +10,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ClassInfo, ClassAssignment } from '@/contexts/app-context';
 import { differenceInDays, parseISO, isFuture } from 'date-fns';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import type { Student } from '@/lib/teacher-types';
+import { AppContext } from '@/contexts/app-context';
 
 type ClassCardProps = {
   classInfo: ClassInfo;
@@ -33,10 +34,13 @@ export function ClassCard({
   priority = false
 }: ClassCardProps) {
   const router = useRouter();
-  const [students, setStudents] = useState<Student[]>([]);
+  const { students: allStudents } = useContext(AppContext) as any;
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const hasFetchedRef = useRef(false);
+
+  // Fetch student count for this specific class
+  const [studentCount, setStudentCount] = useState(0);
 
   useEffect(() => {
     if (hasFetchedRef.current) return; // Prevent multiple fetches
@@ -47,34 +51,26 @@ export function ClassCard({
             setIsLoading(false);
             return;
         }
-        setIsLoading(true);
+
         try {
-            const [studentsRes, assignmentsRes] = await Promise.all([
-                fetch(`/api/classes/${classInfo.id}/members`),
-                fetch(`/api/assignments`)
-            ]);
-
-            // Handle 404 errors gracefully - class might not exist or have no members yet
-            let studentsData = [];
-            if (studentsRes.ok) {
-                studentsData = await studentsRes.json();
-            } else if (studentsRes.status === 404) {
-                console.warn(`Class ${classInfo.id} not found or no members yet`);
-                studentsData = [];
-            } else {
-                throw new Error(`Failed to fetch students: ${studentsRes.status}`);
-            }
-
+            // Fetch assignments
+            const assignmentsRes = await fetch(`/api/assignments`);
             const allAssignments = await assignmentsRes.json();
-
-            setStudents(studentsData);
             setAssignments(allAssignments.filter((a: ClassAssignment) => a.class_id === classInfo.id));
 
+            // Fetch student count for this class
+            const membersRes = await fetch(`/api/classes/${classInfo.id}/members`);
+            if (membersRes.ok) {
+                const members = await membersRes.json();
+                setStudentCount(members.length);
+            } else {
+                console.warn(`Failed to fetch members for class ${classInfo.id}`);
+                setStudentCount(0);
+            }
         } catch (error) {
             console.error(`Failed to fetch data for class ${classInfo.id}`, error);
-            // Set empty data on error to prevent UI issues
-            setStudents([]);
             setAssignments([]);
+            setStudentCount(0);
         } finally {
             setIsLoading(false);
         }
@@ -85,7 +81,7 @@ export function ClassCard({
       fetchData();
     } else {
       // Delay loading for non-priority cards to prevent overwhelming the server
-      const timer = setTimeout(fetchData, 2000); // 2 second delay
+      const timer = setTimeout(fetchData, 1000); // Reduced delay
       return () => {
         if (!hasFetchedRef.current) {
           clearTimeout(timer);
@@ -94,8 +90,6 @@ export function ClassCard({
     }
   }, [classInfo.id, isArchived, priority]);
 
-
-  const studentCount = students.length;
 
   const assignmentsDue = assignments.filter(a => {
     if (!a.due_date) return false;
@@ -128,13 +122,13 @@ export function ClassCard({
             assignments.some(a => a.id === s.assignment_id)
           );
 
-          if (students.length === 0 || assignments.length === 0) {
+          if (studentCount === 0 || assignments.length === 0) {
             setAverageProgress(0);
             return;
           }
 
           // Calculate completion rate
-          const totalPossible = students.length * assignments.length;
+          const totalPossible = studentCount * assignments.length;
           const completed = classSubmissions.filter((s: any) =>
             s.status === 'submitted' || s.grade !== null
           ).length;
@@ -149,7 +143,7 @@ export function ClassCard({
     };
 
     calculateProgress();
-  }, [classInfo.id, assignments, students, isArchived]);
+  }, [classInfo.id, assignments, studentCount, isArchived]);
   
   const alerts: string[] = [];
   if (assignmentsDue > 0) {
