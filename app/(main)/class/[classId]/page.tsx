@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useContext, useEffect, useState, useMemo } from 'react';
 import { AppContext, AppContextType, ClassInfo } from '@/contexts/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,6 +20,7 @@ import { BookOpen, Users, FileText, Settings, GraduationCap, Bell, BarChart3 } f
 
 export default function ClassDetailsPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const { classId } = params as { classId: string };
   const { classes, assignments, isLoading: isAppLoading, materials, refetchMaterials, role } = useContext(AppContext) as AppContextType;
 
@@ -131,7 +132,7 @@ export default function ClassDetailsPage() {
         <p className="text-muted-foreground">{classInfo.description || 'Manage assignments, students, and settings for this class.'}</p>
       </header>
 
-      <Tabs defaultValue="assignments" className="w-full">
+      <Tabs defaultValue={searchParams.get('tab') || "assignments"} className="w-full">
         <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-6' : 'grid-cols-4'}`}>
           <TabsTrigger value="assignments"><FileText className="mr-2 h-4 w-4" /> Assignments</TabsTrigger>
           <TabsTrigger value="materials"><BookOpen className="mr-2 h-4 w-4" /> Materials</TabsTrigger>

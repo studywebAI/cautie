@@ -7,9 +7,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Users, BookCheck, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { ClassInfo, ClassAssignment } from '@/contexts/app-context';
 import { differenceInDays, parseISO, isFuture } from 'date-fns';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Student } from '@/lib/teacher-types';
 
 type ClassCardProps = {
@@ -31,12 +32,17 @@ export function ClassCard({
   onToggleSelect,
   priority = false
 }: ClassCardProps) {
+  const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    if (hasFetchedRef.current) return; // Prevent multiple fetches
+
     const fetchData = async () => {
+        hasFetchedRef.current = true;
         if (!classInfo.id || classInfo.id.startsWith('local-') || isArchived) {
             setIsLoading(false);
             return;
@@ -80,7 +86,11 @@ export function ClassCard({
     } else {
       // Delay loading for non-priority cards to prevent overwhelming the server
       const timer = setTimeout(fetchData, 2000); // 2 second delay
-      return () => clearTimeout(timer);
+      return () => {
+        if (!hasFetchedRef.current) {
+          clearTimeout(timer);
+        }
+      };
     }
   }, [classInfo.id, isArchived, priority]);
 
@@ -171,11 +181,25 @@ export function ClassCard({
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-1.5">
+              <div
+                className="flex items-center gap-1.5 cursor-pointer hover:text-primary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  router.push(`/class/${classInfo.id}?tab=students`);
+                }}
+              >
                 <Users className="h-4 w-4" />
                 <span>{studentCount} Student{studentCount !== 1 ? 's' : ''}</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div
+                className="flex items-center gap-1.5 cursor-pointer hover:text-primary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  router.push(`/class/${classInfo.id}?tab=assignments`);
+                }}
+              >
                 <BookCheck className="h-4 w-4" />
                 <span>{assignmentsDue} Due Soon</span>
               </div>
