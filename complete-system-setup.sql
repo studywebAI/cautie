@@ -64,7 +64,10 @@ CREATE TABLE "public"."classes" (
     "description" text,
     "owner_id" uuid,
     "user_id" uuid,
+    "guest_id" text,
     "join_code" text UNIQUE,
+    "owner_type" text DEFAULT 'user' CHECK (owner_type IN ('user', 'guest')),
+    "status" text,
     CONSTRAINT "classes_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "classes_owner_id_fkey" FOREIGN KEY (owner_id) REFERENCES auth.users (id) ON DELETE CASCADE,
     CONSTRAINT "classes_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE
@@ -104,10 +107,16 @@ CREATE TABLE "public"."assignments" (
     "paragraph_id" uuid,
     "assignment_index" integer NOT NULL DEFAULT 0,
     "title" text NOT NULL,
+    "content" json,
+    "due_date" timestamp with time zone,
     "answers_enabled" boolean DEFAULT false,
+    "owner_type" text DEFAULT 'user' CHECK (owner_type IN ('user', 'guest')),
+    "guest_id" text,
+    "user_id" uuid,
     "created_at" timestamp with time zone NOT NULL DEFAULT now(),
     CONSTRAINT "assignments_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "assignments_class_id_fkey" FOREIGN KEY (class_id) REFERENCES classes (id) ON DELETE CASCADE
+    CONSTRAINT "assignments_class_id_fkey" FOREIGN KEY (class_id) REFERENCES classes (id) ON DELETE CASCADE,
+    CONSTRAINT "assignments_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE SET NULL
 );
 
 -- Create unique index for assignments
