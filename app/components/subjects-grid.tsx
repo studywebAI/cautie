@@ -57,12 +57,16 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
   const fetchSubjects = async () => {
     try {
       setIsLoading(true);
+      console.log('DEBUG: Fetching subjects for classId:', classId);
       const response = await fetch(`/api/classes/${classId}/subjects`);
+      console.log('DEBUG: Subjects response:', response.status, response.ok);
       if (!response.ok) throw new Error('Failed to fetch subjects');
       const data = await response.json();
-      setSubjects(data);
+      console.log('DEBUG: Subjects data:', data);
+      setSubjects(data || []);
     } catch (error) {
       console.error('Error fetching subjects:', error);
+      setSubjects([]);
       toast({
         variant: 'destructive',
         title: 'Error',

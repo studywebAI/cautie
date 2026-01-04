@@ -21,8 +21,10 @@ export async function GET(
     // Check if user has access to this class
     const { data: classAccess, error: classError } = await supabase
       .from('classes')
-      .select('id')
+      .select('id, owner_id, user_id')
       .or(`user_id.eq.${user.id},owner_id.eq.${user.id}`)
+
+    console.log('DEBUG: Subjects GET - Class access check:', { classAccess, classError, paramsClassId: params.classId, userId: user.id })
 
     if (classError || !classAccess?.some(c => c.id === params.classId)) {
       // Check if user is a member
@@ -33,7 +35,10 @@ export async function GET(
         .eq('user_id', user.id)
         .single()
 
+      console.log('DEBUG: Subjects GET - Member check:', { memberData, memberError })
+
       if (memberError || !memberData) {
+        console.log('DEBUG: Subjects GET - Access denied')
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }

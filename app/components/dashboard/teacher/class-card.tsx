@@ -41,15 +41,23 @@ export function ClassCard({
         }
         setIsLoading(true);
         try {
+            console.log('DEBUG: ClassCard fetching for class:', classInfo.id);
             const [studentsRes, assignmentsRes] = await Promise.all([
                 fetch(`/api/classes/${classInfo.id}/members`),
                 fetch(`/api/assignments`)
             ]);
 
+            console.log('DEBUG: ClassCard students response:', studentsRes.status, studentsRes.ok);
+            if (!studentsRes.ok) {
+                const errorText = await studentsRes.text();
+                console.log('DEBUG: Students error response:', errorText);
+            }
+
             // Handle 404 errors gracefully - class might not exist or have no members yet
             let studentsData = [];
             if (studentsRes.ok) {
                 studentsData = await studentsRes.json();
+                console.log('DEBUG: Students data:', studentsData);
             } else if (studentsRes.status === 404) {
                 console.warn(`Class ${classInfo.id} not found or no members yet`);
                 studentsData = [];

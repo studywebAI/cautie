@@ -11,6 +11,7 @@ export async function GET(request: Request, { params }: { params: { classId: str
   const supabase = await createClient(cookieStore)
 
   const { data: { user } } = await supabase.auth.getUser()
+  console.log('DEBUG: Members GET - User:', user?.id)
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -18,11 +19,14 @@ export async function GET(request: Request, { params }: { params: { classId: str
   // Check if user owns the class
   const { data: classData, error: classError } = await supabase
     .from('classes')
-    .select('owner_id')
+    .select('owner_id, user_id')
     .eq('id', classId)
     .single()
 
-  if (classError || !classData || classData.owner_id !== user.id) {
+  console.log('DEBUG: Members GET - Class data:', { classData, classError, classId, userId: user.id })
+
+  if (classError || !classData || (classData.owner_id !== user.id && classData.user_id !== user.id)) {
+    console.log('DEBUG: Members GET - Access denied:', { classData, userId: user.id })
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
