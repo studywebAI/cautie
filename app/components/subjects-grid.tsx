@@ -49,6 +49,8 @@ type SubjectsGridProps = {
 };
 
 export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
+  console.log('DEBUG: SubjectsGrid render', { classId, isTeacher });
+
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -216,11 +218,15 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
             <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No subjects yet</h3>
             <p className="text-muted-foreground mb-4">
-              {classes.length === 0
-                ? "You need to create a class first before you can create subjects."
-                : isTeacher
-                  ? "Create your first subject to organize your class content."
-                  : "Your teacher hasn't created any subjects yet."
+              {classId
+                ? isTeacher
+                  ? "No subjects have been created for this class yet. Create the first subject to organize your content."
+                  : "Your teacher hasn't created any subjects for this class yet."
+                : classes.length === 0
+                  ? "You need to create a class first before you can create subjects."
+                  : isTeacher
+                    ? "Create your first subject to organize your class content."
+                    : "Your teacher hasn't created any subjects yet."
               }
             </p>
             {isTeacher && classes.length === 0 && (
