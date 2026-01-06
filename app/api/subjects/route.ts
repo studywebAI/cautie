@@ -29,28 +29,38 @@ export async function GET(request: Request) {
 
     if (userRole === 'teacher') {
       // Teachers see subjects for classes they own OR teach in
-      const { data: ownedClasses } = await supabase
+      const { data: ownedClasses, error: ownedError } = await supabase
         .from('classes')
-        .select('id')
+        .select('id, user_id, owner_id')
         .or(`user_id.eq.${user.id},owner_id.eq.${user.id}`)
 
-      const { data: taughtClasses } = await supabase
+      console.log('DEBUG: Owned classes query:', { ownedClasses, ownedError, userId: user.id })
+
+      const { data: taughtClasses, error: taughtError } = await supabase
         .from('class_members')
         .select('class_id')
         .eq('user_id', user.id)
         .eq('role', 'teacher')
 
+      console.log('DEBUG: Taught classes query:', { taughtClasses, taughtError })
+
       const ownedIds = ((ownedClasses as any[]) || []).map(c => c.id)
       const taughtIds = ((taughtClasses as any[]) || []).map(c => c.class_id)
       accessibleClassIds = [...new Set([...ownedIds, ...taughtIds])]
+
+      console.log('DEBUG: Accessible class IDs for teacher:', accessibleClassIds)
     } else {
       // Students see subjects for classes they are members of
-      const { data: memberClasses } = await supabase
+      const { data: memberClasses, error: memberError } = await supabase
         .from('class_members')
         .select('class_id')
         .eq('user_id', user.id)
 
+      console.log('DEBUG: Member classes query:', { memberClasses, memberError })
+
       accessibleClassIds = ((memberClasses as any[]) || []).map(c => c.class_id)
+
+      console.log('DEBUG: Accessible class IDs for student:', accessibleClassIds)
     }
 
     // Get subjects for accessible classes
@@ -141,6 +151,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'You do not have permission to create subjects for this class' }, { status: 403 })
     }
 
+    console.log('DEBUG: Creating subject with data:', {
+      title: name.trim(),
+      class_id: class_id,
+      cover_type: cover_type || 'ai_icons',
+      cover_image_url: cover_image_url || null,
+      user_id: user.id
+    })
+
     const { data: subject, error: insertError } = await supabase
       .from('subjects')
       .insert([{
@@ -152,6 +170,8 @@ export async function POST(request: Request) {
       }])
       .select('id, title, class_id, cover_type, cover_image_url, created_at, user_id, class_label')
       .single()
+
+    console.log('DEBUG: Subject creation result:', { subject, insertError })
 
     if (insertError) {
       console.error('Error creating subject:', insertError)

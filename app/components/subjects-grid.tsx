@@ -128,11 +128,15 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
             cover_type: 'ai_icons',
           };
 
+      console.log('DEBUG: Component sending request:', { apiUrl, requestBody });
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
       });
+
+      console.log('DEBUG: Component received response:', { status: response.status, ok: response.ok });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -212,12 +216,25 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
             <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No subjects yet</h3>
             <p className="text-muted-foreground mb-4">
-              {isTeacher
-                ? "The image will be used as cover for your subject. If no image is uploaded then an automatic icon-based cover will be used."
-                : "Your teacher hasn't created any subjects yet."
+              {classes.length === 0
+                ? "You need to create a class first before you can create subjects."
+                : isTeacher
+                  ? "Create your first subject to organize your class content."
+                  : "Your teacher hasn't created any subjects yet."
               }
             </p>
-            {isTeacher && (
+            {isTeacher && classes.length === 0 && (
+              <div className="space-y-2">
+                <Button onClick={() => window.location.href = '/classes'}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create Class First
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Go to Classes page to create your first class
+                </p>
+              </div>
+            )}
+            {isTeacher && classes.length > 0 && (
               <Button onClick={() => setIsCreateOpen(true)}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Create First Subject

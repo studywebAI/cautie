@@ -14,6 +14,7 @@ import { ClassAnalyticsDashboard } from '@/components/dashboard/teacher/class-an
 import { ChapterNavigation } from '@/components/class/ChapterNavigation';
 import { ChapterContentViewer } from '@/components/class/ChapterContentViewer';
 import { ChapterEditor } from '@/components/class/ChapterEditor';
+import { SubjectsGrid } from '@/components/subjects-grid';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Users, FileText, Settings, GraduationCap, Bell, BarChart3, Library } from 'lucide-react';
@@ -111,9 +112,10 @@ export default function ClassDetailsPage() {
       </header>
 
       <Tabs defaultValue={searchParams.get('tab') || "assignments"} className="w-full">
-        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-6' : 'grid-cols-4'}`}>
+        <TabsList className={`grid w-full ${isTeacher ? 'grid-cols-7' : 'grid-cols-4'}`}>
           <TabsTrigger value="assignments"><FileText className="mr-2 h-4 w-4" /> Assignments</TabsTrigger>
           <TabsTrigger value="materials"><BookOpen className="mr-2 h-4 w-4" /> Materials</TabsTrigger>
+          <TabsTrigger value="subjects"><Library className="mr-2 h-4 w-4" /> Subjects</TabsTrigger>
           <TabsTrigger value="announcements"><Bell className="mr-2 h-4 w-4" /> Announcements</TabsTrigger>
           {isTeacher && (
             <>
@@ -125,6 +127,9 @@ export default function ClassDetailsPage() {
         </TabsList>
         <TabsContent value="assignments">
           <AssignmentList assignments={classAssignments} classId={classId} isTeacher={isTeacher} />
+        </TabsContent>
+        <TabsContent value="subjects">
+          <SubjectsGrid classId={classId} isTeacher={isTeacher} />
         </TabsContent>
         <TabsContent value="announcements">
           <AnnouncementManager classId={classId} isTeacher={isTeacher} />
