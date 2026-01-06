@@ -63,12 +63,13 @@ export async function GET(request: Request) {
       console.log('DEBUG: Accessible class IDs for student:', accessibleClassIds)
     }
 
-    // Get subjects for accessible classes
+    // TEMPORARILY DISABLE FILTERING FOR TESTING - Get ALL subjects
+    console.log('TEMP: Getting ALL subjects instead of filtering by accessible classes')
     const { data: subjects, error } = await supabase
       .from('subjects')
       .select('id, title, class_id, cover_type, cover_image_url, created_at, user_id, class_label, ai_icon_seed')
-      .in('class_id', accessibleClassIds)
       .order('created_at', { ascending: false })
+      .limit(50) // Limit to prevent huge responses
 
     if (error) {
       console.error('Error fetching subjects:', error)
