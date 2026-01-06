@@ -137,7 +137,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 })
     }
 
-    if (classData.user_id !== user.id && classData.owner_id !== user.id) {
+    if (classData.owner_id !== user.id) {
       return NextResponse.json({ error: 'You do not have permission to create subjects for this class' }, { status: 403 })
     }
 
