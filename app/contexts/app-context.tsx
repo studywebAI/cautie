@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
+import { createContext, useState, useEffect, ReactNode, useCallback, useContext, useMemo } from 'react';
 import type { SessionRecapData } from '@/lib/types';
 import type { Tables } from '@/lib/supabase/database.types';
 import { Session } from '@supabase/supabase-js';
@@ -264,14 +264,14 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
               try {
                 // Check if user owns any classes (teacher)
                 const ownedClasses = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
-                  c.owner_id === session.user.id || c.user_id === session.user.id
+                  c.owner_id === session.user.id
                 );
                 if (ownedClasses.length > 0) {
                   userRole = 'teacher';
                 } else {
                   // Check if user is a member of any classes (student)
                   const memberClasses = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
-                    c.user_id !== session.user.id && c.owner_id !== session.user.id
+                    c.owner_id !== session.user.id
                   );
                   if (memberClasses.length > 0) {
                     userRole = 'student';
@@ -302,7 +302,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
               // Fetch all students for all classes owned by the teacher
               if (userRole === 'teacher') {
                 const ownedClassIds = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
-                  c.owner_id === session.user.id || c.user_id === session.user.id
+                  c.owner_id === session.user.id
                 ).map((c: ClassInfo) => c.id);
                 if (ownedClassIds.length > 0 && ownedClassIds.length <= 10) { // Limit to prevent spam
                    const studentPromises = ownedClassIds.map((id: string) => fetch(`/api/classes/${id}/members`).then(res => res.json()));
@@ -586,7 +586,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
 
-  const contextValue: AppContextType = {
+  const contextValue = useMemo<AppContextType>(() => ({
     session,
     isLoading,
     language,
