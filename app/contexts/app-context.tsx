@@ -4,11 +4,10 @@ import { createContext, useState, useEffect, ReactNode, useCallback, useContext,
 import type { SessionRecapData } from '@/lib/types';
 import type { Tables } from '@/lib/supabase/database.types';
 import { Session } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client'; // Import Supabase client
+import { createClient } from '@/lib/supabase/client';
 import type { Student, MaterialReference } from '@/lib/teacher-types';
 import { getDictionary } from '@/lib/get-dictionary';
-import type { Dictionary, Locale } from '@/lib/get-dictionary'; // Import Locale type
-
+import type { Dictionary, Locale } from '@/lib/get-dictionary';
 
 export type UserRole = 'student' | 'teacher';
 export type ThemeType = 'light' | 'dark' | 'pastel';
@@ -35,8 +34,8 @@ export type PersonalTask = {
 export type AppContextType = {
   session: Session | null;
   isLoading: boolean;
-  language: Locale; // Use Locale type
-  setLanguage: (language: Locale) => void; // Use Locale type.
+  language: Locale;
+  setLanguage: (language: Locale) => void;
   dictionary: Dictionary;
   role: UserRole;
   setRole: (role: UserRole) => void;
@@ -106,12 +105,11 @@ const saveToLocalStorage = <T,>(key: string, value: T) => {
     }
 };
 
-
 export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [language, setLanguageState] = useState<Locale>('en'); // Initialized with full type
+  const [language, setLanguageState] = useState<Locale>('en');
   const [dictionary, setDictionary] = useState<Dictionary>(() => getDictionary(language));
   const [role, setRoleState] = useState<UserRole>('student');
   const [highContrast, setHighContrastState] = useState(false);
@@ -132,7 +130,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   // Track previous session state to detect login
   const [prevSession, setPrevSession] = useState<Session | null>(session);
 
-  const supabase = createClient(); // Initialize Supabase client
+  const supabase = createClient();
 
   // Apply theme to document
   const applyTheme = useCallback((currentTheme: ThemeType) => {
@@ -153,7 +151,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setIsLoading(false);
-    }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+    };
 
     getInitialSession();
 
@@ -182,7 +180,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       // Sync classes
-      const syncedClasses = await Promise.all(localClasses.map(async (cls: ClassInfo) => { // Explicitly type cls
+      const syncedClasses = await Promise.all(localClasses.map(async (cls: ClassInfo) => {
         const response = await fetch('/api/classes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -199,7 +197,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       const classIdMap = new Map(syncedClasses.map(c => [c.localId, c.remoteId]));
 
       // Sync assignments, using the new class IDs
-      await Promise.all(localAssignments.map(async (asn: ClassAssignment) => { // Explicitly type asn
+      await Promise.all(localAssignments.map(async (asn: ClassAssignment) => {
         const remoteClassId = classIdMap.get(asn.class_id);
         if (!remoteClassId) {
           console.warn(`Skipping assignment "${asn.title}" because its class was not synced.`);
@@ -211,7 +209,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({
               title: asn.title,
               due_date: asn.due_date,
-              class_id: remoteClassId, // Use the new ID
+              class_id: remoteClassId,
           }),
         });
         if (!response.ok) throw new Error(`Failed to sync assignment: ${asn.title}`);
@@ -219,7 +217,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       console.log("Synced assignments.");
 
       // Sync personal tasks
-      await Promise.all(localPersonalTasks.map(async (task: PersonalTask) => { // Explicitly type task
+      await Promise.all(localPersonalTasks.map(async (task: PersonalTask) => {
         const response = await fetch('/api/personal-tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -325,25 +323,25 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       } else {
           // User is a guest, fetch from localStorage
            try {
-                const [localClasses, localAssignments, localPersonalTasks] = await Promise.all([
-                    Promise.resolve(getFromLocalStorage<ClassInfo[]>('studyweb-local-classes', [])),
-                    Promise.resolve(getFromLocalStorage<ClassAssignment[]>('studyweb-local-assignments', [])),
+               const [localClasses, localAssignments, localPersonalTasks] = await Promise.all([
+                   Promise.resolve(getFromLocalStorage<ClassInfo[]>('studyweb-local-classes', [])),
+                   Promise.resolve(getFromLocalStorage<ClassAssignment[]>('studyweb-local-assignments', [])),
 
 
-                    Promise.resolve(getFromLocalStorage<PersonalTask[]>('studyweb-local-personal-tasks', [])),
-                ]);
-                setClasses(localClasses);
-                setAssignments(localAssignments);
-                setPersonalTasks(localPersonalTasks);
-                // For guests, always use localStorage role
-                setRoleState(getFromLocalStorage('studyweb-role', 'student'));
+                   Promise.resolve(getFromLocalStorage<PersonalTask[]>('studyweb-local-personal-tasks', [])),
+               ]);
+               setClasses(localClasses);
+               setAssignments(localAssignments);
+               setPersonalTasks(localPersonalTasks);
+               // For guests, always use localStorage role
+               setRoleState(getFromLocalStorage('studyweb-role', 'student'));
            } catch (error) {
-                console.error("Failed to fetch guest data:", error);
-                setRoleState('student'); // Default to student on guest data fetch failure
+               console.error("Failed to fetch guest data:", error);
+               setRoleState('student'); // Default to student on guest data fetch failure
            }
       }
       setIsLoading(false);
-  }, [session, supabase]); // Added supabase to dependency array
+  }, [session, supabase]);
 
   useEffect(() => {
     const wasGuest = !prevSession;
@@ -366,7 +364,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
 
   // ---- Data Creation ----
-  const createClass = async (newClassData: { name: string; description: string | null }): Promise<ClassInfo | null> => {
+  const createClass = useCallback(async (newClassData: { name: string; description: string | null }): Promise<ClassInfo | null> => {
     if (session) {
       // Logged-in user: save to Supabase
       const response = await fetch('/api/classes', {
@@ -396,15 +394,15 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         join_code: null,
         owner_type: 'guest',
         status: null,
-      }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+      };
       const updatedClasses = [...classes, newClass];
       setClasses(updatedClasses);
       saveToLocalStorage('studyweb-local-classes', updatedClasses);
       return newClass;
     }
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  }, [session, classes]);
 
-  const createAssignment = async (newAssignmentData: Omit<ClassAssignment, 'id' | 'created_at'>) => {
+  const createAssignment = useCallback(async (newAssignmentData: Omit<ClassAssignment, 'id' | 'created_at'>) => {
      if (session) {
         // Logged-in user: save to Supabase
         const response = await fetch('/api/assignments', {
@@ -420,14 +418,14 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
             id: `local-assign-${Date.now()}`,
             created_at: new Date().toISOString(),
             ...newAssignmentData
-        }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+        };
         const updatedAssignments = [...assignments, newAssignment];
         setAssignments(updatedAssignments);
         saveToLocalStorage('studyweb-local-assignments', updatedAssignments);
     }
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  }, [session, assignments]);
 
-  const deleteAssignment = async (assignmentId: string) => {
+  const deleteAssignment = useCallback(async (assignmentId: string) => {
     if (session) {
       // Logged-in user: delete from Supabase
       const response = await fetch(`/api/assignments/${assignmentId}`, {
@@ -441,9 +439,9 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       setAssignments(updatedAssignments);
       saveToLocalStorage('studyweb-local-assignments', updatedAssignments);
     }
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  }, [session, assignments]);
 
-   const createPersonalTask = async (newTaskData: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => {
+   const createPersonalTask = useCallback(async (newTaskData: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => {
      if (session) {
         const response = await fetch('/api/personal-tasks', {
             method: 'POST',
@@ -459,14 +457,14 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
             created_at: new Date().toISOString(),
             user_id: 'local-user',
             ...newTaskData
-        }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+        };
         const updatedTasks = [...personalTasks, newTask];
         setPersonalTasks(updatedTasks);
         saveToLocalStorage('studyweb-local-personal-tasks', updatedTasks);
      }
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  }, [session, personalTasks]);
 
-  const updatePersonalTask = async (id: string, updates: Partial<PersonalTask>) => {
+  const updatePersonalTask = useCallback(async (id: string, updates: Partial<PersonalTask>) => {
      if (session) {
         const response = await fetch(`/api/personal-tasks/${id}`, {
             method: 'PUT',
@@ -482,7 +480,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         setPersonalTasks(updatedTasks);
         saveToLocalStorage('studyweb-local-personal-tasks', updatedTasks);
      }
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  }, [session, personalTasks]);
 
   const refetchClasses = useCallback(async () => {
     if (session) {
@@ -540,19 +538,19 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     applyTheme(savedTheme);
   }, [applyTheme]);
 
-  const setLanguage = (newLanguage: Locale) => { // Updated type
+  const setLanguage = (newLanguage: Locale) => {
     setLanguageState(newLanguage);
     saveToLocalStorage('studyweb-language', newLanguage);
     const newDict = getDictionary(newLanguage);
     setDictionary(newDict);
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  };
 
   // Allow manual role switching for UI purposes, but log that it's client-side only
   const setRole = async (newRole: UserRole) => {
     console.log('Manually setting role to:', newRole, '(client-side only - actual permissions determined by class ownership)');
     setRoleState(newRole);
     saveToLocalStorage('studyweb-role', newRole);
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  };
 
   const setHighContrast = (enabled: boolean) => {
     setHighContrastState(enabled);
@@ -560,7 +558,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
      const html = document.documentElement;
     if (enabled) html.classList.add('high-contrast');
     else html.classList.remove('high-contrast');
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  };
 
   const setDyslexiaFont = (enabled: boolean) => {
     setDyslexiaFontState(enabled);
@@ -568,7 +566,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     const body = document.body;
     if (enabled) body.classList.add('font-dyslexia');
     else body.classList.remove('font-dyslexia');
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  };
 
   const setReducedMotion = (enabled: boolean) => {
     setReducedMotionState(enabled);
@@ -576,14 +574,14 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
      const body = document.body;
     if (enabled) body.setAttribute('data-reduced-motion', 'true');
     else body.removeAttribute('data-reduced-motion');
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  };
 
   // Theme setters
   const setTheme = (newTheme: ThemeType) => {
     setThemeState(newTheme);
     saveToLocalStorage('studyweb-theme', newTheme);
     applyTheme(newTheme);
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  };
 
 
   const contextValue = useMemo<AppContextType>(() => ({
@@ -634,4 +632,3 @@ export const useDictionary = () => {
   }
   return { dictionary: context.dictionary };
 };
-
