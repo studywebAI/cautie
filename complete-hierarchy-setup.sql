@@ -118,7 +118,33 @@ CREATE POLICY "Students can manage their progress" ON public.progress_snapshots 
 CREATE POLICY "Students can manage their sessions" ON public.session_logs FOR ALL USING (auth.uid() = student_id);
 CREATE POLICY "Students can manage their answers" ON public.student_answers FOR ALL USING (auth.uid() = student_id);
 
--- 6. Function to convert index to letters (0=a, 1=b, 26=aa, etc.)
+-- 6. Function to generate unique join codes
+CREATE OR REPLACE FUNCTION generate_join_code()
+RETURNS TEXT AS $$
+DECLARE
+    new_code TEXT;
+    exists_count INTEGER;
+BEGIN
+    LOOP
+        -- Generate a random 6-digit code (100000-999999)
+        new_code := (100000 + floor(random() * 900000))::TEXT;
+
+        -- Check if this code already exists
+        SELECT COUNT(*) INTO exists_count
+        FROM public.classes
+        WHERE join_code = new_code;
+
+        -- Exit loop if code is unique
+        IF exists_count = 0 THEN
+            EXIT;
+        END IF;
+    END LOOP;
+
+    RETURN new_code;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 7. Function to convert index to letters (0=a, 1=b, 26=aa, etc.)
 CREATE OR REPLACE FUNCTION assignment_index_to_letters(index INTEGER)
 RETURNS TEXT AS $$
 DECLARE
@@ -137,7 +163,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
--- 7. Indexes for performance
+-- 8. Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_chapters_subject_id ON public.chapters(subject_id);
 CREATE INDEX IF NOT EXISTS idx_paragraphs_chapter_id ON public.paragraphs(chapter_id);
 CREATE INDEX IF NOT EXISTS idx_assignments_paragraph_id ON public.assignments(paragraph_id);
@@ -147,15 +173,23 @@ CREATE INDEX IF NOT EXISTS idx_progress_snapshots_student_paragraph ON public.pr
 CREATE INDEX IF NOT EXISTS idx_session_logs_student_paragraph ON public.session_logs(student_id, paragraph_id);
 CREATE INDEX IF NOT EXISTS idx_student_answers_student_block ON public.student_answers(student_id, block_id);
 
--- 8. Re-enable RLS on modified tables
+-- 9. Re-enable RLS on modified tables
 ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.class_members ENABLE ROW LEVEL SECURITY;
 
--- 9. Verification
+-- 10. Verification
 SELECT
     'Migration completed successfully!' as status,
     COUNT(*) as tables_created
 FROM information_schema.tables
 WHERE table_schema = 'public'
 AND table_name IN ('chapters', 'paragraphs', 'assignments', 'blocks', 'progress_snapshots', 'session_logs', 'student_answers');
+
+-- Also check functions were created
+SELECT
+    'Functions created:' as info,
+    routine_name
+FROM information_schema.routines
+WHERE routine_schema = 'public'
+AND routine_name IN ('generate_join_code', 'assignment_index_to_letters');
