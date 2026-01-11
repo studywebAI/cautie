@@ -109,15 +109,17 @@ export async function POST(request: Request) {
        return NextResponse.json({ error: 'Failed to generate join code' }, { status: 500 });
     }
 
-    // Cast to correct insert type
+    // Only allow authenticated users to create classes
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required to create classes' }, { status: 401 });
+    }
+
+    // Cast to correct insert type - only use fields that exist in the database schema
     const insertData = {
       name,
       description,
       join_code: joinCode,
-      user_id: user?.id || null,
-      guest_id: guestId || null,
-      owner_id: user?.id || null,
-      owner_type: (user ? 'user' : 'guest') as 'user' | 'guest'
+      owner_id: user.id
     };
 
     console.log('Inserting data:', insertData);
