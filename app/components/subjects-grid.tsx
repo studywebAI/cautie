@@ -339,7 +339,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
                     <SelectValue placeholder="Select a class" />
                   </SelectTrigger>
                   <SelectContent>
-                    {classes.filter(c => c.user_id === (useContext(AppContext) as AppContextType)?.session?.user?.id || c.owner_id === (useContext(AppContext) as AppContextType)?.session?.user?.id).map((classItem) => (
+                    {classes.filter(c => c.owner_id === session?.user?.id).map((classItem) => (
                       <SelectItem key={classItem.id} value={classItem.id}>
                         {classItem.name}
                       </SelectItem>
