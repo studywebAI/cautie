@@ -153,7 +153,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setIsLoading(false);
-    };
+    }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
     getInitialSession();
 
@@ -396,13 +396,13 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         join_code: null,
         owner_type: 'guest',
         status: null,
-      };
+      }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
       const updatedClasses = [...classes, newClass];
       setClasses(updatedClasses);
       saveToLocalStorage('studyweb-local-classes', updatedClasses);
       return newClass;
     }
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
   const createAssignment = async (newAssignmentData: Omit<ClassAssignment, 'id' | 'created_at'>) => {
      if (session) {
@@ -420,12 +420,12 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
             id: `local-assign-${Date.now()}`,
             created_at: new Date().toISOString(),
             ...newAssignmentData
-        };
+        }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
         const updatedAssignments = [...assignments, newAssignment];
         setAssignments(updatedAssignments);
         saveToLocalStorage('studyweb-local-assignments', updatedAssignments);
     }
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
   const deleteAssignment = async (assignmentId: string) => {
     if (session) {
@@ -441,7 +441,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       setAssignments(updatedAssignments);
       saveToLocalStorage('studyweb-local-assignments', updatedAssignments);
     }
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
    const createPersonalTask = async (newTaskData: Omit<PersonalTask, 'id' | 'created_at' | 'user_id'>) => {
      if (session) {
@@ -459,12 +459,12 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
             created_at: new Date().toISOString(),
             user_id: 'local-user',
             ...newTaskData
-        };
+        }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
         const updatedTasks = [...personalTasks, newTask];
         setPersonalTasks(updatedTasks);
         saveToLocalStorage('studyweb-local-personal-tasks', updatedTasks);
      }
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
   const updatePersonalTask = async (id: string, updates: Partial<PersonalTask>) => {
      if (session) {
@@ -482,7 +482,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         setPersonalTasks(updatedTasks);
         saveToLocalStorage('studyweb-local-personal-tasks', updatedTasks);
      }
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
   const refetchClasses = useCallback(async () => {
     if (session) {
@@ -545,14 +545,14 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     saveToLocalStorage('studyweb-language', newLanguage);
     const newDict = getDictionary(newLanguage);
     setDictionary(newDict);
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
   // Allow manual role switching for UI purposes, but log that it's client-side only
   const setRole = async (newRole: UserRole) => {
     console.log('Manually setting role to:', newRole, '(client-side only - actual permissions determined by class ownership)');
     setRoleState(newRole);
     saveToLocalStorage('studyweb-role', newRole);
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
   const setHighContrast = (enabled: boolean) => {
     setHighContrastState(enabled);
@@ -560,7 +560,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
      const html = document.documentElement;
     if (enabled) html.classList.add('high-contrast');
     else html.classList.remove('high-contrast');
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
   const setDyslexiaFont = (enabled: boolean) => {
     setDyslexiaFontState(enabled);
@@ -568,7 +568,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     const body = document.body;
     if (enabled) body.classList.add('font-dyslexia');
     else body.classList.remove('font-dyslexia');
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
   const setReducedMotion = (enabled: boolean) => {
     setReducedMotionState(enabled);
@@ -576,14 +576,14 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
      const body = document.body;
     if (enabled) body.setAttribute('data-reduced-motion', 'true');
     else body.removeAttribute('data-reduced-motion');
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
   // Theme setters
   const setTheme = (newTheme: ThemeType) => {
     setThemeState(newTheme);
     saveToLocalStorage('studyweb-theme', newTheme);
     applyTheme(newTheme);
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
 
   const contextValue = useMemo<AppContextType>(() => ({
@@ -617,7 +617,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     updatePersonalTask,
     materials,
     refetchMaterials,
-  };
+  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
 
 
   return (
