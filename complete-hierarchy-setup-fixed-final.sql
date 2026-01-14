@@ -139,14 +139,14 @@ CREATE POLICY "Students can manage their answers" ON public.student_answers FOR 
 
 -- 6. Function to generate join codes (simplified to avoid RLS issues)
 CREATE OR REPLACE FUNCTION generate_join_code()
-RETURNS TEXT AS $
+RETURNS TEXT AS $$
 BEGIN
     -- Generate a random 6-digit code (100000-999999)
     -- Skip uniqueness checking to avoid RLS complications
     -- Collision risk is very low with 900k possible codes
     RETURN (100000 + floor(random() * 900000))::TEXT;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- 7. Function to convert index to letters (0=a, 1=b, 26=aa, etc.)
 CREATE OR REPLACE FUNCTION assignment_index_to_letters(index INTEGER)
