@@ -52,21 +52,7 @@ export async function GET(request: Request) {
       allClasses = data || [];
       console.log('DEBUG: Teacher mode - sees ALL classes:', allClasses.length, 'total classes');
     } else {
-      // STUDENTS: See classes they own + classes they're members of
-      // Students can create their own classes AND join other teachers' classes
-      let ownedQuery = supabase
-        .from('classes')
-        .select('*')
-        .eq('owner_id', user.id);
-
-      if (!includeArchived) {
-        ownedQuery = ownedQuery.or('status.is.null,status.neq.archived');
-      }
-
-      const { data: ownedData, error: ownedError } = await ownedQuery;
-      if (ownedError) return NextResponse.json({ error: ownedError.message }, { status: 500 });
-
-      // Get member classes (classes student has joined)
+      // STUDENTS: Only see classes they're members of (cannot own/create classes)
       const { data: memberClassesData, error: memberError } = await supabase
         .from('class_members')
         .select('classes(*)')
@@ -74,11 +60,9 @@ export async function GET(request: Request) {
 
       if (memberError) return NextResponse.json({ error: memberError.message }, { status: 500 });
 
-      // Filter out classes where the user is the owner to avoid duplicates
-      const memberClasses = memberClassesData?.map((member: any) => member.classes).filter((cls: any) => cls && cls.owner_id !== user.id) || [];
-
-      allClasses = [...(ownedData || []), ...memberClasses];
-      console.log('DEBUG: Student mode - owned classes:', ownedData?.length || 0, '+ member classes:', memberClasses.length);
+      // Students only see classes they've joined
+      allClasses = memberClassesData?.map((member: any) => member.classes).filter((cls: any) => cls) || [];
+      console.log('DEBUG: Student mode - member classes only:', allClasses.length, 'classes');
     }
 
     // Remove duplicates (though there shouldn't be any with the filtering above)
@@ -122,9 +106,21 @@ export async function POST(request: Request) {
        return NextResponse.json({ error: 'Failed to generate join code' }, { status: 500 });
     }
 
-    // Only allow authenticated users to create classes
+    // Only allow authenticated TEACHERS to create classes
     if (!user) {
       return NextResponse.json({ error: 'Authentication required to create classes' }, { status: 401 });
+    }
+
+    // Check if user is a teacher (only teachers can create classes)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const userRole = profile?.role || 'student';
+    if (userRole !== 'teacher') {
+      return NextResponse.json({ error: 'Only teachers can create classes' }, { status: 403 });
     }
 
     // Cast to correct insert type - only use fields that exist in the database schema
