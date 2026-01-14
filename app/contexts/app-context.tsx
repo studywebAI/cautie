@@ -66,7 +66,7 @@ export type AppContextType = {
 
 export const AppContext = createContext<AppContextType | null>(null);
 
-// Helper functions for local storage
+// Helper functions for local storage..
 const getFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
     if (typeof window === 'undefined') return defaultValue;
     try {
@@ -85,7 +85,7 @@ const getFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
         return parsed;
     } catch (error) {
         // If parsing fails, it's likely a plain string that shouldn't have been parsed.
-        // This is a recovery mechanism from the previous bug.
+        // This is a recovery mechanism from the previous bug.a
         const item = window.localStorage.getItem(key);
         if (item) {
           return item as T;
