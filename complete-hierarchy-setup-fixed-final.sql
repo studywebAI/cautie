@@ -126,8 +126,18 @@ ALTER TABLE public.progress_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.session_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_answers ENABLE ROW LEVEL SECURITY;
 
--- 5. RLS Policies - Simplified to avoid circular references
--- Allow authenticated users to access hierarchy content (detailed access control handled in API layer)
+-- 5. RLS Policies - Drop existing first to avoid conflicts
+-- Drop any existing policies
+DROP POLICY IF EXISTS "Allow authenticated users for chapters" ON public.chapters;
+DROP POLICY IF EXISTS "Allow authenticated users for paragraphs" ON public.paragraphs;
+DROP POLICY IF EXISTS "Allow authenticated users for assignments" ON public.assignments;
+DROP POLICY IF EXISTS "Allow authenticated users for blocks" ON public.blocks;
+DROP POLICY IF EXISTS "Allow authenticated users for submissions" ON public.submissions;
+DROP POLICY IF EXISTS "Students can manage their progress" ON public.progress_snapshots;
+DROP POLICY IF EXISTS "Students can manage their sessions" ON public.session_logs;
+DROP POLICY IF EXISTS "Students can manage their answers" ON public.student_answers;
+
+-- Create new policies - simplified to avoid circular references
 CREATE POLICY "Allow authenticated users for chapters" ON public.chapters FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Allow authenticated users for paragraphs" ON public.paragraphs FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Allow authenticated users for assignments" ON public.assignments FOR ALL USING (auth.uid() IS NOT NULL);
