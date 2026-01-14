@@ -7,93 +7,217 @@ import type { Database } from '@/lib/supabase/database.types'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
+  const startTime = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
+
+  console.log(`[${requestId}] GET /api/classes - Started at ${new Date().toISOString()}`);
+
   try {
-  const cookieStore = cookies()
-  const supabase = await createClient(cookieStore)
-
-  const { data: { user } } = await supabase.auth.getUser();
-  const { searchParams } = new URL(request.url);
-  const guestId = searchParams.get('guestId');
-  const includeArchived = searchParams.get('includeArchived') === 'true';
-
-  if (!user && !guestId) {
-    return NextResponse.json([]);
-  }
-
-  let allClasses: any[] = [];
-
-  if (user) {
-    // Get GLOBAL user role from profiles table (website-wide teacher/student mode)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    const userRole = profile?.role || 'student'; // Default to student if no profile exists
-    const isTeacher = userRole === 'teacher';
-
-    console.log('DEBUG: Global user role from profiles:', userRole, 'isTeacher:', isTeacher);
-
-    if (isTeacher) {
-      // TEACHERS: See ALL classes on the website (for management and creation)
-      // This allows teachers to see everything and manage the platform
-      let query = supabase
-        .from('classes')
-        .select('*');
-
-      if (!includeArchived) {
-        query = query.or('status.is.null,status.neq.archived');
-      }
-
-      const { data, error } = await query;
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-      allClasses = data || [];
-      console.log('DEBUG: Teacher mode - sees ALL classes:', allClasses.length, 'total classes');
-    } else {
-      // STUDENTS: Only see classes they're members of (cannot own/create classes)
-      const { data: memberClassesData, error: memberError } = await supabase
-        .from('class_members')
-        .select('classes(*)')
-        .eq('user_id', user.id);
-
-      if (memberError) return NextResponse.json({ error: memberError.message }, { status: 500 });
-
-      // Students only see classes they've joined
-      allClasses = memberClassesData?.map((member: any) => member.classes).filter((cls: any) => cls) || [];
-      console.log('DEBUG: Student mode - member classes only:', allClasses.length, 'classes');
-    }
-
-    // Remove duplicates (though there shouldn't be any with the filtering above)
-    const uniqueClasses = Array.from(new Map(allClasses.map(c => [c.id, c])).values());
-    return NextResponse.json(uniqueClasses);
-  } else if (guestId) {
-    return NextResponse.json([]);
-  } else {
-    return NextResponse.json([]);
-  }
-  } catch (err) {
-    console.error('Unexpected error in classes GET:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    console.log('POST /api/classes called');
-    const { name, description, guestId } = await request.json();
     const cookieStore = cookies()
     const supabase = await createClient(cookieStore)
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError) {
-      console.error('Auth error:', authError);
-      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
+      console.error(`[${requestId}] GET /api/classes - Auth error:`, {
+        error: authError.message,
+        status: authError.status,
+        timestamp: new Date().toISOString()
+      });
+      return NextResponse.json({ error: 'Authentication failed', details: authError.message }, { status: 401 });
     }
 
-    console.log('User:', user?.id, 'GuestId:', guestId);
+    const { searchParams } = new URL(request.url);
+    const guestId = searchParams.get('guestId');
+    const includeArchived = searchParams.get('includeArchived') === 'true';
+
+    console.log(`[${requestId}] GET /api/classes - Auth details:`, {
+      hasUser: !!user,
+      userId: user?.id || 'none',
+      guestId: guestId || 'none',
+      includeArchived,
+      userAgent: request.headers.get('user-agent')?.substring(0, 100) || 'unknown'
+    });
+
+    if (!user && !guestId) {
+      console.log(`[${requestId}] GET /api/classes - No user or guest ID provided, returning empty array`);
+      return NextResponse.json([]);
+    }
+
+  let allClasses: any[] = [];
+
+  if (user) {
+    // Get GLOBAL user role from profiles table (website-wide teacher/student mode)
+    console.log(`[${requestId}] GET /api/classes - Fetching user profile for role determination`);
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error(`[${requestId}] GET /api/classes - Profile fetch error:`, {
+        error: profileError.message,
+        code: profileError.code,
+        details: profileError.details,
+        hint: profileError.hint,
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      });
+      // Continue with default role but log the error
+    }
+
+    const userRole = profile?.role || 'student'; // Default to student if no profile exists
+    const isTeacher = userRole === 'teacher';
+
+    console.log(`[${requestId}] GET /api/classes - Role determination:`, {
+      userRole,
+      isTeacher,
+      profileFound: !!profile,
+      profileError: profileError?.message || 'none'
+    });
+
+    if (isTeacher) {
+      // TEACHERS: See ALL classes on the website (for management and creation)
+      console.log(`[${requestId}] GET /api/classes - Teacher mode: fetching ALL classes`);
+
+      let query = supabase
+        .from('classes')
+        .select('*');
+
+      if (!includeArchived) {
+        query = query.or('status.is.null,status.neq.archived');
+        console.log(`[${requestId}] GET /api/classes - Excluding archived classes`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error(`[${requestId}] GET /api/classes - Teacher classes query failed:`, {
+          error: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          userId: user.id,
+          timestamp: new Date().toISOString()
+        });
+        return NextResponse.json({
+          error: error.message,
+          details: 'Failed to fetch classes for teacher',
+          requestId
+        }, { status: 500 });
+      }
+
+      allClasses = data || [];
+      console.log(`[${requestId}] GET /api/classes - Teacher fetched ${allClasses.length} classes successfully`);
+    } else {
+      // STUDENTS: Only see classes they're members of (cannot own/create classes)
+      console.log(`[${requestId}] GET /api/classes - Student mode: fetching member classes only`);
+
+      const { data: memberClassesData, error: memberError } = await supabase
+        .from('class_members')
+        .select('classes(*)')
+        .eq('user_id', user.id);
+
+      if (memberError) {
+        console.error(`[${requestId}] GET /api/classes - Student member classes query failed:`, {
+          error: memberError.message,
+          code: memberError.code,
+          details: memberError.details,
+          hint: memberError.hint,
+          userId: user.id,
+          timestamp: new Date().toISOString()
+        });
+        return NextResponse.json({
+          error: memberError.message,
+          details: 'Failed to fetch member classes for student',
+          requestId
+        }, { status: 500 });
+      }
+
+      // Students only see classes they've joined
+      allClasses = memberClassesData?.map((member: any) => member.classes).filter((cls: any) => cls) || [];
+      console.log(`[${requestId}] GET /api/classes - Student fetched ${allClasses.length} member classes successfully`);
+    }
+
+    // Remove duplicates (though there shouldn't be any with the filtering above)
+    const uniqueClasses = Array.from(new Map(allClasses.map(c => [c.id, c])).values());
+
+    const duration = Date.now() - startTime;
+    console.log(`[${requestId}] GET /api/classes - Completed successfully:`, {
+      classesReturned: uniqueClasses.length,
+      duration: `${duration}ms`,
+      timestamp: new Date().toISOString()
+    });
+
+    return NextResponse.json(uniqueClasses);
+  } else if (guestId) {
+    console.log(`[${requestId}] GET /api/classes - Guest mode, returning empty array`);
+    return NextResponse.json([]);
+  } else {
+    console.log(`[${requestId}] GET /api/classes - Unexpected state, returning empty array`);
+    return NextResponse.json([]);
+  }
+  } catch (err) {
+    const duration = Date.now() - startTime;
+    console.error(`[${requestId}] GET /api/classes - Unexpected error:`, {
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : 'No stack trace',
+      duration: `${duration}ms`,
+      timestamp: new Date().toISOString(),
+      url: request.url,
+      method: request.method,
+      userAgent: request.headers.get('user-agent')
+    });
+    return NextResponse.json({
+      error: 'Internal server error',
+      requestId,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  const startTime = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
+
+  console.log(`[${requestId}] POST /api/classes - Started at ${new Date().toISOString()}`);
+
+  try {
+    const { name, description, guestId } = await request.json();
+
+    console.log(`[${requestId}] POST /api/classes - Request payload:`, {
+      name: name?.substring(0, 50) || 'undefined',
+      description: description?.substring(0, 50) || 'undefined',
+      hasGuestId: !!guestId,
+      contentLength: request.headers.get('content-length')
+    });
+
+    const cookieStore = cookies()
+    const supabase = await createClient(cookieStore)
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError) {
+      console.error(`[${requestId}] POST /api/classes - Auth error:`, {
+        error: authError.message,
+        status: authError.status,
+        name: authError.name,
+        timestamp: new Date().toISOString()
+      });
+      return NextResponse.json({
+        error: 'Authentication failed',
+        details: authError.message,
+        requestId
+      }, { status: 401 });
+    }
+
+    console.log(`[${requestId}] POST /api/classes - Auth successful:`, {
+      userId: user?.id || 'none',
+      guestId: guestId || 'none',
+      userAgent: request.headers.get('user-agent')?.substring(0, 100) || 'unknown'
+    });
 
     if (!user && !guestId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -112,15 +236,43 @@ export async function POST(request: Request) {
     }
 
     // Check if user is a teacher (only teachers can create classes)
-    const { data: profile } = await supabase
+    console.log(`[${requestId}] POST /api/classes - Checking user role for class creation`);
+
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .maybeSingle();
 
+    if (profileError) {
+      console.error(`[${requestId}] POST /api/classes - Profile fetch error:`, {
+        error: profileError.message,
+        code: profileError.code,
+        details: profileError.details,
+        hint: profileError.hint,
+        userId: user.id
+      });
+      return NextResponse.json({
+        error: 'Failed to verify user permissions',
+        details: profileError.message,
+        requestId
+      }, { status: 500 });
+    }
+
     const userRole = profile?.role || 'student';
+    console.log(`[${requestId}] POST /api/classes - Role check:`, {
+      userRole,
+      profileFound: !!profile,
+      canCreateClasses: userRole === 'teacher'
+    });
+
     if (userRole !== 'teacher') {
-      return NextResponse.json({ error: 'Only teachers can create classes' }, { status: 403 });
+      console.log(`[${requestId}] POST /api/classes - Access denied: user is ${userRole}, needs teacher`);
+      return NextResponse.json({
+        error: 'Only teachers can create classes',
+        userRole,
+        requestId
+      }, { status: 403 });
     }
 
     // Cast to correct insert type - only use fields that exist in the database schema
@@ -131,7 +283,11 @@ export async function POST(request: Request) {
       owner_id: user.id
     };
 
-    console.log('Inserting data:', insertData);
+    console.log(`[${requestId}] POST /api/classes - Attempting to create class:`, {
+      name: insertData.name,
+      joinCode: insertData.join_code,
+      ownerId: insertData.owner_id
+    });
 
     const { data, error } = await supabase
       .from('classes')
@@ -140,15 +296,47 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error('Insert error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error(`[${requestId}] POST /api/classes - Class creation failed:`, {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        insertData,
+        userId: user.id
+      });
+      return NextResponse.json({
+        error: error.message,
+        details: 'Failed to create class in database',
+        requestId
+      }, { status: 500 });
     }
 
-    console.log('Insert successful:', data);
+    const duration = Date.now() - startTime;
+    console.log(`[${requestId}] POST /api/classes - Class created successfully:`, {
+      classId: data.id,
+      className: data.name,
+      joinCode: data.join_code,
+      duration: `${duration}ms`,
+      timestamp: new Date().toISOString()
+    });
 
     return NextResponse.json(data);
   } catch (err) {
-    console.error('Unexpected error in classes POST:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const duration = Date.now() - startTime;
+    console.error(`[${requestId}] POST /api/classes - Unexpected error:`, {
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : 'No stack trace',
+      duration: `${duration}ms`,
+      timestamp: new Date().toISOString(),
+      url: request.url,
+      method: request.method,
+      userAgent: request.headers.get('user-agent'),
+      contentType: request.headers.get('content-type')
+    });
+    return NextResponse.json({
+      error: 'Internal server error',
+      requestId,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
   }
 }

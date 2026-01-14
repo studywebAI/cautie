@@ -357,33 +357,83 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   // Role sync interval - fetch role from Supabase every 5 seconds
   useEffect(() => {
     if (session?.user?.id) {
+      console.log(`[RoleSync] Starting 5-second role sync for user ${session.user.id}`);
+
       // Start 5-second sync interval
       const interval = setInterval(async () => {
+        const syncId = Math.random().toString(36).substring(7);
+        const syncStart = Date.now();
+
         try {
-          const { data: profile } = await supabase
+          const { data: profile, error: syncError } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', session.user.id)
             .single();
 
-          if (profile?.role && profile.role !== role) {
-            setRoleState(profile.role as UserRole);
-            console.log('Role synced from Supabase:', profile.role);
+          const syncDuration = Date.now() - syncStart;
+
+          if (syncError) {
+            console.error(`[RoleSync:${syncId}] Sync failed:`, {
+              error: syncError.message,
+              code: syncError.code,
+              details: syncError.details,
+              hint: syncError.hint,
+              userId: session.user.id,
+              duration: `${syncDuration}ms`,
+              timestamp: new Date().toISOString()
+            });
+            return;
+          }
+
+          if (profile?.role) {
+            if (profile.role !== role) {
+              console.log(`[RoleSync:${syncId}] Role changed:`, {
+                oldRole: role,
+                newRole: profile.role,
+                userId: session.user.id,
+                duration: `${syncDuration}ms`,
+                timestamp: new Date().toISOString()
+              });
+              setRoleState(profile.role as UserRole);
+            } else {
+              console.log(`[RoleSync:${syncId}] Role unchanged:`, {
+                role: profile.role,
+                userId: session.user.id,
+                duration: `${syncDuration}ms`
+              });
+            }
+          } else {
+            console.warn(`[RoleSync:${syncId}] No role found in profile:`, {
+              profile,
+              userId: session.user.id,
+              duration: `${syncDuration}ms`,
+              timestamp: new Date().toISOString()
+            });
           }
         } catch (error) {
-          console.error('Error syncing role:', error);
+          const syncDuration = Date.now() - syncStart;
+          console.error(`[RoleSync:${syncId}] Unexpected sync error:`, {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : 'No stack trace',
+            userId: session?.user?.id || 'none',
+            duration: `${syncDuration}ms`,
+            timestamp: new Date().toISOString()
+          });
         }
       }, 5000); // 5 seconds
 
       setRoleSyncInterval(interval);
 
       return () => {
+        console.log(`[RoleSync] Stopping role sync for user ${session.user.id}`);
         clearInterval(interval);
         setRoleSyncInterval(null);
       };
     } else {
       // Clear interval when no session
       if (roleSyncInterval) {
+        console.log(`[RoleSync] Clearing role sync interval (no session)`);
         clearInterval(roleSyncInterval);
         setRoleSyncInterval(null);
       }
@@ -594,6 +644,16 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
   // Update role in Supabase profiles table (blocks until API returns)
   const setRole = async (newRole: UserRole) => {
+    const requestId = Math.random().toString(36).substring(7);
+    const startTime = Date.now();
+
+    console.log(`[${requestId}] AppContext.setRole - Starting role update:`, {
+      newRole,
+      userId: session?.user?.id || 'none',
+      currentRole: role,
+      timestamp: new Date().toISOString()
+    });
+
     try {
       if (session?.user?.id) {
         const { error } = await supabase
@@ -602,16 +662,48 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
           .eq('id', session.user.id);
 
         if (error) {
-          console.error('Failed to update role in Supabase:', error);
+          const duration = Date.now() - startTime;
+          console.error(`[${requestId}] AppContext.setRole - Supabase update failed:`, {
+            error: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+            userId: session.user.id,
+            attemptedRole: newRole,
+            duration: `${duration}ms`,
+            timestamp: new Date().toISOString()
+          });
           return;
         }
 
         // Update local state only after successful Supabase update
         setRoleState(newRole);
-        console.log('Role updated to:', newRole, 'in Supabase');
+
+        const duration = Date.now() - startTime;
+        console.log(`[${requestId}] AppContext.setRole - Role updated successfully:`, {
+          newRole,
+          previousRole: role,
+          userId: session.user.id,
+          duration: `${duration}ms`,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        console.error(`[${requestId}] AppContext.setRole - No valid session for role update:`, {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userId: session?.user?.id || 'none'
+        });
       }
     } catch (error) {
-      console.error('Error updating role:', error);
+      const duration = Date.now() - startTime;
+      console.error(`[${requestId}] AppContext.setRole - Unexpected error:`, {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : 'No stack trace',
+        attemptedRole: newRole,
+        userId: session?.user?.id || 'none',
+        duration: `${duration}ms`,
+        timestamp: new Date().toISOString()
+      });
     }
   };
 
