@@ -59,10 +59,10 @@ CREATE POLICY "subjects_auth_insert" ON public.subjects FOR INSERT WITH CHECK (a
 CREATE POLICY "subjects_auth_update" ON public.subjects FOR UPDATE USING (auth.uid() IS NOT NULL);
 CREATE POLICY "subjects_auth_delete" ON public.subjects FOR DELETE USING (auth.uid() IS NOT NULL);
 
--- Profiles: Users can ONLY access their OWN profiles
+-- Profiles: Users can access their OWN profiles (more permissive for updates)
 CREATE POLICY "profiles_self_read" ON public.profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "profiles_self_insert" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "profiles_self_update" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "profiles_self_update" ON public.profiles FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 
 -- 5. Verification
 SELECT
