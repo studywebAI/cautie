@@ -112,7 +112,6 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<Locale>('en');
   const [dictionary, setDictionary] = useState<Dictionary>(() => getDictionary(language));
   const [role, setRoleState] = useState<UserRole>('student');
-  const [roleSyncInterval, setRoleSyncInterval] = useState<NodeJS.Timeout | null>(null);
   const [highContrast, setHighContrastState] = useState(false);
   const [dyslexiaFont, setDyslexiaFontState] = useState(false);
   const [reducedMotion, setReducedMotionState] = useState(false);
@@ -354,91 +353,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
   }, [session, supabase]);
 
-  // Role sync interval - fetch role from Supabase every 5 seconds
-  useEffect(() => {
-    if (session?.user?.id) {
-      console.log(`[RoleSync] Starting 5-second role sync for user ${session.user.id}`);
-
-      // Start 5-second sync interval
-      const interval = setInterval(async () => {
-        const syncId = Math.random().toString(36).substring(7);
-        const syncStart = Date.now();
-
-        try {
-          const { data: profile, error: syncError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-
-          const syncDuration = Date.now() - syncStart;
-
-          if (syncError) {
-            console.error(`[RoleSync:${syncId}] Sync failed:`, {
-              error: syncError.message,
-              code: syncError.code,
-              details: syncError.details,
-              hint: syncError.hint,
-              userId: session.user.id,
-              duration: `${syncDuration}ms`,
-              timestamp: new Date().toISOString()
-            });
-            return;
-          }
-
-          if (profile?.role) {
-            if (profile.role !== role) {
-              console.log(`[RoleSync:${syncId}] Role changed:`, {
-                oldRole: role,
-                newRole: profile.role,
-                userId: session.user.id,
-                duration: `${syncDuration}ms`,
-                timestamp: new Date().toISOString()
-              });
-              setRoleState(profile.role as UserRole);
-            } else {
-              console.log(`[RoleSync:${syncId}] Role unchanged:`, {
-                role: profile.role,
-                userId: session.user.id,
-                duration: `${syncDuration}ms`
-              });
-            }
-          } else {
-            console.warn(`[RoleSync:${syncId}] No role found in profile:`, {
-              profile,
-              userId: session.user.id,
-              duration: `${syncDuration}ms`,
-              timestamp: new Date().toISOString()
-            });
-          }
-        } catch (error) {
-          const syncDuration = Date.now() - syncStart;
-          console.error(`[RoleSync:${syncId}] Unexpected sync error:`, {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : 'No stack trace',
-            userId: session?.user?.id || 'none',
-            duration: `${syncDuration}ms`,
-            timestamp: new Date().toISOString()
-          });
-        }
-      }, 5000); // 5 seconds
-
-      setRoleSyncInterval(interval);
-
-      return () => {
-        console.log(`[RoleSync] Stopping role sync for user ${session.user.id}`);
-        clearInterval(interval);
-        setRoleSyncInterval(null);
-      };
-    } else {
-      // Clear interval when no session
-      if (roleSyncInterval) {
-        console.log(`[RoleSync] Clearing role sync interval (no session)`);
-        clearInterval(roleSyncInterval);
-        setRoleSyncInterval(null);
-      }
-    }
-  }, [session, role, supabase]);
+  // Role sync disabled - roles managed directly in setRole and fetchData
 
   useEffect(() => {
     const wasGuest = !prevSession;

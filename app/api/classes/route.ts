@@ -238,31 +238,44 @@ export async function POST(request: Request) {
     // Check if user is a teacher (only teachers can create classes)
     console.log(`[${requestId}] POST /api/classes - Checking user role for class creation`);
 
-    const { data: profile, error: profileError } = await supabase
+    // Ensure profile exists first
+    const { data: existingProfile, error: profileCheckError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .maybeSingle();
 
-    if (profileError) {
-      console.error(`[${requestId}] POST /api/classes - Profile fetch error:`, {
-        error: profileError.message,
-        code: profileError.code,
-        details: profileError.details,
-        hint: profileError.hint,
-        userId: user.id
-      });
-      return NextResponse.json({
-        error: 'Failed to verify user permissions',
-        details: profileError.message,
-        requestId
-      }, { status: 500 });
+    let userRole: string = 'student';
+
+    if (existingProfile?.role) {
+      userRole = existingProfile.role;
+      console.log(`[${requestId}] POST /api/classes - Profile exists with role: ${userRole}`);
+    } else {
+      // Create profile if it doesn't exist
+      console.log(`[${requestId}] POST /api/classes - Creating default profile`);
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          role: 'student',
+          full_name: user.user_metadata?.full_name || '',
+          avatar_url: user.user_metadata?.avatar_url || null
+        });
+
+      if (insertError) {
+        console.error(`[${requestId}] POST /api/classes - Profile creation failed:`, insertError);
+        return NextResponse.json({
+          error: 'Failed to create user profile',
+          details: insertError.message,
+          requestId
+        }, { status: 500 });
+      }
+      userRole = 'student';
+      console.log(`[${requestId}] POST /api/classes - Default profile created`);
     }
 
-    const userRole = profile?.role || 'student';
     console.log(`[${requestId}] POST /api/classes - Role check:`, {
       userRole,
-      profileFound: !!profile,
       canCreateClasses: userRole === 'teacher'
     });
 
