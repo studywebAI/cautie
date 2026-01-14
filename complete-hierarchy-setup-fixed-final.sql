@@ -216,7 +216,23 @@ CREATE POLICY "allow_all_authenticated_classes" ON public.classes FOR ALL USING 
 CREATE POLICY "allow_all_authenticated_members" ON public.class_members FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "allow_all_authenticated_subjects" ON public.subjects FOR ALL USING (auth.uid() IS NOT NULL);
 
--- 10. Verification
+-- 10. Fix profiles RLS policies (critical for role switching)
+-- Drop any existing complex policies that might cause 406 errors
+DROP POLICY IF EXISTS "Allow read access for users and teachers" ON public.profiles;
+DROP POLICY IF EXISTS "Allow authenticated users to read all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Allow individual read access" ON public.profiles;
+DROP POLICY IF EXISTS "Allow individual insert access" ON public.profiles;
+DROP POLICY IF EXISTS "Allow individual update access" ON public.profiles;
+
+-- Enable RLS on profiles
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Simple policies: users can read and update their own profiles
+CREATE POLICY "users_can_read_own_profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "users_can_insert_own_profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "users_can_update_own_profile" ON public.profiles FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- 11. Verification
 SELECT
     'Migration completed successfully!' as status,
     COUNT(*) as tables_created
