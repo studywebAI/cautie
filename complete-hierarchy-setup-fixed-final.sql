@@ -210,11 +210,22 @@ ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.class_members ENABLE ROW LEVEL SECURITY;
 
--- Simplified RLS policies - allow all authenticated operations
--- These are simplified to prevent circular references
-CREATE POLICY "allow_all_authenticated_classes" ON public.classes FOR ALL USING (auth.uid() IS NOT NULL);
-CREATE POLICY "allow_all_authenticated_members" ON public.class_members FOR ALL USING (auth.uid() IS NOT NULL);
-CREATE POLICY "allow_all_authenticated_subjects" ON public.subjects FOR ALL USING (auth.uid() IS NOT NULL);
+-- EXTREMELY simplified RLS policies - no cross-table references
+-- These prevent ANY circular references
+CREATE POLICY "classes_allow_authenticated_read" ON public.classes FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "classes_allow_authenticated_insert" ON public.classes FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "classes_allow_authenticated_update" ON public.classes FOR UPDATE USING (auth.uid() IS NOT NULL);
+CREATE POLICY "classes_allow_authenticated_delete" ON public.classes FOR DELETE USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "members_allow_authenticated_read" ON public.class_members FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "members_allow_authenticated_insert" ON public.class_members FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "members_allow_authenticated_update" ON public.class_members FOR UPDATE USING (auth.uid() IS NOT NULL);
+CREATE POLICY "members_allow_authenticated_delete" ON public.class_members FOR DELETE USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "subjects_allow_authenticated_read" ON public.subjects FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "subjects_allow_authenticated_insert" ON public.subjects FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "subjects_allow_authenticated_update" ON public.subjects FOR UPDATE USING (auth.uid() IS NOT NULL);
+CREATE POLICY "subjects_allow_authenticated_delete" ON public.subjects FOR DELETE USING (auth.uid() IS NOT NULL);
 
 -- 10. Fix profiles RLS policies (critical for role switching)
 -- Drop any existing complex policies that might cause 406 errors
