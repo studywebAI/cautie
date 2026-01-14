@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useMemo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,14 +59,15 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
-  const { classes } = useContext(AppContext) as AppContextType;
+  const { classes, session } = useContext(AppContext) as AppContextType;
 
-  // Fetch subjects on mount
-  React.useEffect(() => {
-    fetchSubjects();
-  }, [classId]);
+  // Memoize owned classes to avoid filtering in render
+  const ownedClasses = useMemo(() => {
+    if (!session?.user?.id) return [];
+    return classes.filter(c => c.owner_id === session.user.id);
+  }, [classes, session?.user?.id]);
 
-  const fetchSubjects = async () => {
+  const fetchSubjects = useCallback(async () => {
     try {
       setIsLoading(true);
       console.log('DEBUG: Fetching subjects for classId:', classId);
@@ -93,7 +94,12 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [classId, toast]);
+
+  // Fetch subjects on mount
+  React.useEffect(() => {
+    fetchSubjects();
+  }, [fetchSubjects]);
 
   const handleCreateSubject = async () => {
     if (!newSubjectTitle.trim()) {
@@ -339,7 +345,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
                     <SelectValue placeholder="Select a class" />
                   </SelectTrigger>
                   <SelectContent>
-                    {classes.filter(c => c.owner_id === session?.user?.id).map((classItem) => (
+                    {ownedClasses.map((classItem) => (
                       <SelectItem key={classItem.id} value={classItem.id}>
                         {classItem.name}
                       </SelectItem>

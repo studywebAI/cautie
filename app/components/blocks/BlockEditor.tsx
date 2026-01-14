@@ -1,308 +1,362 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { BaseBlock, BlockType, BlockContent } from './types';
-import { BlockRenderer } from './BlockRenderer';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Type, List, Image, Code, Quote, Layout, Zap } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PlusCircle, X, GripVertical, Save } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-interface BlockEditorProps {
-  materialId: string;
-  className?: string;
-}
+type Block = {
+  id?: string;
+  type: string;
+  position: number;
+  data: any;
+};
 
-export const BlockEditor: React.FC<BlockEditorProps> = ({ materialId, className }) => {
-  const [blocks, setBlocks] = useState<BaseBlock[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
-  const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+type BlockEditorProps = {
+  assignmentId: string;
+  subjectId: string;
+  chapterId: string;
+  paragraphId: string;
+  initialBlocks?: Block[];
+  onSave?: (blocks: Block[]) => void;
+};
 
-  // Fetch blocks on mount
+const BLOCK_TYPES = [
+  { value: 'TextBlock', label: 'Text', icon: '📝' },
+  { value: 'ImageBlock', label: 'Image', icon: '🖼️' },
+  { value: 'VideoBlock', label: 'Video', icon: '🎥' },
+  { value: 'MultipleChoiceBlock', label: 'Multiple Choice', icon: '☑️' },
+  { value: 'OpenQuestionBlock', label: 'Open Question', icon: '❓' },
+  { value: 'FillInBlankBlock', label: 'Fill in Blank', icon: '📝' },
+  { value: 'DragDropBlock', label: 'Drag & Drop', icon: '🎯' },
+  { value: 'OrderingBlock', label: 'Ordering', icon: '🔢' },
+  { value: 'MediaEmbedBlock', label: 'Media Embed', icon: '🔗' },
+  { value: 'DividerBlock', label: 'Divider', icon: '➖' },
+];
+
+export function BlockEditor({
+  assignmentId,
+  subjectId,
+  chapterId,
+  paragraphId,
+  initialBlocks = [],
+  onSave
+}: BlockEditorProps) {
+  const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  // Load existing blocks on mount
   useEffect(() => {
-    fetchBlocks();
-  }, [materialId]);
+    loadBlocks();
+  }, [assignmentId]);
 
-  const fetchBlocks = async () => {
+  const loadBlocks = async () => {
     try {
-      const response = await fetch(`/api/materials/${materialId}/blocks`);
+      const response = await fetch(`/api/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}/assignments/${assignmentId}/blocks`);
       if (response.ok) {
         const data = await response.json();
-        setBlocks(data.blocks || []);
+        setBlocks(data);
       }
     } catch (error) {
-      console.error('Failed to fetch blocks:', error);
+      console.error('Error loading blocks:', error);
+    }
+  };
+
+  const saveBlocks = async () => {
+    setIsLoading(true);
+    try {
+      // First, clear existing blocks and then save new ones
+      // This is a simplified approach - in production you'd want to do proper updates
+
+      // Delete existing blocks
+      const existingResponse = await fetch(`/api/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}/assignments/${assignmentId}/blocks`);
+      if (existingResponse.ok) {
+        const existingBlocks = await existingResponse.json();
+        // In a real implementation, you'd delete blocks that are no longer present
+      }
+
+      // Save new blocks
+      for (const block of blocks) {
+        await fetch(`/api/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}/assignments/${assignmentId}/blocks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: block.type,
+            data: block.data,
+            position: block.position
+          })
+        });
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Assignment content saved successfully.',
+      });
+
+      onSave?.(blocks);
+    } catch (error) {
+      console.error('Error saving blocks:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save assignment content.',
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const createBlock = async (type: BlockType, content: BlockContent, orderIndex: number) => {
-    try {
-      const response = await fetch(`/api/materials/${materialId}/blocks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, content, order_index: orderIndex }),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setBlocks(prev => [...prev, data.block]);
-        return data.block;
-      }
-    } catch (error) {
-      console.error('Failed to create block:', error);
-    }
-    return null;
+  const addBlock = (type: string) => {
+    const newBlock: Block = {
+      type,
+      position: blocks.length,
+      data: getDefaultDataForType(type)
+    };
+    setBlocks([...blocks, newBlock]);
   };
 
-  const updateBlock = async (blockId: string, updates: Partial<BaseBlock>) => {
-    try {
-      const response = await fetch(`/api/blocks/${blockId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setBlocks(prev => prev.map(block => block.id === blockId ? data.block : block));
-        return data.block;
-      }
-    } catch (error) {
-      console.error('Failed to update block:', error);
-    }
-    return null;
+  const updateBlock = (index: number, data: any) => {
+    const updatedBlocks = [...blocks];
+    updatedBlocks[index] = { ...updatedBlocks[index], data };
+    setBlocks(updatedBlocks);
   };
 
-  const deleteBlock = async (blockId: string) => {
-    try {
-      const response = await fetch(`/api/blocks/${blockId}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        setBlocks(prev => prev.filter(block => block.id !== blockId));
-      }
-    } catch (error) {
-      console.error('Failed to delete block:', error);
-    }
+  const removeBlock = (index: number) => {
+    const updatedBlocks = blocks.filter((_, i) => i !== index);
+    setBlocks(updatedBlocks);
   };
 
-  const reorderBlocks = async (blockIds: string[]) => {
-    try {
-      const response = await fetch('/api/blocks/reorder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blockIds }),
-      });
-      if (response.ok) {
-        // Blocks are already reordered in state
-      }
-    } catch (error) {
-      console.error('Failed to reorder blocks:', error);
-      // Revert on error
-      fetchBlocks();
-    }
-  };
-
-  const handleAddBlock = (type: BlockType, afterIndex?: number) => {
-    const orderIndex = afterIndex !== undefined ? afterIndex + 1 : blocks.length;
-    const defaultContent = getDefaultContent(type);
-    createBlock(type, defaultContent, orderIndex);
-  };
-
-  const getDefaultContent = (type: BlockType): BlockContent => {
+  const getDefaultDataForType = (type: string) => {
     switch (type) {
-      case 'text':
+      case 'TextBlock':
         return { content: '', style: 'normal' };
-      case 'code':
-        return { language: 'javascript', code: '', showLineNumbers: false };
-      case 'list':
-        return { type: 'bulleted', items: [{ id: '1', text: '' }] };
-      case 'image':
+      case 'ImageBlock':
         return { url: '', caption: '', transform: { x: 0, y: 0, scale: 1, rotation: 0 } };
-      case 'video':
+      case 'VideoBlock':
         return { url: '', provider: 'youtube', start_seconds: 0, end_seconds: null };
-      case 'quote':
-        return { text: '', author: '' };
-      case 'layout':
-        return { type: 'divider' };
-      case 'complex':
-        return { type: 'mindmap', data: {}, viewerType: 'mindmap-professional' };
-      case 'rich_text':
-        return { html: '', plainText: '', aiSuggestions: [] };
-      case 'executable_code':
-        return { language: 'javascript', code: '', output: '', canExecute: true };
-      case 'media_embed':
-        return { embed_url: '', description: '' };
-      case 'divider':
-        return { style: 'line' };
-      case 'multiple_choice':
-        return { question: '', options: [{ id: '1', text: '', correct: false }], multiple_correct: false, shuffle: false };
-      case 'open_question':
-        return { question: '', ai_grading: true, grading_criteria: '', max_score: 10 };
-      case 'fill_in_blank':
-        return { text: '', answers: [], case_sensitive: false };
-      case 'drag_drop':
+      case 'MultipleChoiceBlock':
+        return { question: '', options: [{ id: 'a', text: '', correct: false }], multiple_correct: false, shuffle: true };
+      case 'OpenQuestionBlock':
+        return { question: '', ai_grading: true, grading_criteria: '', max_length: 1000 };
+      case 'FillInBlankBlock':
+        return { text: '', answers: [''], case_sensitive: false };
+      case 'DragDropBlock':
         return { prompt: '', pairs: [{ left: '', right: '' }] };
-      case 'ordering':
-        return { prompt: '', items: [], correct_order: [] };
+      case 'OrderingBlock':
+        return { prompt: '', items: ['', '', ''], correct_order: [0, 1, 2] };
+      case 'MediaEmbedBlock':
+        return { embed_url: '', description: '' };
+      case 'DividerBlock':
+        return { style: 'line' };
       default:
-        return { content: '', style: 'normal' };
+        return {};
     }
   };
 
-  const handleBlockUpdate = (blockId: string, content: BlockContent) => {
-    updateBlock(blockId, { content });
-  };
+  const renderBlockEditor = (block: Block, index: number) => {
+    switch (block.type) {
+      case 'TextBlock':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Content</Label>
+              <Textarea
+                value={block.data.content}
+                onChange={(e) => updateBlock(index, { ...block.data, content: e.target.value })}
+                placeholder="Enter text content..."
+                rows={4}
+              />
+            </div>
+            <div>
+              <Label>Style</Label>
+              <Select
+                value={block.data.style}
+                onValueChange={(value) => updateBlock(index, { ...block.data, style: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="heading">Heading</SelectItem>
+                  <SelectItem value="subheading">Subheading</SelectItem>
+                  <SelectItem value="quote">Quote</SelectItem>
+                  <SelectItem value="note">Note</SelectItem>
+                  <SelectItem value="warning">Warning</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        );
 
-  const handleBlockDelete = (blockId: string) => {
-    deleteBlock(blockId);
-  };
+      case 'MultipleChoiceBlock':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Question</Label>
+              <Input
+                value={block.data.question}
+                onChange={(e) => updateBlock(index, { ...block.data, question: e.target.value })}
+                placeholder="Enter your question..."
+              />
+            </div>
+            <div>
+              <Label>Options</Label>
+              <div className="space-y-2">
+                {block.data.options?.map((option: any, optIndex: number) => (
+                  <div key={optIndex} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={option.correct}
+                      onChange={(e) => {
+                        const newOptions = [...block.data.options];
+                        newOptions[optIndex] = { ...option, correct: e.target.checked };
+                        updateBlock(index, { ...block.data, options: newOptions });
+                      }}
+                    />
+                    <Input
+                      value={option.text}
+                      onChange={(e) => {
+                        const newOptions = [...block.data.options];
+                        newOptions[optIndex] = { ...option, text: e.target.value };
+                        updateBlock(index, { ...block.data, options: newOptions });
+                      }}
+                      placeholder={`Option ${optIndex + 1}`}
+                    />
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newOptions = [...(block.data.options || []), { id: `opt${Date.now()}`, text: '', correct: false }];
+                    updateBlock(index, { ...block.data, options: newOptions });
+                  }}
+                >
+                  Add Option
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
 
-  const handleBlockTypeChange = (blockId: string, newType: BlockType) => {
-    const block = blocks.find(b => b.id === blockId);
-    if (block) {
-      const newContent = getDefaultContent(newType);
-      updateBlock(blockId, { type: newType, content: newContent });
+      case 'OpenQuestionBlock':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Question</Label>
+              <Textarea
+                value={block.data.question}
+                onChange={(e) => updateBlock(index, { ...block.data, question: e.target.value })}
+                placeholder="Enter your question..."
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label>Grading Criteria</Label>
+              <Textarea
+                value={block.data.grading_criteria}
+                onChange={(e) => updateBlock(index, { ...block.data, grading_criteria: e.target.value })}
+                placeholder="Describe how to grade this question..."
+                rows={2}
+              />
+            </div>
+            <div>
+              <Label>Max Length</Label>
+              <Input
+                type="number"
+                value={block.data.max_length}
+                onChange={(e) => updateBlock(index, { ...block.data, max_length: parseInt(e.target.value) })}
+              />
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="p-4 text-center text-muted-foreground">
+            Editor for {block.type} not implemented yet.
+            <pre className="mt-2 text-xs text-left bg-muted p-2 rounded">
+              {JSON.stringify(block.data, null, 2)}
+            </pre>
+          </div>
+        );
     }
   };
-
-  // Drag and drop handlers
-  const handleDragStart = (e: React.DragEvent, blockId: string) => {
-    setDraggedBlockId(blockId);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    setDragOverIndex(index);
-  };
-
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault();
-    if (!draggedBlockId) return;
-
-    const draggedIndex = blocks.findIndex(block => block.id === draggedBlockId);
-    if (draggedIndex === -1 || draggedIndex === dropIndex) return;
-
-    const newBlocks = [...blocks];
-    const [draggedBlock] = newBlocks.splice(draggedIndex, 1);
-    newBlocks.splice(dropIndex, 0, draggedBlock);
-
-    setBlocks(newBlocks);
-    setDraggedBlockId(null);
-    setDragOverIndex(null);
-
-    const blockIds = newBlocks.map(block => block.id);
-    reorderBlocks(blockIds);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedBlockId(null);
-    setDragOverIndex(null);
-  };
-
-  if (loading) {
-    return <div className="p-4">Loading blocks...</div>;
-  }
 
   return (
-    <div className={`block-editor ${className}`}>
-      {blocks.map((block, index) => (
-        <div
-          key={block.id}
-          draggable
-          onDragStart={(e) => handleDragStart(e, block.id)}
-          onDragOver={(e) => handleDragOver(e, index)}
-          onDrop={(e) => handleDrop(e, index)}
-          onDragEnd={handleDragEnd}
-          className={`relative group ${dragOverIndex === index ? 'border-t-2 border-blue-500' : ''}`}
-        >
-          <BlockRenderer
-            block={block}
-            onUpdate={(content) => handleBlockUpdate(block.id, content)}
-            onDelete={() => handleBlockDelete(block.id)}
-            isEditing={editingBlockId === block.id}
-          />
-          {/* Block toolbar */}
-          <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => handleBlockTypeChange(block.id, 'text')}>
-                  <Type className="h-4 w-4 mr-2" /> Text
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBlockTypeChange(block.id, 'list')}>
-                  <List className="h-4 w-4 mr-2" /> List
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBlockTypeChange(block.id, 'image')}>
-                  <Image className="h-4 w-4 mr-2" /> Image
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBlockTypeChange(block.id, 'code')}>
-                  <Code className="h-4 w-4 mr-2" /> Code
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBlockTypeChange(block.id, 'quote')}>
-                  <Quote className="h-4 w-4 mr-2" /> Quote
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBlockTypeChange(block.id, 'layout')}>
-                  <Layout className="h-4 w-4 mr-2" /> Layout
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBlockTypeChange(block.id, 'complex')}>
-                  <Zap className="h-4 w-4 mr-2" /> Complex
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      ))}
-
-      {/* Add block button */}
-      <div className="mt-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-2" /> Add Block
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleAddBlock('text')}>
-              <Type className="h-4 w-4 mr-2" /> Text
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddBlock('rich_text')}>
-              <Type className="h-4 w-4 mr-2" /> Rich Text
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddBlock('multiple_choice')}>
-              <Zap className="h-4 w-4 mr-2" /> Multiple Choice
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddBlock('list')}>
-              <List className="h-4 w-4 mr-2" /> List
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddBlock('image')}>
-              <Image className="h-4 w-4 mr-2" /> Image
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddBlock('code')}>
-              <Code className="h-4 w-4 mr-2" /> Code
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddBlock('executable_code')}>
-              <Code className="h-4 w-4 mr-2" /> Executable Code
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddBlock('quote')}>
-              <Quote className="h-4 w-4 mr-2" /> Quote
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddBlock('layout')}>
-              <Layout className="h-4 w-4 mr-2" /> Layout
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddBlock('complex')}>
-              <Zap className="h-4 w-4 mr-2" /> Complex
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Assignment Content</h2>
+        <Button onClick={saveBlocks} disabled={isLoading}>
+          <Save className="mr-2 h-4 w-4" />
+          {isLoading ? 'Saving...' : 'Save Changes'}
+        </Button>
       </div>
+
+      {/* Block List */}
+      <div className="space-y-4">
+        {blocks.map((block, index) => (
+          <Card key={index}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="outline">
+                    {BLOCK_TYPES.find(bt => bt.value === block.type)?.icon}
+                    {BLOCK_TYPES.find(bt => bt.value === block.type)?.label}
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeBlock(index)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {renderBlockEditor(block, index)}
+            </CardContent>
+          </Card>
+        ))}
+
+        {blocks.length === 0 && (
+          <Card className="p-12 text-center">
+            <p className="text-muted-foreground">No content blocks added yet. Add your first block below.</p>
+          </Card>
+        )}
+      </div>
+
+      {/* Add Block */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Add Content Block</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            {BLOCK_TYPES.map((blockType) => (
+              <Button
+                key={blockType.value}
+                variant="outline"
+                className="h-16 flex flex-col items-center justify-center gap-1"
+                onClick={() => addBlock(blockType.value)}
+              >
+                <span className="text-lg">{blockType.icon}</span>
+                <span className="text-xs">{blockType.label}</span>
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
+}

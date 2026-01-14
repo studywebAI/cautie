@@ -85,7 +85,24 @@ CREATE TABLE IF NOT EXISTS public.session_logs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Student answers
+-- Submissions table (assignment-level submissions)
+CREATE TABLE IF NOT EXISTS public.submissions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    assignment_id UUID NOT NULL REFERENCES public.assignments(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    content JSONB,
+    files JSONB DEFAULT '[]'::jsonb,
+    submitted_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    status TEXT DEFAULT 'submitted' CHECK (status IN ('draft', 'submitted', 'graded')),
+    grade NUMERIC,
+    feedback TEXT,
+    graded_at TIMESTAMPTZ,
+    graded_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    CONSTRAINT unique_assignment_user UNIQUE (assignment_id, user_id)
+);
+
+-- Student answers (block-level answers)
 CREATE TABLE IF NOT EXISTS public.student_answers (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     student_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -104,6 +121,7 @@ ALTER TABLE public.chapters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.paragraphs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.blocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.progress_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.session_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_answers ENABLE ROW LEVEL SECURITY;
@@ -114,6 +132,7 @@ CREATE POLICY "Allow authenticated users for chapters" ON public.chapters FOR AL
 CREATE POLICY "Allow authenticated users for paragraphs" ON public.paragraphs FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Allow authenticated users for assignments" ON public.assignments FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Allow authenticated users for blocks" ON public.blocks FOR ALL USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Allow authenticated users for submissions" ON public.submissions FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Students can manage their progress" ON public.progress_snapshots FOR ALL USING (auth.uid() = student_id);
 CREATE POLICY "Students can manage their sessions" ON public.session_logs FOR ALL USING (auth.uid() = student_id);
 CREATE POLICY "Students can manage their answers" ON public.student_answers FOR ALL USING (auth.uid() = student_id);
@@ -168,6 +187,8 @@ CREATE INDEX IF NOT EXISTS idx_chapters_subject_id ON public.chapters(subject_id
 CREATE INDEX IF NOT EXISTS idx_paragraphs_chapter_id ON public.paragraphs(chapter_id);
 CREATE INDEX IF NOT EXISTS idx_assignments_paragraph_id ON public.assignments(paragraph_id);
 CREATE INDEX IF NOT EXISTS idx_assignments_class_id ON public.assignments(class_id);
+CREATE INDEX IF NOT EXISTS idx_submissions_assignment_id ON public.submissions(assignment_id);
+CREATE INDEX IF NOT EXISTS idx_submissions_user_id ON public.submissions(user_id);
 CREATE INDEX IF NOT EXISTS idx_blocks_assignment_id ON public.blocks(assignment_id);
 CREATE INDEX IF NOT EXISTS idx_progress_snapshots_student_paragraph ON public.progress_snapshots(student_id, paragraph_id);
 CREATE INDEX IF NOT EXISTS idx_session_logs_student_paragraph ON public.session_logs(student_id, paragraph_id);
@@ -184,7 +205,7 @@ SELECT
     COUNT(*) as tables_created
 FROM information_schema.tables
 WHERE table_schema = 'public'
-AND table_name IN ('chapters', 'paragraphs', 'assignments', 'blocks', 'progress_snapshots', 'session_logs', 'student_answers');
+AND table_name IN ('chapters', 'paragraphs', 'assignments', 'blocks', 'submissions', 'progress_snapshots', 'session_logs', 'student_answers');
 
 -- Also check functions were created
 SELECT

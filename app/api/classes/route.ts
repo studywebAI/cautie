@@ -23,18 +23,14 @@ export async function GET(request: Request) {
   let allClasses: any[] = [];
 
   if (user) {
-    // Check if user is a teacher from profiles
+    // Check if user is a teacher from profiles (handle missing profile gracefully)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single to avoid error when no rows
 
-    if (profileError) {
-      console.error('Profile fetch error:', profileError);
-      return NextResponse.json({ error: 'Failed to fetch user profile' }, { status: 500 });
-    }
-
+    // If profile doesn't exist or fetch failed, default to student
     const isTeacher = profile?.role === 'teacher';
 
     console.log('DEBUG: User role from profiles:', profile?.role, 'isTeacher:', isTeacher);

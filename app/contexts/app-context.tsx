@@ -615,7 +615,38 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     updatePersonalTask,
     materials,
     refetchMaterials,
-  }), [session, isLoading, language, dictionary, role, highContrast, dyslexiaFont, reducedMotion, theme, sessionRecap, classes, assignments, students, personalTasks, materials, createClass, refetchClasses, createAssignment, deleteAssignment, refetchAssignments, createPersonalTask, updatePersonalTask, refetchMaterials, setLanguage, setRole, setHighContrast, setDyslexiaFont, setReducedMotion, setTheme, setSessionRecap]);
+  }), [
+    session,
+    isLoading,
+    language,
+    dictionary,
+    role,
+    highContrast,
+    dyslexiaFont,
+    reducedMotion,
+    theme,
+    sessionRecap,
+    classes,
+    createClass,
+    refetchClasses,
+    assignments,
+    createAssignment,
+    deleteAssignment,
+    refetchAssignments,
+    students,
+    personalTasks,
+    createPersonalTask,
+    updatePersonalTask,
+    materials,
+    refetchMaterials,
+    setLanguage,
+    setRole,
+    setHighContrast,
+    setDyslexiaFont,
+    setReducedMotion,
+    setTheme,
+    setSessionRecap
+  ]);
 
 
   return (
