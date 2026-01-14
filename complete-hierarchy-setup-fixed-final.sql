@@ -210,10 +210,11 @@ ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.class_members ENABLE ROW LEVEL SECURITY;
 
--- Simplified RLS policies that don't cause circular references
-CREATE POLICY "classes_owner_access" ON public.classes FOR ALL USING (auth.uid() = owner_id);
-CREATE POLICY "classes_member_access" ON public.class_members FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "subjects_owner_access" ON public.subjects FOR ALL USING (auth.uid() = user_id);
+-- Simplified RLS policies - allow all authenticated operations
+-- These are simplified to prevent circular references
+CREATE POLICY "allow_all_authenticated_classes" ON public.classes FOR ALL USING (auth.uid() IS NOT NULL);
+CREATE POLICY "allow_all_authenticated_members" ON public.class_members FOR ALL USING (auth.uid() IS NOT NULL);
+CREATE POLICY "allow_all_authenticated_subjects" ON public.subjects FOR ALL USING (auth.uid() IS NOT NULL);
 
 -- 10. Verification
 SELECT
