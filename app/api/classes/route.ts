@@ -23,24 +23,24 @@ export async function GET(request: Request) {
   let allClasses: any[] = [];
 
   if (user) {
-    // Check if user is a teacher from profiles (handle missing profile gracefully)
-    const { data: profile, error: profileError } = await supabase
+    // Get GLOBAL user role from profiles table (website-wide teacher/student mode)
+    const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .maybeSingle(); // Use maybeSingle instead of single to avoid error when no rows
+      .maybeSingle();
 
-    // If profile doesn't exist or fetch failed, default to student
-    const isTeacher = profile?.role === 'teacher';
+    const userRole = profile?.role || 'student'; // Default to student if no profile exists
+    const isTeacher = userRole === 'teacher';
 
-    console.log('DEBUG: User role from profiles:', profile?.role, 'isTeacher:', isTeacher);
+    console.log('DEBUG: Global user role from profiles:', userRole, 'isTeacher:', isTeacher);
 
     if (isTeacher) {
-      // Teachers only see classes they own
+      // TEACHERS: See ALL classes on the website (for management and creation)
+      // This allows teachers to see everything and manage the platform
       let query = supabase
         .from('classes')
-        .select('*')
-        .eq('owner_id', user.id);
+        .select('*');
 
       if (!includeArchived) {
         query = query.or('status.is.null,status.neq.archived');
@@ -50,10 +50,10 @@ export async function GET(request: Request) {
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
       allClasses = data || [];
-      console.log('DEBUG: Teacher classes (owned only):', allClasses.map(c => ({id: c.id, name: c.name, owner_id: c.owner_id})));
+      console.log('DEBUG: Teacher mode - sees ALL classes:', allClasses.length, 'total classes');
     } else {
-      // Students see classes they own + classes they're members of
-      // Get owned classes
+      // STUDENTS: See classes they own + classes they're members of
+      // Students can create their own classes AND join other teachers' classes
       let ownedQuery = supabase
         .from('classes')
         .select('*')
@@ -66,7 +66,7 @@ export async function GET(request: Request) {
       const { data: ownedData, error: ownedError } = await ownedQuery;
       if (ownedError) return NextResponse.json({ error: ownedError.message }, { status: 500 });
 
-      // Get member classes
+      // Get member classes (classes student has joined)
       const { data: memberClassesData, error: memberError } = await supabase
         .from('class_members')
         .select('classes(*)')
@@ -78,15 +78,13 @@ export async function GET(request: Request) {
       const memberClasses = memberClassesData?.map((member: any) => member.classes).filter((cls: any) => cls && cls.owner_id !== user.id) || [];
 
       allClasses = [...(ownedData || []), ...memberClasses];
-      console.log('DEBUG: Student classes (owned + member):', allClasses.map(c => ({id: c.id, name: c.name, owner_id: c.owner_id})));
+      console.log('DEBUG: Student mode - owned classes:', ownedData?.length || 0, '+ member classes:', memberClasses.length);
     }
 
+    // Remove duplicates (though there shouldn't be any with the filtering above)
     const uniqueClasses = Array.from(new Map(allClasses.map(c => [c.id, c])).values());
-    console.log('DEBUG: Final unique classes:', uniqueClasses.map(c => c.id));
-
     return NextResponse.json(uniqueClasses);
   } else if (guestId) {
-    // Guest user logic (if needed)
     return NextResponse.json([]);
   } else {
     return NextResponse.json([]);
