@@ -112,6 +112,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<Locale>('en');
   const [dictionary, setDictionary] = useState<Dictionary>(() => getDictionary(language));
   const [role, setRoleState] = useState<UserRole>('student');
+  const [roleSyncInterval, setRoleSyncInterval] = useState<NodeJS.Timeout | null>(null);
   const [highContrast, setHighContrastState] = useState(false);
   const [dyslexiaFont, setDyslexiaFontState] = useState(false);
   const [reducedMotion, setReducedMotionState] = useState(false);
@@ -257,32 +258,42 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
               const classesData = await classesRes.json();
               setClasses(classesData || []);
 
-              // Determine role based on class ownership/membership (SECURITY FIX)
+              // Get role from profiles table (primary)
               let userRole: UserRole = 'student';
               try {
-                // Check if user owns any classes (teacher)
-                const ownedClasses = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
-                  c.owner_id === session.user.id
-                );
-                if (ownedClasses.length > 0) {
-                  userRole = 'teacher';
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('role')
+                  .eq('id', session.user.id)
+                  .single();
+
+                if (profile?.role) {
+                  userRole = profile.role as UserRole;
                 } else {
-                  // Check if user is a member of any classes (student)
-                  const memberClasses = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
-                    c.owner_id !== session.user.id
+                  // Fallback: Determine role based on class ownership/membership
+                  // Check if user owns any classes (teacher)
+                  const ownedClasses = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
+                    c.owner_id === session.user.id
                   );
-                  if (memberClasses.length > 0) {
-                    userRole = 'student';
+                  if (ownedClasses.length > 0) {
+                    userRole = 'teacher';
+                  } else {
+                    // Check if user is a member of any classes (student)
+                    const memberClasses = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
+                      c.owner_id !== session.user.id
+                    );
+                    if (memberClasses.length > 0) {
+                      userRole = 'student';
+                    }
+                    // If no classes at all, stay as student (default)
                   }
-                  // If no classes at all, stay as student (default)
                 }
               } catch (roleError) {
-                console.error('Error determining user role:', roleError);
+                console.error('Error fetching user role from profiles:', roleError);
                 userRole = 'student'; // Default to student on error
               }
 
               setRoleState(userRole);
-              saveToLocalStorage('studyweb-role', userRole);
 
               // Then fetch assignments and personal tasks
               const [assignmentsRes, personalTasksRes] = await Promise.all([
@@ -342,6 +353,42 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       }
       setIsLoading(false);
   }, [session, supabase]);
+
+  // Role sync interval - fetch role from Supabase every 5 seconds
+  useEffect(() => {
+    if (session?.user?.id) {
+      // Start 5-second sync interval
+      const interval = setInterval(async () => {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.role && profile.role !== role) {
+            setRoleState(profile.role as UserRole);
+            console.log('Role synced from Supabase:', profile.role);
+          }
+        } catch (error) {
+          console.error('Error syncing role:', error);
+        }
+      }, 5000); // 5 seconds
+
+      setRoleSyncInterval(interval);
+
+      return () => {
+        clearInterval(interval);
+        setRoleSyncInterval(null);
+      };
+    } else {
+      // Clear interval when no session
+      if (roleSyncInterval) {
+        clearInterval(roleSyncInterval);
+        setRoleSyncInterval(null);
+      }
+    }
+  }, [session, role, supabase]);
 
   useEffect(() => {
     const wasGuest = !prevSession;
@@ -545,11 +592,27 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     setDictionary(newDict);
   };
 
-  // Allow manual role switching for UI purposes, but log that it's client-side only
+  // Update role in Supabase profiles table (blocks until API returns)
   const setRole = async (newRole: UserRole) => {
-    console.log('Manually setting role to:', newRole, '(client-side only - actual permissions determined by class ownership)');
-    setRoleState(newRole);
-    saveToLocalStorage('studyweb-role', newRole);
+    try {
+      if (session?.user?.id) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ role: newRole })
+          .eq('id', session.user.id);
+
+        if (error) {
+          console.error('Failed to update role in Supabase:', error);
+          return;
+        }
+
+        // Update local state only after successful Supabase update
+        setRoleState(newRole);
+        console.log('Role updated to:', newRole, 'in Supabase');
+      }
+    } catch (error) {
+      console.error('Error updating role:', error);
+    }
   };
 
   const setHighContrast = (enabled: boolean) => {
