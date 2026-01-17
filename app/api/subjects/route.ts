@@ -31,8 +31,8 @@ export async function GET(request: Request) {
       // Teachers see subjects for classes they own OR teach in
       const { data: ownedClasses, error: ownedError } = await supabase
         .from('classes')
-        .select('id, user_id, owner_id')
-        .or(`user_id.eq.${user.id},owner_id.eq.${user.id}`)
+        .select('id, owner_id')
+        .eq('owner_id', user.id)
 
       console.log('DEBUG: Owned classes query:', { ownedClasses, ownedError, userId: user.id })
 
@@ -137,10 +137,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Class ID is required' }, { status: 400 })
     }
 
-    // Verify user owns or teaches the class
+    // Verify user owns the class
     const { data: classData, error: classError } = await supabase
       .from('classes')
-      .select('id, user_id, owner_id')
+      .select('id, owner_id')
       .eq('id', class_id)
       .single()
 
