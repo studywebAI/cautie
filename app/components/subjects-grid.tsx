@@ -64,7 +64,11 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
   // Memoize owned classes to avoid filtering in render
   const ownedClasses = useMemo(() => {
     if (!session?.user?.id) return [];
-    return classes.filter(c => c.owner_id === session.user.id);
+    console.log('DEBUG: All classes:', classes);
+    console.log('DEBUG: User ID:', session.user.id);
+    const filtered = classes.filter(c => c.owner_id === session.user.id);
+    console.log('DEBUG: Owned classes:', filtered);
+    return filtered;
   }, [classes, session?.user?.id]);
 
   const fetchSubjects = useCallback(async () => {
