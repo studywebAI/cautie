@@ -79,12 +79,13 @@ export async function GET(request: Request) {
     });
 
     if (isTeacher) {
-      // TEACHERS: See ALL classes on the website (for management and creation)
-      console.log(`[${requestId}] GET /api/classes - Teacher mode: fetching ALL classes`);
+      // TEACHERS: See classes they own (for management and creation)
+      console.log(`[${requestId}] GET /api/classes - Teacher mode: fetching owned classes`);
 
       let query = supabase
         .from('classes')
-        .select('*');
+        .select('*')
+        .eq('owner_id', user.id);
 
       if (!includeArchived) {
         query = query.or('status.is.null,status.neq.archived');
