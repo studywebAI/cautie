@@ -21,7 +21,7 @@ export async function GET(
     // Check if user has access to this subject
     const { data: subjectAccess, error: subjectError } = await supabase
       .from('subjects')
-      .select('id, class_id')
+      .select('id, class_id, user_id')
       .eq('id', params.subjectId)
       .single()
 
@@ -29,30 +29,37 @@ export async function GET(
       return NextResponse.json({ error: 'Subject not found' }, { status: 404 })
     }
 
-    // Check class access
-    const { data: classAccess, error: classError } = await supabase
-      .from('classes')
-      .select('id, owner_id')
-      .eq('id', subjectAccess.class_id)
-      .single()
-
-    if (classError || !classAccess) {
-      return NextResponse.json({ error: 'Class not found' }, { status: 404 })
-    }
-
-    const isOwner = classAccess.owner_id === user.id
-
-    if (!isOwner) {
-      // Check if user is a member
-      const { data: memberData, error: memberError } = await supabase
-        .from('class_members')
-        .select('class_id')
-        .eq('class_id', subjectAccess.class_id)
-        .eq('user_id', user.id)
+    // If subject is global (no class_id), only owner can access
+    if (!subjectAccess.class_id) {
+      if (subjectAccess.user_id !== user.id) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
+    } else {
+      // If subject has class_id, check class access
+      const { data: classAccess, error: classError } = await supabase
+        .from('classes')
+        .select('id, owner_id')
+        .eq('id', subjectAccess.class_id)
         .single()
 
-      if (memberError || !memberData) {
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      if (classError || !classAccess) {
+        return NextResponse.json({ error: 'Class not found' }, { status: 404 })
+      }
+
+      const isOwner = classAccess.owner_id === user.id
+
+      if (!isOwner) {
+        // Check if user is a member
+        const { data: memberData, error: memberError } = await supabase
+          .from('class_members')
+          .select('class_id')
+          .eq('class_id', subjectAccess.class_id)
+          .eq('user_id', user.id)
+          .single()
+
+        if (memberError || !memberData) {
+          return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+        }
       }
     }
 
@@ -113,10 +120,10 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user owns the class for this subject
+    // Check if user can create chapters for this subject
     const { data: subjectData, error: subjectError } = await supabase
       .from('subjects')
-      .select('class_id')
+      .select('class_id, user_id')
       .eq('id', params.subjectId)
       .single()
 
@@ -124,18 +131,26 @@ export async function POST(
       return NextResponse.json({ error: 'Subject not found' }, { status: 404 })
     }
 
-    const { data: classData, error: classError } = await supabase
-      .from('classes')
-      .select('owner_id')
-      .eq('id', subjectData.class_id)
-      .single()
+    // If subject is global, only subject owner can create chapters
+    if (!subjectData.class_id) {
+      if (subjectData.user_id !== user.id) {
+        return NextResponse.json({ error: 'Only subject owners can create chapters' }, { status: 403 })
+      }
+    } else {
+      // If subject has class, only class owner can create chapters
+      const { data: classData, error: classError } = await supabase
+        .from('classes')
+        .select('owner_id')
+        .eq('id', subjectData.class_id)
+        .single()
 
-    if (classError || !classData) {
-      return NextResponse.json({ error: 'Class not found' }, { status: 404 })
-    }
+      if (classError || !classData) {
+        return NextResponse.json({ error: 'Class not found' }, { status: 404 })
+      }
 
-    if (classData.owner_id !== user.id) {
-      return NextResponse.json({ error: 'Only class owners can create chapters' }, { status: 403 })
+      if (classData.owner_id !== user.id) {
+        return NextResponse.json({ error: 'Only class owners can create chapters' }, { status: 403 })
+      }
     }
 
     const { title } = await request.json()

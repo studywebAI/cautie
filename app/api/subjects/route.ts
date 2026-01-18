@@ -63,11 +63,11 @@ export async function GET(request: Request) {
       console.log('DEBUG: Accessible class IDs for student:', accessibleClassIds)
     }
 
-    // TEMPORARILY DISABLE FILTERING FOR TESTING - Get ALL subjects
-    console.log('TEMP: Getting ALL subjects instead of filtering by accessible classes')
+    // Get subjects user owns or has access to via classes
     const { data: subjects, error } = await supabase
       .from('subjects')
       .select('id, title, class_id, cover_type, cover_image_url, created_at, user_id, class_label, ai_icon_seed')
+      .or(`user_id.eq.${user.id},class_id.in.(${accessibleClassIds.join(',')})`)
       .order('created_at', { ascending: false })
       .limit(50) // Limit to prevent huge responses
 
@@ -76,38 +76,45 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Get class names for the subjects
-    const classIds = [...new Set(((subjects as any[]) || []).map((s: any) => s.class_id))]
-    const { data: classes, error: classError } = await supabase
-      .from('classes')
-      .select('id, name')
-      .in('id', classIds)
+    // Get class names for the subjects (only for subjects that have class_id)
+    const classIds = [...new Set(((subjects as any[]) || []).filter(s => s.class_id).map((s: any) => s.class_id))]
+    let classMap = {} as Record<string, string>
 
-    const classMap = ((classes as any[]) || []).reduce((acc, cls) => {
-      acc[cls.id] = cls.name
-      return acc
-    }, {} as Record<string, string>)
+    if (classIds.length > 0) {
+      const { data: classes, error: classError } = await supabase
+        .from('classes')
+        .select('id, name')
+        .in('id', classIds)
+
+      classMap = ((classes as any[]) || []).reduce((acc, cls) => {
+        acc[cls.id] = cls.name
+        return acc
+      }, {} as Record<string, string>)
+    }
 
     // Transform to match expected format
-    const transformedSubjects = ((subjects as any[]) || []).map((subject: any) => ({
-      id: subject.id,
-      title: subject.title,
-      name: subject.title,
-      class_id: subject.class_id,
-      class_label: classMap[subject.class_id] || 'Unknown Class',
-      class_name: classMap[subject.class_id] || 'Unknown Class',
-      cover_type: subject.cover_type,
-      cover_image_url: subject.cover_image_url,
-      ai_icon_seed: subject.ai_icon_seed,
-      created_at: subject.created_at,
-      content: {
-        class_label: classMap[subject.class_id] || 'Unknown Class',
+    const transformedSubjects = ((subjects as any[]) || []).map((subject: any) => {
+      const classLabel = subject.class_id ? (classMap[subject.class_id] || 'Unknown Class') : 'Global Subject'
+      return {
+        id: subject.id,
+        title: subject.title,
+        name: subject.title,
+        class_id: subject.class_id,
+        class_label: classLabel,
+        class_name: classLabel,
         cover_type: subject.cover_type,
         cover_image_url: subject.cover_image_url,
-        ai_icon_seed: subject.ai_icon_seed
-      },
-      recentParagraphs: []
-    }))
+        ai_icon_seed: subject.ai_icon_seed,
+        created_at: subject.created_at,
+        content: {
+          class_label: classLabel,
+          cover_type: subject.cover_type,
+          cover_image_url: subject.cover_image_url,
+          ai_icon_seed: subject.ai_icon_seed
+        },
+        recentParagraphs: []
+      }
+    })
 
     return NextResponse.json(transformedSubjects)
   } catch (error) {
@@ -133,23 +140,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Subject name is required' }, { status: 400 })
     }
 
-    if (!class_id) {
-      return NextResponse.json({ error: 'Class ID is required' }, { status: 400 })
-    }
+    // If class_id is provided, verify user owns the class (optional association)
+    if (class_id) {
+      const { data: classData, error: classError } = await supabase
+        .from('classes')
+        .select('id, owner_id')
+        .eq('id', class_id)
+        .single()
 
-    // Verify user owns the class
-    const { data: classData, error: classError } = await supabase
-      .from('classes')
-      .select('id, owner_id')
-      .eq('id', class_id)
-      .single()
+      if (classError || !classData) {
+        return NextResponse.json({ error: 'Class not found' }, { status: 404 })
+      }
 
-    if (classError || !classData) {
-      return NextResponse.json({ error: 'Class not found' }, { status: 404 })
-    }
-
-    if (classData.owner_id !== user.id) {
-      return NextResponse.json({ error: 'You do not have permission to create subjects for this class' }, { status: 403 })
+      if (classData.owner_id !== user.id) {
+        return NextResponse.json({ error: 'You do not have permission to associate subjects with this class' }, { status: 403 })
+      }
     }
 
     console.log('DEBUG: Creating subject with data:', {
@@ -160,16 +165,22 @@ export async function POST(request: Request) {
       user_id: user.id
     })
 
+    const insertData: any = {
+      title: name.trim(),
+      cover_type: cover_type || 'ai_icons',
+      cover_image_url: cover_image_url || null,
+      user_id: user.id
+    };
+
+    // Only add class_id if provided
+    if (class_id) {
+      insertData.class_id = class_id;
+    }
+
     const { data: subject, error: insertError } = await supabase
       .from('subjects')
-      .insert([{
-        title: name.trim(),
-        class_id: class_id,
-        cover_type: cover_type || 'ai_icons',
-        cover_image_url: cover_image_url || null,
-        user_id: user.id
-      }])
-      .select('id, title, class_id, cover_type, cover_image_url, created_at, user_id, class_label')
+      .insert([insertData])
+      .select('id, title, class_id, cover_type, cover_image_url, created_at, user_id, class_label, ai_icon_seed')
       .single()
 
     console.log('DEBUG: Subject creation result:', { subject, insertError })

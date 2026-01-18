@@ -50,7 +50,7 @@ export function MySubjectsGrid({ subjects }: MySubjectsGridProps) {
             const colorClass = subjectColors[subject.name] || subjectColors.Default;
 
             return (
-              <Link key={subject.id} href={`/class/${subject.id}`} className="group">
+              <Link key={subject.id} href={`/subjects/${subject.id}`} className="group">
                 <Card className="h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-lg flex flex-col">
                   <CardHeader className="p-4 flex-grow-0">
                      <div className={cn("w-16 h-16 rounded-lg flex items-center justify-center mb-4", colorClass)}>

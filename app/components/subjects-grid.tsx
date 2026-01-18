@@ -119,16 +119,6 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
       return;
     }
 
-    // If no classId provided, require class selection
-    if (!classId && !selectedCreateClassId) {
-      toast({
-        variant: 'destructive',
-        title: 'Missing class',
-        description: 'Please select a class for this subject.',
-      });
-      return;
-    }
-
     setIsCreating(true);
     try {
       const apiUrl = classId ? `/api/classes/${classId}/subjects` : '/api/subjects';
@@ -140,7 +130,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
           }
         : {
             name: newSubjectTitle,
-            class_id: selectedCreateClassId,
+            class_id: selectedCreateClassId || null, // Optional class association
             cover_type: 'ai_icons',
           };
 
@@ -213,7 +203,12 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold">Subjects</h2>
-              <p className="text-muted-foreground">Organize your class content into structured subjects</p>
+              <p className="text-muted-foreground">
+                {classId
+                  ? "Organize your class content into structured subjects"
+                  : "Create and manage your learning subjects"
+                }
+              </p>
             </div>
             <Button onClick={() => {
               setNewSubjectTitle('');
@@ -236,11 +231,9 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
                 ? isTeacher
                   ? "No subjects have been created for this class yet. Create the first subject to organize your content."
                   : "Your teacher hasn't created any subjects for this class yet."
-                : classes.length === 0
-                  ? "You need to create a class first before you can create subjects."
-                  : isTeacher
-                    ? "Create your first subject to organize your class content."
-                    : "Your teacher hasn't created any subjects yet."
+                : isTeacher
+                  ? "Create your first subject to start organizing your learning content."
+                  : "No subjects available yet."
               }
             </p>
             {isTeacher && classes.length === 0 && (
@@ -265,7 +258,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {subjects.map((subject) => (
               <Card key={subject.id} className="group hover:shadow-lg transition-shadow cursor-pointer">
-                <Link href={classId ? `/class/${classId}/subject/${subject.id}` : `/subjects/${subject.id}`}>
+                <Link href={`/subjects/${subject.id}`}>
                   <CardContent className="p-0">
                     {/* Top half - Cover/Icon */}
                     <div className="aspect-[4/3] bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 flex items-center justify-center relative overflow-hidden">
@@ -347,7 +340,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
             </div>
             {!classId && (
               <div className="space-y-2">
-                <Label htmlFor="class-select">Class</Label>
+                <Label htmlFor="class-select">Class (Optional)</Label>
                 {(() => { console.log('DEBUG: Rendering Select, ownedClasses:', ownedClasses); return null; })()}
                 {ownedClasses.length > 0 ? (
                   <select
@@ -356,7 +349,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
                     onChange={(e) => setSelectedCreateClassId(e.target.value)}
                     className="w-full p-2 border rounded"
                   >
-                    <option value="">Select a class</option>
+                    <option value="">No class association (Global subject)</option>
                     {ownedClasses.map((classItem) => (
                       <option key={classItem.id} value={classItem.id}>
                         {classItem.name}
@@ -364,8 +357,11 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
                     ))}
                   </select>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No classes available</p>
+                  <p className="text-sm text-muted-foreground">No classes available - subject will be global</p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  Optionally associate this subject with a class, or leave blank for a global subject.
+                </p>
               </div>
             )}
             <div className="space-y-2">
