@@ -68,6 +68,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
     if (!session?.user?.id) return [];
     console.log('DEBUG: All classes:', classes);
     console.log('DEBUG: User ID:', session.user.id);
+    classes.forEach(c => console.log('DEBUG: Class', c.id, 'owner_id:', c.owner_id));
     const filtered = classes.filter(c => c.owner_id === session.user.id);
     console.log('DEBUG: Owned classes:', filtered);
     // TEMP: Show all classes for testing
