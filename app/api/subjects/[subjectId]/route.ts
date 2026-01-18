@@ -8,13 +8,33 @@ export async function GET(
   request: Request,
   { params }: { params: { subjectId: string } }
 ) {
-  console.log(`GET /api/subjects/${params.subjectId} - Called with params:`, params);
+  console.log(`🔍 DETAIL API: GET /api/subjects/${params.subjectId}`);
+  console.log(`🔍 Params received:`, params);
+  console.log(`🔍 SubjectId type:`, typeof params.subjectId);
+  console.log(`🔍 SubjectId length:`, params.subjectId?.length);
 
   try {
     const cookieStore = cookies()
     const supabase = await createClient(cookieStore)
 
-    // Simple fetch without auth check for debugging
+    // First check if this subject ID exists at all
+    const { data: allSubjects, error: listError } = await supabase
+      .from('subjects')
+      .select('id, title')
+      .limit(10);
+
+    console.log(`🔍 All subjects in DB (first 10):`, allSubjects);
+    console.log(`🔍 Looking for ID: "${params.subjectId}"`);
+
+    // Check exact match
+    const exactMatch = allSubjects?.find(s => s.id === params.subjectId);
+    console.log(`🔍 Exact match found:`, exactMatch);
+
+    // Check case-insensitive match
+    const caseInsensitiveMatch = allSubjects?.find(s => s.id?.toLowerCase() === params.subjectId?.toLowerCase());
+    console.log(`🔍 Case-insensitive match:`, caseInsensitiveMatch);
+
+    // Try the actual query
     const { data: subject, error } = await supabase
       .from('subjects')
       .select('*')
@@ -22,23 +42,41 @@ export async function GET(
       .single();
 
     if (error) {
-      console.log(`Subject fetch error:`, error);
-      console.log(`Searching for subject ID:`, params.subjectId);
+      console.log(`❌ Subject fetch error:`, error);
+      console.log(`❌ Error code:`, error.code);
+      console.log(`❌ Error details:`, error.details);
+
+      // Try alternative queries
+      console.log(`🔍 Trying alternative query methods...`);
+
+      // Query without .single()
+      const { data: multipleResults, error: multiError } = await supabase
+        .from('subjects')
+        .select('*')
+        .eq('id', params.subjectId);
+
+      console.log(`🔍 Multiple results query:`, multipleResults, multiError);
+
       return NextResponse.json({
         error: 'Subject not found',
         subjectId: params.subjectId,
-        dbError: error.message
+        subjectIdType: typeof params.subjectId,
+        dbError: error.message,
+        errorCode: error.code,
+        allSubjectIds: allSubjects?.map(s => s.id),
+        exactMatch: !!exactMatch
       }, { status: 404 });
     }
 
-    console.log(`Subject found:`, subject);
+    console.log(`✅ Subject found:`, subject);
     return NextResponse.json(subject);
 
   } catch (err) {
-    console.error(`Unexpected error:`, err);
+    console.error(`💥 Unexpected error:`, err);
     return NextResponse.json({
       error: 'Internal server error',
-      subjectId: params.subjectId
+      subjectId: params.subjectId,
+      errorMessage: err instanceof Error ? err.message : String(err)
     }, { status: 500 });
   }
 }
