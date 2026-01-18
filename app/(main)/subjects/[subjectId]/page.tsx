@@ -30,17 +30,18 @@ import Link from 'next/link';
 type Chapter = {
   id: string;
   title: string;
+  chapter_number: number;
   description: string | null;
-  order_index: number;
-  subchapters?: Subchapter[];
+  ai_summary?: string;
+  paragraphs?: Paragraph[];
 };
 
-type Subchapter = {
+type Paragraph = {
   id: string;
   title: string;
-  description: string | null;
-  order_index: number;
-  content?: any;
+  paragraph_number: number;
+  assignment_count: number;
+  progress_percent: number;
 };
 
 type Subject = {
@@ -56,7 +57,7 @@ export default function SubjectDetailPage() {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [isCreateChapterOpen, setIsCreateChapterOpen] = useState(false);
-  const [isCreateSubchapterOpen, setIsCreateSubchapterOpen] = useState(false);
+  const [isCreateParagraphOpen, setIsCreateParagraphOpen] = useState(false);
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -76,11 +77,29 @@ export default function SubjectDetailPage() {
           });
         }
 
-        // Fetch chapters
+        // Fetch chapters with paragraphs
         const chaptersResponse = await fetch(`/api/subjects/${subjectId}/chapters`);
         if (chaptersResponse.ok) {
           const chaptersData = await chaptersResponse.json();
-          setChapters(chaptersData);
+
+          // For each chapter, fetch its paragraphs
+          const chaptersWithParagraphs = await Promise.all(
+            chaptersData.map(async (chapter: any) => {
+              try {
+                const paragraphsResponse = await fetch(`/api/subjects/${subjectId}/chapters/${chapter.id}/paragraphs`);
+                if (paragraphsResponse.ok) {
+                  const paragraphs = await paragraphsResponse.json();
+                  return { ...chapter, paragraphs };
+                }
+                return { ...chapter, paragraphs: [] };
+              } catch (error) {
+                console.error(`Error fetching paragraphs for chapter ${chapter.id}:`, error);
+                return { ...chapter, paragraphs: [] };
+              }
+            })
+          );
+
+          setChapters(chaptersWithParagraphs);
         }
       } catch (error) {
         console.error('Error fetching subject data:', error);
@@ -142,9 +161,9 @@ export default function SubjectDetailPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => {
                       setSelectedChapterId(chapter.id);
-                      setIsCreateSubchapterOpen(true);
+                      setIsCreateParagraphOpen(true);
                     }}>
-                      Add Subchapter
+                      Add Paragraph
                     </DropdownMenuItem>
                     <DropdownMenuItem>Edit Chapter</DropdownMenuItem>
                     <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
@@ -153,27 +172,44 @@ export default function SubjectDetailPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {/* Subchapters */}
+              {/* Paragraphs */}
               <div className="space-y-3">
                 <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                  Subchapters
+                  Paragraphs
                 </h4>
-                {chapter.subchapters?.map((subchapter) => (
-                  <div key={subchapter.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                {chapter.paragraphs?.map((paragraph) => (
+                  <div key={paragraph.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">{subchapter.title}</p>
-                        <p className="text-sm text-muted-foreground">{subchapter.description}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium bg-primary/10 text-primary px-2 py-1 rounded">
+                          {chapter.chapter_number}.{paragraph.paragraph_number}
+                        </span>
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">{paragraph.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {paragraph.assignment_count} assignments • {paragraph.progress_percent}% complete
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      View Content
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 bg-muted rounded-full h-2">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${paragraph.progress_percent}%` }}
+                        />
+                      </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/subjects/${subjectId}/chapters/${chapter.id}/paragraphs/${paragraph.id}`}>
+                          View Assignments ({paragraph.assignment_count})
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 ))}
-                {(!chapter.subchapters || chapter.subchapters.length === 0) && (
-                  <p className="text-sm text-muted-foreground italic">No subchapters yet</p>
+                {(!chapter.paragraphs || chapter.paragraphs.length === 0) && (
+                  <p className="text-sm text-muted-foreground italic">No paragraphs yet</p>
                 )}
               </div>
             </CardContent>
@@ -233,7 +269,7 @@ export default function SubjectDetailPage() {
 
                 if (response.ok) {
                   const newChapter = await response.json();
-                  setChapters(prev => [...prev, { ...newChapter, subchapters: [] }]);
+                  setChapters(prev => [...prev, { ...newChapter, paragraphs: [] }]);
                   toast({
                     title: 'Chapter Created',
                     description: 'The new chapter has been added to your subject.',
@@ -261,58 +297,32 @@ export default function SubjectDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Subchapter Dialog */}
-      <Dialog open={isCreateSubchapterOpen} onOpenChange={setIsCreateSubchapterOpen}>
-        <DialogContent className="max-w-4xl">
+      {/* Create Paragraph Dialog */}
+      <Dialog open={isCreateParagraphOpen} onOpenChange={setIsCreateParagraphOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Subchapter</DialogTitle>
+            <DialogTitle>Add Paragraph</DialogTitle>
             <DialogDescription>
-              Create detailed content for this subchapter with AI assistance.
+              Create a new paragraph for this chapter.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="subchapter-title">Subchapter Title</Label>
-              <Input id="subchapter-title" placeholder="e.g., Variables and Expressions" />
-            </div>
-            <div>
-              <Label htmlFor="subchapter-description">Description</Label>
-              <Textarea
-                id="subchapter-description"
-                placeholder="Brief description of this subchapter..."
-                rows={2}
-              />
-            </div>
-            <div>
-              <Label>Content Creation</Label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                <Button variant="outline" className="h-24 flex flex-col gap-2">
-                  <FileText className="h-6 w-6" />
-                  Manual Content
-                </Button>
-                <Button variant="outline" className="h-24 flex flex-col gap-2">
-                  <BookOpen className="h-6 w-6" />
-                  AI-Generated Notes
-                </Button>
-                <Button variant="outline" className="h-24 flex flex-col gap-2">
-                  <PlusCircle className="h-6 w-6" />
-                  Import Existing
-                </Button>
-              </div>
+              <Label htmlFor="paragraph-title">Paragraph Title</Label>
+              <Input id="paragraph-title" placeholder="e.g., Basic Concepts" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateSubchapterOpen(false)}>
+            <Button variant="outline" onClick={() => setIsCreateParagraphOpen(false)}>
               Cancel
             </Button>
             <Button onClick={async () => {
-              const titleInput = document.getElementById('subchapter-title') as HTMLInputElement;
-              const descriptionInput = document.getElementById('subchapter-description') as HTMLTextAreaElement;
+              const titleInput = document.getElementById('paragraph-title') as HTMLInputElement;
 
               if (!titleInput?.value?.trim()) {
                 toast({
                   title: 'Error',
-                  description: 'Subchapter title is required.',
+                  description: 'Paragraph title is required.',
                   variant: 'destructive'
                 });
                 return;
@@ -328,50 +338,58 @@ export default function SubjectDetailPage() {
               }
 
               try {
-                const response = await fetch(`/api/subjects/${subjectId}/chapters/${selectedChapterId}/subchapters`, {
+                const response = await fetch(`/api/subjects/${subjectId}/chapters/${selectedChapterId}/paragraphs`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                    title: titleInput.value.trim(),
-                    description: descriptionInput.value.trim() || null,
-                    content: null // TODO: Implement content creation
+                    title: titleInput.value.trim()
                   })
                 });
 
                 if (response.ok) {
-                  const newSubchapter = await response.json();
-                  // Update the chapters state to include the new subchapter
-                  setChapters(prev => prev.map(chapter =>
-                    chapter.id === selectedChapterId
-                      ? {
-                          ...chapter,
-                          subchapters: [...(chapter.subchapters || []), newSubchapter]
+                  const newParagraph = await response.json();
+                  // Refresh chapters to show new paragraph
+                  const chaptersResponse = await fetch(`/api/subjects/${subjectId}/chapters`);
+                  if (chaptersResponse.ok) {
+                    const chaptersData = await chaptersResponse.json();
+                    const chaptersWithParagraphs = await Promise.all(
+                      chaptersData.map(async (chapter: any) => {
+                        try {
+                          const paragraphsResponse = await fetch(`/api/subjects/${subjectId}/chapters/${chapter.id}/paragraphs`);
+                          if (paragraphsResponse.ok) {
+                            const paragraphs = await paragraphsResponse.json();
+                            return { ...chapter, paragraphs };
+                          }
+                          return { ...chapter, paragraphs: [] };
+                        } catch (error) {
+                          return { ...chapter, paragraphs: [] };
                         }
-                      : chapter
-                  ));
+                      })
+                    );
+                    setChapters(chaptersWithParagraphs);
+                  }
                   toast({
-                    title: 'Subchapter Created',
-                    description: 'The subchapter has been added to the chapter.',
+                    title: 'Paragraph Created',
+                    description: 'The new paragraph has been added to the chapter.',
                   });
-                  setIsCreateSubchapterOpen(false);
+                  setIsCreateParagraphOpen(false);
                   setSelectedChapterId(null);
                   // Clear form
                   titleInput.value = '';
-                  descriptionInput.value = '';
                 } else {
                   const errorData = await response.json();
-                  throw new Error(errorData.error || 'Failed to create subchapter');
+                  throw new Error(errorData.error || 'Failed to create paragraph');
                 }
               } catch (error) {
-                console.error('Error creating subchapter:', error);
+                console.error('Error creating paragraph:', error);
                 toast({
                   title: 'Error',
-                  description: error instanceof Error ? error.message : 'Failed to create subchapter. Please try again.',
+                  description: error instanceof Error ? error.message : 'Failed to create paragraph. Please try again.',
                   variant: 'destructive'
                 });
               }
             }}>
-              Create Subchapter
+              Create Paragraph
             </Button>
           </DialogFooter>
         </DialogContent>
