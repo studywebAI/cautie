@@ -47,7 +47,7 @@ export async function GET(request: Request) {
   let allClasses: any[] = [];
 
   if (user) {
-    // Get GLOBAL user role from profiles table (website-wide teacher/student mode)
+    // Get GLOBAL user role. from profiles table (website-wide teacher/student mode)
     console.log(`[${requestId}] GET /api/classes - Fetching user profile for role determination`);
 
     const { data: profile, error: profileError } = await supabase
