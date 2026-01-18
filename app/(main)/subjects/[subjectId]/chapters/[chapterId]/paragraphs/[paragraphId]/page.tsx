@@ -152,8 +152,10 @@ export default function ParagraphDetailPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button className="w-full" variant="outline">
-                    View Assignment
+                  <Button className="w-full" variant="outline" asChild>
+                    <Link href={`/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}/assignments/${assignment.id}`}>
+                      View Assignment
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>
