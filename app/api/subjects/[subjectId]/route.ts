@@ -6,12 +6,15 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: Request,
-  { params }: { params: { subjectId: string } }
+  { params }: { params: Promise<{ subjectId: string }> }
 ) {
-  console.log(`🔍 DETAIL API: GET /api/subjects/${params.subjectId}`);
-  console.log(`🔍 Params received:`, params);
-  console.log(`🔍 SubjectId type:`, typeof params.subjectId);
-  console.log(`🔍 SubjectId length:`, params.subjectId?.length);
+  const resolvedParams = await params;
+  const subjectId = resolvedParams.subjectId;
+
+  console.log(`🔍 DETAIL API: GET /api/subjects/${subjectId}`);
+  console.log(`🔍 Params resolved:`, resolvedParams);
+  console.log(`🔍 SubjectId type:`, typeof subjectId);
+  console.log(`🔍 SubjectId length:`, subjectId?.length);
 
   try {
     const cookieStore = cookies()
@@ -24,21 +27,21 @@ export async function GET(
       .limit(10);
 
     console.log(`🔍 All subjects in DB (first 10):`, allSubjects);
-    console.log(`🔍 Looking for ID: "${params.subjectId}"`);
+    console.log(`🔍 Looking for ID: "${subjectId}"`);
 
     // Check exact match
-    const exactMatch = allSubjects?.find(s => s.id === params.subjectId);
+    const exactMatch = allSubjects?.find(s => s.id === subjectId);
     console.log(`🔍 Exact match found:`, exactMatch);
 
     // Check case-insensitive match
-    const caseInsensitiveMatch = allSubjects?.find(s => s.id?.toLowerCase() === params.subjectId?.toLowerCase());
+    const caseInsensitiveMatch = allSubjects?.find(s => s.id?.toLowerCase() === subjectId?.toLowerCase());
     console.log(`🔍 Case-insensitive match:`, caseInsensitiveMatch);
 
     // Try the actual query
     const { data: subject, error } = await supabase
       .from('subjects')
       .select('*')
-      .eq('id', params.subjectId)
+      .eq('id', subjectId)
       .single();
 
     if (error) {
@@ -53,14 +56,14 @@ export async function GET(
       const { data: multipleResults, error: multiError } = await supabase
         .from('subjects')
         .select('*')
-        .eq('id', params.subjectId);
+        .eq('id', subjectId);
 
       console.log(`🔍 Multiple results query:`, multipleResults, multiError);
 
       return NextResponse.json({
         error: 'Subject not found',
-        subjectId: params.subjectId,
-        subjectIdType: typeof params.subjectId,
+        subjectId: subjectId,
+        subjectIdType: typeof subjectId,
         dbError: error.message,
         errorCode: error.code,
         allSubjectIds: allSubjects?.map(s => s.id),
@@ -75,7 +78,7 @@ export async function GET(
     console.error(`💥 Unexpected error:`, err);
     return NextResponse.json({
       error: 'Internal server error',
-      subjectId: params.subjectId,
+      subjectId: subjectId,
       errorMessage: err instanceof Error ? err.message : String(err)
     }, { status: 500 });
   }
