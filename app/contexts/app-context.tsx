@@ -299,16 +299,15 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
                   fetch('/api/assignments'),
                   fetch('/api/personal-tasks'),
               ]);
-              // Handle assignments failure gracefully
+              // Handle API failures gracefully
               const assignmentsData = assignmentsRes.ok ? await assignmentsRes.json() : [];
               if (!assignmentsRes.ok) {
                 console.error('Failed to fetch assignments, using empty array');
               }
+              const personalTasksData = personalTasksRes.ok ? await personalTasksRes.json() : [];
               if (!personalTasksRes.ok) {
-                console.error('Failed to fetch personal tasks');
-                throw new Error('Failed to fetch personal tasks');
+                console.error('Failed to fetch personal tasks, using empty array');
               }
-              const personalTasksData = await personalTasksRes.json();
               setAssignments(assignmentsData || []);
               setPersonalTasks(personalTasksData || []);
 
