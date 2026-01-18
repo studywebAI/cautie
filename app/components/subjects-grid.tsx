@@ -68,7 +68,8 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
     console.log('DEBUG: User ID:', session.user.id);
     const filtered = classes.filter(c => c.owner_id === session.user.id);
     console.log('DEBUG: Owned classes:', filtered);
-    return filtered;
+    // TEMP: Show all classes for testing
+    return classes;
   }, [classes, session?.user?.id]);
 
   const fetchSubjects = useCallback(async () => {
