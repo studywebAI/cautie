@@ -61,6 +61,8 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
   const { toast } = useToast();
   const { classes, session } = useContext(AppContext) as AppContextType;
 
+  console.log('DEBUG: SubjectsGrid context', { classes, session });
+
   // Memoize owned classes to avoid filtering in render
   const ownedClasses = useMemo(() => {
     if (!session?.user?.id) return [];
@@ -345,18 +347,24 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
             {!classId && (
               <div className="space-y-2">
                 <Label htmlFor="class-select">Class</Label>
-                <Select value={selectedCreateClassId} onValueChange={setSelectedCreateClassId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a class" />
-                  </SelectTrigger>
-                  <SelectContent>
+                {(() => { console.log('DEBUG: Rendering Select, ownedClasses:', ownedClasses); return null; })()}
+                {ownedClasses.length > 0 ? (
+                  <select
+                    id="class-select"
+                    value={selectedCreateClassId}
+                    onChange={(e) => setSelectedCreateClassId(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  >
+                    <option value="">Select a class</option>
                     {ownedClasses.map((classItem) => (
-                      <SelectItem key={classItem.id} value={classItem.id}>
+                      <option key={classItem.id} value={classItem.id}>
                         {classItem.name}
-                      </SelectItem>
+                      </option>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </select>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No classes available</p>
+                )}
               </div>
             )}
             <div className="space-y-2">
