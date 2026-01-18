@@ -575,10 +575,14 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       if (session?.user?.id) {
-        const { error } = await supabase
+        console.log(`[${requestId}] AppContext.setRole - Attempting Supabase update...`);
+
+        const { data, error } = await supabase
           .from('profiles')
           .update({ role: newRole })
-          .eq('id', session.user.id);
+          .eq('id', session.user.id)
+          .select('role')
+          .single();
 
         if (error) {
           const duration = Date.now() - startTime;
@@ -595,8 +599,17 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
+        console.log(`[${requestId}] AppContext.setRole - Supabase update successful:`, {
+          returnedData: data,
+          attemptedRole: newRole
+        });
+
         // Update local state only after successful Supabase update
+        console.log(`[${requestId}] AppContext.setRole - Updating local state from ${role} to ${newRole}`);
         setRoleState(newRole);
+
+        // Force a re-render check
+        console.log(`[${requestId}] AppContext.setRole - Current role state after update:`, role);
 
         const duration = Date.now() - startTime;
         console.log(`[${requestId}] AppContext.setRole - Role updated successfully:`, {
@@ -610,7 +623,8 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         console.error(`[${requestId}] AppContext.setRole - No valid session for role update:`, {
           hasSession: !!session,
           hasUser: !!session?.user,
-          userId: session?.user?.id || 'none'
+          userId: session?.user?.id || 'none',
+          sessionKeys: session ? Object.keys(session) : 'no session'
         });
       }
     } catch (error) {

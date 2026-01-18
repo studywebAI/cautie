@@ -62,7 +62,10 @@ export function AppHeader() {
                     <Switch
                         id="role-switcher"
                         checked={!isStudent}
-                        onCheckedChange={(checked) => setRole(checked ? 'teacher' : 'student')}
+                        onCheckedChange={(checked) => {
+                          console.log('Header: Role switch triggered', { checked, newRole: checked ? 'teacher' : 'student', currentRole: role });
+                          setRole(checked ? 'teacher' : 'student');
+                        }}
                         aria-label="Toggle between student and teacher view"
                     />
                     <Label htmlFor="role-switcher" className="flex items-center gap-2 cursor-pointer pl-3">
