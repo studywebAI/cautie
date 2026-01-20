@@ -18,7 +18,10 @@ export async function GET(
     const resolvedParams = await params;
 
     // Simple fetch - no auth checks since RLS is disabled
-    const { data: assignments, error } = await supabase
+    console.log(`Fetching assignments for paragraph: ${resolvedParams.paragraphId}`);
+
+    // First try to fetch assignments with blocks
+    let { data: assignments, error } = await supabase
       .from('assignments')
       .select(`
         *,
@@ -31,10 +34,30 @@ export async function GET(
       .eq('paragraph_id', resolvedParams.paragraphId)
       .order('assignment_index', { ascending: true })
 
-    if (error) {
-      console.log(`Assignments fetch error:`, error);
-      return NextResponse.json({ error: 'Failed to fetch assignments' }, { status: 500 })
+    console.log(`Raw assignments query result:`, { assignments, error });
+
+    // If that fails, try without blocks
+    if (error || !assignments) {
+      console.log(`Blocks query failed, trying without blocks:`, error);
+      const { data: assignmentsNoBlocks, error: errorNoBlocks } = await supabase
+        .from('assignments')
+        .select('*')
+        .eq('paragraph_id', resolvedParams.paragraphId)
+        .order('assignment_index', { ascending: true })
+
+      if (errorNoBlocks) {
+        console.log(`Assignments fetch error (no blocks):`, errorNoBlocks);
+        return NextResponse.json({ error: 'Failed to fetch assignments' }, { status: 500 })
+      }
+
+      assignments = assignmentsNoBlocks?.map(assignment => ({
+        ...assignment,
+        blocks: []
+      })) || [];
+      console.log(`Fetched assignments without blocks:`, assignments);
     }
+
+    console.log(`Found ${assignments?.length || 0} assignments`);
 
     // Transform assignments to include letter indexing
     const transformedAssignments = (assignments || []).map(assignment => {
