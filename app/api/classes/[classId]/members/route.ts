@@ -19,7 +19,7 @@ export async function GET(request: Request, { params }: { params: { classId: str
   // Check if user owns the class
   const { data: classData, error: classError } = await supabase
     .from('classes')
-    .select('owner_id, user_id')
+    .select('owner_id')
     .eq('id', classId)
     .single()
 
@@ -36,7 +36,7 @@ export async function GET(request: Request, { params }: { params: { classId: str
   }
 
   let hasAccess = false;
-  if (classData.owner_id === user.id || classData.user_id === user.id) {
+  if (classData.owner_id === user.id) {
     hasAccess = true;
   } else {
     // Check if user is a teacher member
