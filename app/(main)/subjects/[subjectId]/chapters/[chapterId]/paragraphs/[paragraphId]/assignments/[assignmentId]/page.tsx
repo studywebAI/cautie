@@ -318,18 +318,28 @@ export default function AssignmentDetailPage() {
       {/* Blocks */}
       <div className="space-y-6">
         {blocks.length === 0 ? (
-          <Card className="p-12 text-center">
+          <Card
+            className="p-12 text-center border-dashed"
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
             <AlertCircle className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No content yet</h3>
             <p className="text-muted-foreground">
               {isTeacher
-                ? "Add blocks to this assignment to create content."
+                ? "Drag blocks from below or click to add content to this assignment."
                 : "This assignment has no content yet."
               }
             </p>
           </Card>
         ) : (
-          blocks.map(renderBlock)
+          <div
+            className="space-y-6"
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
+            {blocks.map(renderBlock)}
+          </div>
         )}
       </div>
 
@@ -359,67 +369,59 @@ export default function AssignmentDetailPage() {
             <CardTitle>Teacher Tools</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2 flex-wrap">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    🎯 Apply Preset
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-72">
-                  <DropdownMenuLabel>Assignment Templates</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {ASSIGNMENT_PRESETS.map((preset) => (
-                    <DropdownMenuItem
-                      key={preset.id}
-                      onClick={() => handleApplyPreset(preset)}
-                      className="flex items-start gap-3 p-3"
-                    >
-                      <span className="text-lg">{preset.icon}</span>
-                      <div className="flex-1">
-                        <div className="font-medium">{preset.name}</div>
-                        <div className="text-sm text-muted-foreground">{preset.description}</div>
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Block
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel>Block Types</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleAddBlock('text')}>
-                    📝 Text Block
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleAddBlock('multiple_choice')}>
-                    ✅ Multiple Choice
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleAddBlock('open_question')}>
-                    ❓ Open Question
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleAddBlock('image')}>
-                    🖼️ Image Block
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleAddBlock('video')}>
-                    🎥 Video Block
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleAddBlock('divider')}>
-                    ― Divider
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {/* Block Template Palette - Drag and Drop */}
+            <div>
+              <h4 className="text-sm font-medium mb-3">Drag blocks to add them to your assignment:</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, 'text')}
+                  className="p-3 border rounded-lg cursor-grab hover:bg-accent transition-colors"
+                >
+                  📝 Text Block
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, 'multiple_choice')}
+                  className="p-3 border rounded-lg cursor-grab hover:bg-accent transition-colors"
+                >
+                  ✅ Multiple Choice
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, 'open_question')}
+                  className="p-3 border rounded-lg cursor-grab hover:bg-accent transition-colors"
+                >
+                  ❓ Open Question
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, 'image')}
+                  className="p-3 border rounded-lg cursor-grab hover:bg-accent transition-colors"
+                >
+                  🖼️ Image Block
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, 'video')}
+                  className="p-3 border rounded-lg cursor-grab hover:bg-accent transition-colors"
+                >
+                  🎥 Video Block
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, 'divider')}
+                  className="p-3 border rounded-lg cursor-grab hover:bg-accent transition-colors"
+                >
+                  ― Divider
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
               <Button variant="outline" onClick={() => setShowStudentView(!showStudentView)}>
                 👁️ {showStudentView ? 'Teacher View' : 'Student View'}
               </Button>
-            </div>
-            <div className="flex gap-2">
               <Button variant="outline">Edit Assignment</Button>
               <Button variant="outline">View Submissions</Button>
             </div>
