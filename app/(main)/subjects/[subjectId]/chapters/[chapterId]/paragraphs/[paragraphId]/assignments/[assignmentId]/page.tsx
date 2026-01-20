@@ -40,12 +40,15 @@ type StudentAnswer = {
 
 export default function AssignmentDetailPage() {
   const params = useParams();
+  console.log('Raw params on mount:', params);
+
   const { subjectId, chapterId, paragraphId, assignmentId } = params as {
     subjectId: string;
     chapterId: string;
     paragraphId: string;
     assignmentId: string;
   };
+  console.log('Extracted params on mount:', { subjectId, chapterId, paragraphId, assignmentId });
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [studentAnswers, setStudentAnswers] = useState<Record<string, StudentAnswer>>({});
@@ -202,6 +205,8 @@ export default function AssignmentDetailPage() {
   };
 
   const handleAddBlock = async (blockType: string) => {
+    console.log('handleAddBlock called with:', { blockType, assignmentId, subjectId, chapterId, paragraphId });
+
     if (!assignment) {
       console.error('No assignment loaded');
       toast({
