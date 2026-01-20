@@ -17,19 +17,49 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Simple fetch for teacher's subjects only (for debugging)
-    const { data, error } = await supabase
-      .from('subjects')
-      .select('*')
-      .eq('user_id', user.id);
+    // Get user role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
 
-    if (error) {
-      console.log(`Subjects fetch error:`, error);
-      return NextResponse.json({ error: 'Failed to fetch subjects' }, { status: 500 });
+    const userRole = profile?.role || 'student';
+    const isTeacher = userRole === 'teacher';
+
+    let subjects: any[] = [];
+
+    if (isTeacher) {
+      // Teachers see subjects they own
+      const { data: ownedSubjects, error: ownedError } = await supabase
+        .from('subjects')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (ownedError) {
+        console.log(`Owned subjects fetch error:`, ownedError);
+      } else {
+        subjects = ownedSubjects || [];
+      }
+    } else {
+      // Students see subjects from classes they're members of
+      const { data: memberSubjects, error: memberError } = await supabase
+        .from('class_members')
+        .select('classes!inner(subjects(*))')
+        .eq('user_id', user.id);
+
+      if (memberError) {
+        console.log(`Member subjects fetch error:`, memberError);
+      } else {
+        // Flatten the nested structure
+        subjects = memberSubjects?.flatMap(member =>
+          member.classes?.subjects || []
+        ) || [];
+      }
     }
 
-    console.log(`Subjects found:`, data?.length || 0);
-    return NextResponse.json(data || []);
+    console.log(`Subjects found for ${userRole}:`, subjects.length);
+    return NextResponse.json(subjects);
 
   } catch (err) {
     console.error(`Unexpected error:`, err);
