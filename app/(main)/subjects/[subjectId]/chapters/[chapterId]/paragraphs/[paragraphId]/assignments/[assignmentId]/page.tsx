@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, AlertCircle, PlusCircle } from 'lucide-react';
@@ -40,14 +40,29 @@ type StudentAnswer = {
 
 export default function AssignmentDetailPage() {
   const params = useParams();
+  const pathname = usePathname();
   console.log('Raw params on mount:', params);
+  console.log('Current pathname:', pathname);
 
-  const { subjectId, chapterId, paragraphId, assignmentId } = params as {
+  // Extract assignmentId from pathname as fallback
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const assignmentsIndex = pathSegments.indexOf('assignments');
+  const assignmentIdFromPath = assignmentsIndex !== -1 && pathSegments.length > assignmentsIndex + 1
+    ? pathSegments[assignmentsIndex + 1]
+    : null;
+
+  console.log('AssignmentId from path:', assignmentIdFromPath);
+
+  const { subjectId, chapterId, paragraphId, assignmentId: assignmentIdFromParams } = params as {
     subjectId: string;
     chapterId: string;
     paragraphId: string;
     assignmentId: string;
   };
+
+  // Use pathname extraction as fallback
+  const assignmentId = assignmentIdFromParams || assignmentIdFromPath;
+  console.log('Final assignmentId:', assignmentId);
   console.log('Extracted params on mount:', { subjectId, chapterId, paragraphId, assignmentId });
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
