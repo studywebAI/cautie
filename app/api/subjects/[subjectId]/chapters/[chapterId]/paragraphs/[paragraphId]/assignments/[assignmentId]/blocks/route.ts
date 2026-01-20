@@ -9,11 +9,15 @@ export async function GET(
   request: Request,
   { params }: { params: { subjectId: string; chapterId: string; paragraphId: string; assignmentId: string } }
 ) {
+  console.log(`GET /api/subjects/[subjectId]/chapters/[chapterId]/paragraphs/[paragraphId]/assignments/${params.assignmentId}/blocks - Called`);
+
   try {
     const cookieStore = cookies()
     const supabase = await createClient(cookieStore)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    console.log(`Auth check: user=${user?.id}, error=${authError?.message}`);
+
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -35,12 +39,15 @@ export async function GET(
       .eq('paragraphs.chapter_id', params.chapterId)
       .single()
 
+    console.log(`Assignment lookup: id=${params.assignmentId}, error=${assignmentError?.message}, found=${!!assignment}`);
+
     if (assignmentError || !assignment) {
       return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
     }
 
     const subjectData = assignment.paragraphs.chapters.subjects as any
     const classId = subjectData.class_id
+    console.log(`Subject data: classId=${classId}, userId=${subjectData.user_id}, currentUser=${user.id}`);
 
     // Check access permissions
     if (classId) {
@@ -51,11 +58,14 @@ export async function GET(
         .eq('id', classId)
         .single()
 
+      console.log(`Class lookup: id=${classId}, error=${classError?.message}, owner=${classAccess?.owner_id}`);
+
       if (classError || !classAccess) {
         return NextResponse.json({ error: 'Class not found' }, { status: 404 })
       }
 
       const isOwner = classAccess.owner_id === user.id
+      console.log(`Permission check: isOwner=${isOwner}, classOwner=${classAccess.owner_id}, userId=${user.id}`);
 
       if (!isOwner) {
         const { data: memberData, error: memberError } = await supabase
@@ -65,75 +75,38 @@ export async function GET(
           .eq('user_id', user.id)
           .single()
 
+        console.log(`Member check: classId=${classId}, userId=${user.id}, error=${memberError?.message}, isMember=${!!memberData}`);
+
         if (memberError || !memberData) {
           return NextResponse.json({ error: 'Access denied' }, { status: 403 })
         }
       }
     } else {
       // Global subject
-      if (subjectData.user_id !== user.id) {
+      const isOwner = subjectData.user_id === user.id
+      console.log(`Global subject check: subjectOwner=${subjectData.user_id}, userId=${user.id}, isOwner=${isOwner}`);
+
+      if (!isOwner) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }
 
     // Get blocks for this assignment
+    console.log(`Fetching blocks for assignment: ${params.assignmentId}`);
     const { data: blocks, error: blocksError } = await supabase
       .from('blocks')
       .select('*')
       .eq('assignment_id', params.assignmentId)
       .order('position', { ascending: true })
 
+    console.log(`Blocks query result: count=${blocks?.length || 0}, error=${blocksError?.message}`);
+
     if (blocksError) {
       console.error('Error fetching blocks:', blocksError)
-      // For now, return sample blocks if no blocks exist
-      const sampleBlocks = [
-        {
-          id: 'sample-1',
-          assignment_id: params.assignmentId,
-          type: 'text',
-          position: 1,
-          data: {
-            content: '<p>This is a sample text block. Welcome to your assignment!</p><p>You can add formatted text, images, and interactive questions here.</p>',
-            style: 'normal'
-          },
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'sample-2',
-          assignment_id: params.assignmentId,
-          type: 'multiple_choice',
-          position: 2,
-          data: {
-            question: 'What is the capital of France?',
-            options: [
-              { id: 'a', text: 'London', correct: false },
-              { id: 'b', text: 'Berlin', correct: false },
-              { id: 'c', text: 'Paris', correct: true },
-              { id: 'd', text: 'Madrid', correct: false }
-            ],
-            multiple_correct: false,
-            shuffle: true
-          },
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'sample-3',
-          assignment_id: params.assignmentId,
-          type: 'open_question',
-          position: 3,
-          data: {
-            question: 'Explain why Paris is considered an important city in European history.',
-            ai_grading: true,
-            grading_criteria: 'Focus on historical, cultural, and political significance. Provide specific examples.',
-            max_score: 5,
-            max_length: 500
-          },
-          created_at: new Date().toISOString()
-        }
-      ];
-      return NextResponse.json(sampleBlocks)
+      return NextResponse.json({ error: 'Failed to fetch blocks', details: blocksError.message }, { status: 500 })
     }
 
+    console.log(`Returning ${blocks.length} blocks`);
     return NextResponse.json(blocks)
   } catch (error) {
     console.error('Unexpected error in blocks GET:', error)
@@ -146,19 +119,23 @@ export async function POST(
   request: Request,
   { params }: { params: { subjectId: string; chapterId: string; paragraphId: string; assignmentId: string } }
 ) {
+  console.log(`POST /api/subjects/[subjectId]/chapters/[chapterId]/paragraphs/[paragraphId]/assignments/${params.assignmentId}/blocks - Called`);
+
   try {
     const cookieStore = cookies()
     const supabase = await createClient(cookieStore)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    console.log(`Auth check: user=${user?.id}, error=${authError?.message}`);
+
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
-    const { type, position, data } = body
+    const { type, position, data: blockData } = body
 
-    if (!type || position === undefined || !data) {
+    if (!type || position === undefined || !blockData) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -179,12 +156,15 @@ export async function POST(
       .eq('paragraphs.chapter_id', params.chapterId)
       .single()
 
+    console.log(`Assignment lookup: id=${params.assignmentId}, error=${assignmentError?.message}, found=${!!assignment}`);
+
     if (assignmentError || !assignment) {
       return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
     }
 
     const subjectData = assignment.paragraphs.chapters.subjects as any
     const classId = subjectData.class_id
+    console.log(`Subject data: classId=${classId}, userId=${subjectData.user_id}, currentUser=${user.id}`);
 
     // Check if user is teacher/owner
     let isTeacher = false
@@ -196,14 +176,18 @@ export async function POST(
         .eq('id', classId)
         .single()
 
+      console.log(`Class lookup: id=${classId}, error=${classError?.message}, owner=${classAccess?.owner_id}`);
+
       if (classError || !classAccess) {
         return NextResponse.json({ error: 'Class not found' }, { status: 404 })
       }
 
       isTeacher = classAccess.owner_id === user.id
+      console.log(`Teacher check: isTeacher=${isTeacher}, classOwner=${classAccess.owner_id}, userId=${user.id}`);
     } else {
       // Global subject
       isTeacher = subjectData.user_id === user.id
+      console.log(`Global subject teacher check: subjectOwner=${subjectData.user_id}, userId=${user.id}, isTeacher=${isTeacher}`);
     }
 
     if (!isTeacher) {
@@ -217,7 +201,7 @@ export async function POST(
         assignment_id: params.assignmentId,
         type,
         position,
-        data
+        data: blockData
       })
       .select()
       .single()
@@ -227,6 +211,7 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to create block' }, { status: 500 })
     }
 
+    console.log(`Block created successfully: ${newBlock.id}`);
     return NextResponse.json(newBlock)
   } catch (error) {
     console.error('Unexpected error in blocks POST:', error)
