@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertCircle, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AppContext } from '@/contexts/app-context';
 import { useContext } from 'react';
@@ -12,6 +12,9 @@ import Link from 'next/link';
 import { SimpleTextBlock } from '@/components/blocks/SimpleTextBlock';
 import { SimpleMultipleChoiceBlock } from '@/components/blocks/SimpleMultipleChoiceBlock';
 import { SimpleOpenQuestionBlock } from '@/components/blocks/SimpleOpenQuestionBlock';
+
+
+
 
 type Assignment = {
   id: string;
@@ -47,6 +50,7 @@ export default function AssignmentDetailPage() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [studentAnswers, setStudentAnswers] = useState<Record<string, StudentAnswer>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showStudentView, setShowStudentView] = useState(false);
   const { toast } = useToast();
   const { role } = useContext(AppContext) as any;
   const isTeacher = role === 'teacher';
@@ -120,6 +124,104 @@ export default function AssignmentDetailPage() {
     }));
   };
 
+  const handleAddBlock = async (blockType: string) => {
+    if (!assignment) return;
+
+    try {
+      // Get the next position
+      const maxPosition = blocks.length > 0 ? Math.max(...blocks.map(b => b.position)) : 0;
+      const nextPosition = maxPosition + 1;
+
+      // Create default data based on block type
+      let defaultData = {};
+      switch (blockType) {
+        case 'text':
+          defaultData = { content: 'Enter your text here...', style: 'normal' };
+          break;
+        case 'multiple_choice':
+          defaultData = {
+            question: 'Enter your question here',
+            options: [
+              { id: 'a', text: 'Option A', correct: false },
+              { id: 'b', text: 'Option B', correct: false },
+              { id: 'c', text: 'Option C', correct: true },
+              { id: 'd', text: 'Option D', correct: false }
+            ],
+            multiple_correct: false,
+            shuffle: true
+          };
+          break;
+        case 'open_question':
+          defaultData = {
+            question: 'Enter your question here',
+            ai_grading: true,
+            grading_criteria: 'Check for accuracy and completeness',
+            max_length: 1000
+          };
+          break;
+        case 'image':
+          defaultData = { url: '', caption: 'Image caption', transform: { x: 0, y: 0, scale: 1, rotation: 0 } };
+          break;
+        case 'video':
+          defaultData = { url: '', provider: 'youtube', start_seconds: 0, end_seconds: null };
+          break;
+        case 'divider':
+          defaultData = { style: 'line' };
+          break;
+        default:
+          defaultData = {};
+      }
+
+      const response = await fetch(
+        `/api/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}/assignments/${assignmentId}/blocks`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: blockType,
+            position: nextPosition,
+            data: defaultData
+          })
+        }
+      );
+
+      if (response.ok) {
+        const newBlock = await response.json();
+        setBlocks(prev => [...prev, newBlock].sort((a, b) => a.position - b.position));
+        toast({
+          title: 'Block Added',
+          description: `${blockType} block has been added to the assignment.`,
+        });
+      } else {
+        throw new Error('Failed to add block');
+      }
+    } catch (error) {
+      console.error('Error adding block:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add block.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, blockType: string) => {
+    e.dataTransfer.setData('text/plain', blockType);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    const blockType = e.dataTransfer.getData('text/plain');
+
+    if (blockType) {
+      await handleAddBlock(blockType);
+    }
+  };
+
   const handleSubmit = async () => {
     if (isTeacher) return;
 
@@ -163,7 +265,7 @@ export default function AssignmentDetailPage() {
       answer: studentAnswers[block.id],
       onAnswer: handleBlockAnswer,
       isTeacher,
-      readOnly: isTeacher
+      readOnly: isTeacher && !showStudentView
     };
 
     switch (block.type) {
@@ -257,9 +359,70 @@ export default function AssignmentDetailPage() {
             <CardTitle>Teacher Tools</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button variant="outline">Add Block</Button>
-            <Button variant="outline">Edit Assignment</Button>
-            <Button variant="outline">View Submissions</Button>
+            <div className="flex gap-2 flex-wrap">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    🎯 Apply Preset
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-72">
+                  <DropdownMenuLabel>Assignment Templates</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {ASSIGNMENT_PRESETS.map((preset) => (
+                    <DropdownMenuItem
+                      key={preset.id}
+                      onClick={() => handleApplyPreset(preset)}
+                      className="flex items-start gap-3 p-3"
+                    >
+                      <span className="text-lg">{preset.icon}</span>
+                      <div className="flex-1">
+                        <div className="font-medium">{preset.name}</div>
+                        <div className="text-sm text-muted-foreground">{preset.description}</div>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Block
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuLabel>Block Types</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleAddBlock('text')}>
+                    📝 Text Block
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleAddBlock('multiple_choice')}>
+                    ✅ Multiple Choice
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleAddBlock('open_question')}>
+                    ❓ Open Question
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleAddBlock('image')}>
+                    🖼️ Image Block
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleAddBlock('video')}>
+                    🎥 Video Block
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleAddBlock('divider')}>
+                    ― Divider
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button variant="outline" onClick={() => setShowStudentView(!showStudentView)}>
+                👁️ {showStudentView ? 'Teacher View' : 'Student View'}
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline">Edit Assignment</Button>
+              <Button variant="outline">View Submissions</Button>
+            </div>
           </CardContent>
         </Card>
       )}

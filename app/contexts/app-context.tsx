@@ -51,6 +51,7 @@ export type AppContextType = {
   setSessionRecap: (data: SessionRecapData | null) => void;
   classes: ClassInfo[];
   createClass: (newClass: { name: string; description: string | null }) => Promise<ClassInfo | null>;
+  isCreatingClass: boolean;
   refetchClasses: () => Promise<void>;
   assignments: ClassAssignment[];
   createAssignment: (newAssignment: Omit<ClassAssignment, 'id' | 'created_at'>) => Promise<void>;
@@ -126,6 +127,8 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([]);
   const [materials, setMaterials] = useState<MaterialReference[]>([]);
+  const [isCreatingClass, setIsCreatingClass] = useState(false);
+  const [isSyncingData, setIsSyncingData] = useState(false);
 
   // Track previous session state to detect login
   const [prevSession, setPrevSession] = useState<Session | null>(session);
@@ -167,14 +170,22 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const syncLocalDataToSupabase = useCallback(async () => {
+    // Prevent multiple simultaneous sync operations
+    if (isSyncingData) {
+      console.warn('Data sync already in progress, ignoring duplicate request');
+      return;
+    }
+
     console.log("Starting data sync to Supabase...");
+    setIsSyncingData(true);
+
     const localClasses = getFromLocalStorage<ClassInfo[]>('studyweb-local-classes', []);
     const localAssignments = getFromLocalStorage<ClassAssignment[]>('studyweb-local-assignments', []);
     const localPersonalTasks = getFromLocalStorage<PersonalTask[]>('studyweb-local-personal-tasks', []);
 
-
     if (localClasses.length === 0 && localAssignments.length === 0 && localPersonalTasks.length === 0) {
       console.log("No local data to sync.");
+      setIsSyncingData(false);
       return; // Nothing to sync
     }
 
@@ -231,7 +242,6 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       }));
       console.log("Synced personal tasks.");
 
-
       // Clear local storage after successful sync
       saveToLocalStorage('studyweb-local-classes', []);
       saveToLocalStorage('studyweb-local-assignments', []);
@@ -240,8 +250,10 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Data synchronization failed:", error);
       // Optionally, notify the user that sync failed
+    } finally {
+      setIsSyncingData(false);
     }
-  }, []);
+  }, [isSyncingData]);
 
   const fetchData = useCallback(async () => {
       setIsLoading(true);
@@ -381,42 +393,52 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
   // ---- Data Creation ----
   const createClass = useCallback(async (newClassData: { name: string; description: string | null }): Promise<ClassInfo | null> => {
-    if (session) {
-      // Logged-in user: save to Supabase
-      const response = await fetch('/api/classes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newClassData),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to create class in Supabase');
-      }
-      const savedClass = await response.json();
-
-      // Optimistic update: Add to local state immediately (PERFORMANCE FIX #3)
-      setClasses(prev => [...prev, savedClass]);
-
-      return savedClass;
-    } else {
-      // Guest user: save to localStorage
-      const newClass: ClassInfo = {
-        id: `local-${Date.now()}`,
-        name: newClassData.name,
-        description: newClassData.description,
-        created_at: new Date().toISOString(),
-        owner_id: 'local-user',
-        user_id: null,
-        guest_id: null,
-        join_code: null,
-        owner_type: 'guest',
-        status: null,
-      };
-      const updatedClasses = [...classes, newClass];
-      setClasses(updatedClasses);
-      saveToLocalStorage('studyweb-local-classes', updatedClasses);
-      return newClass;
+    // Prevent multiple simultaneous class creation requests
+    if (isCreatingClass) {
+      console.warn('Class creation already in progress, ignoring duplicate request');
+      return null;
     }
-  }, [session, classes]);
+
+    setIsCreatingClass(true);
+
+    try {
+      if (session) {
+        // Logged-in user: save to Supabase
+        const response = await fetch('/api/classes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newClassData),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create class in Supabase');
+        }
+        const savedClass = await response.json();
+
+        // Optimistic update: Add to local state immediately (PERFORMANCE FIX #3)
+        setClasses(prev => [...prev, savedClass]);
+
+        return savedClass;
+      } else {
+        // Guest user: save to localStorage
+        const newClass: ClassInfo = {
+          id: `local-${Date.now()}`,
+          name: newClassData.name,
+          description: newClassData.description,
+          created_at: new Date().toISOString(),
+          owner_id: 'local-user',
+          join_code: null,
+          status: null,
+        };
+        const updatedClasses = [...classes, newClass];
+        setClasses(updatedClasses);
+        saveToLocalStorage('studyweb-local-classes', updatedClasses);
+        return newClass;
+      }
+    } finally {
+      setIsCreatingClass(false);
+    }
+  }, [session, classes, isCreatingClass]);
 
   const createAssignment = useCallback(async (newAssignmentData: Omit<ClassAssignment, 'id' | 'created_at'>) => {
      if (session) {
@@ -692,6 +714,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     setSessionRecap,
     classes,
     createClass,
+    isCreatingClass,
     refetchClasses,
     assignments,
     createAssignment,
@@ -709,6 +732,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     language,
     dictionary,
     role,
+    isCreatingClass,
     highContrast,
     dyslexiaFont,
     reducedMotion,

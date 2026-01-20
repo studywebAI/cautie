@@ -140,3 +140,97 @@ export async function GET(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+// POST create a new block
+export async function POST(
+  request: Request,
+  { params }: { params: { subjectId: string; chapterId: string; paragraphId: string; assignmentId: string } }
+) {
+  try {
+    const cookieStore = cookies()
+    const supabase = await createClient(cookieStore)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { type, position, data } = body
+
+    if (!type || position === undefined || !data) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Verify access to the assignment and that user is teacher/owner
+    const { data: assignment, error: assignmentError } = await supabase
+      .from('assignments')
+      .select(`
+        *,
+        paragraphs!inner(
+          chapter_id,
+          chapters!inner(
+            subject_id,
+            subjects!inner(class_id, user_id)
+          )
+        )
+      `)
+      .eq('id', params.assignmentId)
+      .eq('paragraphs.chapter_id', params.chapterId)
+      .single()
+
+    if (assignmentError || !assignment) {
+      return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
+    }
+
+    const subjectData = assignment.paragraphs.chapters.subjects as any
+    const classId = subjectData.class_id
+
+    // Check if user is teacher/owner
+    let isTeacher = false
+    if (classId) {
+      // Subject associated with class
+      const { data: classAccess, error: classError } = await supabase
+        .from('classes')
+        .select('owner_id')
+        .eq('id', classId)
+        .single()
+
+      if (classError || !classAccess) {
+        return NextResponse.json({ error: 'Class not found' }, { status: 404 })
+      }
+
+      isTeacher = classAccess.owner_id === user.id
+    } else {
+      // Global subject
+      isTeacher = subjectData.user_id === user.id
+    }
+
+    if (!isTeacher) {
+      return NextResponse.json({ error: 'Access denied - only teachers can create blocks' }, { status: 403 })
+    }
+
+    // Insert the new block
+    const { data: newBlock, error: insertError } = await supabase
+      .from('blocks')
+      .insert({
+        assignment_id: params.assignmentId,
+        type,
+        position,
+        data
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Error creating block:', insertError)
+      return NextResponse.json({ error: 'Failed to create block' }, { status: 500 })
+    }
+
+    return NextResponse.json(newBlock)
+  } catch (error) {
+    console.error('Unexpected error in blocks POST:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
