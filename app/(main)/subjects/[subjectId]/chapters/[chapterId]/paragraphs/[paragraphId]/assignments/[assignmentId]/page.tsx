@@ -61,6 +61,14 @@ export default function AssignmentDetailPage() {
 
   // Fetch assignment and blocks
   useEffect(() => {
+    console.log('useEffect triggered with params:', { subjectId, chapterId, paragraphId, assignmentId });
+
+    // Guard against undefined params
+    if (!subjectId || !chapterId || !paragraphId || !assignmentId || assignmentId === 'undefined') {
+      console.log('Skipping fetch due to invalid params');
+      return;
+    }
+
     const fetchData = async () => {
       try {
         // Fetch assignment info
@@ -73,14 +81,14 @@ export default function AssignmentDetailPage() {
         if (assignmentsResponse.ok) {
           const assignments = await assignmentsResponse.json();
           console.log(`Found ${assignments.length} assignments:`, assignments.map((a: any) => ({ id: a.id, title: a.title })));
+          console.log(`Looking for assignment with ID: ${assignmentId} (type: ${typeof assignmentId})`);
           const currentAssignment = assignments.find((a: Assignment) => a.id === assignmentId);
-          console.log(`Looking for assignment with ID: ${assignmentId}`);
           console.log(`Current assignment found:`, currentAssignment);
 
           if (currentAssignment) {
             setAssignment(currentAssignment);
           } else {
-            console.error(`Assignment ${assignmentId} not found in assignments list`);
+            console.error(`Assignment ${assignmentId} not found in assignments list. Available assignments:`, assignments.map((a: any) => a.id));
             toast({
               title: 'Assignment Not Found',
               description: `Could not find assignment with ID ${assignmentId}`,
@@ -206,6 +214,18 @@ export default function AssignmentDetailPage() {
 
   const handleAddBlock = async (blockType: string) => {
     console.log('handleAddBlock called with:', { blockType, assignmentId, subjectId, chapterId, paragraphId });
+    console.log('Current assignment state:', assignment);
+    console.log('URL params validation:', { subjectId: !!subjectId, chapterId: !!chapterId, paragraphId: !!paragraphId, assignmentId: !!assignmentId });
+
+    if (!assignmentId || assignmentId === 'undefined') {
+      console.error('Invalid assignmentId:', assignmentId);
+      toast({
+        title: 'Error',
+        description: 'Invalid assignment ID.',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     if (!assignment) {
       console.error('No assignment loaded');
