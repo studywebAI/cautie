@@ -190,41 +190,72 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      // Sync classes
-      const syncedClasses = await Promise.all(localClasses.map(async (cls: ClassInfo) => {
-        const response = await fetch('/api/classes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: cls.name, description: cls.description }),
-        });
-        if (!response.ok) throw new Error(`Failed to sync class: ${cls.name}`);
-        const savedClass = await response.json();
-        // Return a map from old local ID to new remote ID
-        return { localId: cls.id, remoteId: savedClass.id };
-      }));
-      console.log("Synced classes:", syncedClasses);
+      // Get user role before syncing
+      let userRole: UserRole = 'student';
+      if (session?.user?.id) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.role) {
+            userRole = profile.role as UserRole;
+          }
+        } catch (roleError) {
+          console.error('Error fetching user role for sync:', roleError);
+          userRole = 'student'; // Default to student
+        }
+      }
+
+      // Sync classes - only for teachers (students join classes instead of creating them)
+      let syncedClasses: { localId: string; remoteId: string }[] = [];
+      if (userRole === 'teacher' && localClasses.length > 0) {
+        syncedClasses = await Promise.all(localClasses.map(async (cls: ClassInfo) => {
+          const response = await fetch('/api/classes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: cls.name, description: cls.description }),
+          });
+          if (!response.ok) throw new Error(`Failed to sync class: ${cls.name}`);
+          const savedClass = await response.json();
+          // Return a map from old local ID to new remote ID
+          return { localId: cls.id, remoteId: savedClass.id };
+        }));
+        console.log("Synced classes for teacher:", syncedClasses);
+      } else if (userRole === 'student' && localClasses.length > 0) {
+        console.log("Skipping class sync for student - students should join classes instead of creating them");
+      }
 
       // Create a mapping from old local class IDs to new Supabase class IDs
       const classIdMap = new Map(syncedClasses.map(c => [c.localId, c.remoteId]));
 
       // Sync assignments, using the new class IDs
-      await Promise.all(localAssignments.map(async (asn: ClassAssignment) => {
-        const remoteClassId = classIdMap.get(asn.class_id);
-        if (!remoteClassId) {
-          console.warn(`Skipping assignment "${asn.title}" because its class was not synced.`);
-          return;
-        }
-        const response = await fetch('/api/assignments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              title: asn.title,
-              due_date: asn.due_date,
-              class_id: remoteClassId,
-          }),
-        });
-        if (!response.ok) throw new Error(`Failed to sync assignment: ${asn.title}`);
-      }));
+      if (userRole === 'teacher' && localAssignments.length > 0) {
+        await Promise.all(localAssignments.map(async (asn: ClassAssignment) => {
+          const remoteClassId = asn.class_id ? classIdMap.get(asn.class_id) : null;
+          if (!remoteClassId) {
+            console.warn(`Skipping assignment "${asn.title}" because its class was not synced or has no class_id.`);
+            return;
+          }
+          const response = await fetch('/api/assignments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: asn.title,
+                class_id: remoteClassId,
+                paragraph_id: asn.paragraph_id,
+                assignment_index: asn.assignment_index,
+                answers_enabled: asn.answers_enabled,
+            }),
+          });
+          if (!response.ok) throw new Error(`Failed to sync assignment: ${asn.title}`);
+        }));
+        console.log("Synced assignments for teacher.");
+      } else if (userRole === 'student' && localAssignments.length > 0) {
+        console.log("Skipping assignment sync for student - assignments are managed by teachers");
+      }
       console.log("Synced assignments.");
 
       // Sync personal tasks
@@ -242,11 +273,22 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       }));
       console.log("Synced personal tasks.");
 
-      // Clear local storage after successful sync
-      saveToLocalStorage('studyweb-local-classes', []);
-      saveToLocalStorage('studyweb-local-assignments', []);
-      saveToLocalStorage('studyweb-local-personal-tasks', []);
-      console.log("Local storage cleared.");
+      // Clear local storage after sync attempt
+      // Clear classes (whether synced or skipped)
+      if (localClasses.length > 0) {
+        saveToLocalStorage('studyweb-local-classes', []);
+        console.log("Cleared local classes from storage");
+      }
+      // Clear assignments (whether synced or skipped)
+      if (localAssignments.length > 0) {
+        saveToLocalStorage('studyweb-local-assignments', []);
+        console.log("Cleared local assignments from storage");
+      }
+      // Clear personal tasks
+      if (localPersonalTasks.length > 0) {
+        saveToLocalStorage('studyweb-local-personal-tasks', []);
+        console.log("Cleared local personal tasks from storage");
+      }
     } catch (error) {
       console.error("Data synchronization failed:", error);
       // Optionally, notify the user that sync failed
@@ -403,7 +445,12 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       if (session) {
-        // Logged-in user: save to Supabase
+        // Check if user is a teacher before allowing class creation
+        if (role !== 'teacher') {
+          throw new Error('Only teachers can create classes. Students should join existing classes instead.');
+        }
+
+        // Logged-in teacher: save to Supabase
         const response = await fetch('/api/classes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

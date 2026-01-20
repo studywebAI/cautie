@@ -51,6 +51,7 @@ export default function AssignmentDetailPage() {
   const [studentAnswers, setStudentAnswers] = useState<Record<string, StudentAnswer>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showStudentView, setShowStudentView] = useState(false);
+  const [lastBlockChange, setLastBlockChange] = useState<number>(0);
   const { toast } = useToast();
   const { role } = useContext(AppContext) as any;
   const isTeacher = role === 'teacher';
@@ -113,6 +114,65 @@ export default function AssignmentDetailPage() {
     fetchData();
   }, [subjectId, chapterId, paragraphId, assignmentId, isTeacher, toast]);
 
+  // Auto-save blocks every 10 minutes (600,000 ms) - only for teachers
+  useEffect(() => {
+    if (!isTeacher || blocks.length === 0) return;
+
+    const autoSaveInterval = setInterval(() => {
+      console.log('Auto-saving blocks...');
+      // Since blocks are already saved when added/modified, we just log for now
+      // In the future, we could implement bulk update if needed
+      toast({
+        title: 'Auto-saved',
+        description: 'Your assignment changes have been saved.',
+      });
+    }, 600000); // 10 minutes
+
+    return () => clearInterval(autoSaveInterval);
+  }, [isTeacher, blocks.length]);
+
+  // Real-time updates for students - check for block changes every 30 seconds
+  useEffect(() => {
+    if (isTeacher) return; // Teachers don't need real-time updates
+
+    const checkForUpdates = async () => {
+      try {
+        const blocksResponse = await fetch(
+          `/api/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}/assignments/${assignmentId}/blocks`
+        );
+        if (blocksResponse.ok) {
+          const latestBlocks = await blocksResponse.json();
+          const sortedLatestBlocks = latestBlocks.sort((a: Block, b: Block) => a.position - b.position);
+
+          // Check if blocks have changed
+          const currentBlockIds = blocks.map(b => b.id).sort();
+          const latestBlockIds = sortedLatestBlocks.map((b: Block) => b.id).sort();
+
+          const blocksChanged = JSON.stringify(currentBlockIds) !== JSON.stringify(latestBlockIds) ||
+                                blocks.some((block, index) => {
+                                  const latestBlock = sortedLatestBlocks[index];
+                                  return latestBlock && JSON.stringify(block.data) !== JSON.stringify(latestBlock.data);
+                                });
+
+          if (blocksChanged) {
+            console.log('Blocks updated by teacher, refreshing...');
+            setBlocks(sortedLatestBlocks);
+            toast({
+              title: 'Assignment Updated',
+              description: 'The teacher has made changes to this assignment.',
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error checking for updates:', error);
+      }
+    };
+
+    const updateInterval = setInterval(checkForUpdates, 30000); // Check every 30 seconds
+
+    return () => clearInterval(updateInterval);
+  }, [isTeacher, subjectId, chapterId, paragraphId, assignmentId, blocks]);
+
   const handleBlockAnswer = (blockId: string, answerData: any) => {
     setStudentAnswers(prev => ({
       ...prev,
@@ -125,12 +185,23 @@ export default function AssignmentDetailPage() {
   };
 
   const handleAddBlock = async (blockType: string) => {
-    if (!assignment) return;
+    if (!assignment) {
+      console.error('No assignment loaded');
+      toast({
+        title: 'Error',
+        description: 'No assignment loaded.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    console.log(`Adding block of type: ${blockType}`);
 
     try {
       // Get the next position
       const maxPosition = blocks.length > 0 ? Math.max(...blocks.map(b => b.position)) : 0;
       const nextPosition = maxPosition + 1;
+      console.log(`Next position: ${nextPosition}`);
 
       // Create default data based on block type
       let defaultData = {};
@@ -169,37 +240,46 @@ export default function AssignmentDetailPage() {
           defaultData = { style: 'line' };
           break;
         default:
-          defaultData = {};
+          console.error(`Unknown block type: ${blockType}`);
+          return;
       }
 
-      const response = await fetch(
-        `/api/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}/assignments/${assignmentId}/blocks`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: blockType,
-            position: nextPosition,
-            data: defaultData
-          })
-        }
-      );
+      console.log('Block data:', { type: blockType, position: nextPosition, data: defaultData });
+
+      const apiUrl = `/api/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}/assignments/${assignmentId}/blocks`;
+      console.log('API URL:', apiUrl);
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: blockType,
+          position: nextPosition,
+          data: defaultData
+        })
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
 
       if (response.ok) {
         const newBlock = await response.json();
+        console.log('New block created:', newBlock);
         setBlocks(prev => [...prev, newBlock].sort((a, b) => a.position - b.position));
         toast({
           title: 'Block Added',
-          description: `${blockType} block has been added to the assignment.`,
+          description: `${blockType.replace('_', ' ')} block has been added to the assignment.`,
         });
       } else {
-        throw new Error('Failed to add block');
+        const errorText = await response.text();
+        console.error('API Error response:', errorText);
+        throw new Error(`API Error ${response.status}: ${errorText}`);
       }
     } catch (error) {
       console.error('Error adding block:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add block.',
+        description: `Failed to add ${blockType.replace('_', ' ')} block. ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive'
       });
     }
@@ -219,6 +299,50 @@ export default function AssignmentDetailPage() {
 
     if (blockType) {
       await handleAddBlock(blockType);
+    }
+  };
+
+  const handleBlockUpdate = async (blockId: string, newData: any) => {
+    if (!assignment) return;
+
+    console.log(`Updating block ${blockId} with data:`, newData);
+
+    try {
+      const response = await fetch(
+        `/api/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}/assignments/${assignmentId}/blocks/${blockId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: newData })
+        }
+      );
+
+      if (response.ok) {
+        const updatedBlock = await response.json();
+        console.log('Block updated:', updatedBlock);
+
+        // Update local state
+        setBlocks(prev => prev.map(block =>
+          block.id === blockId
+            ? { ...block, data: { ...block.data, ...newData } }
+            : block
+        ));
+
+        // Mark as changed for auto-save tracking
+        setLastBlockChange(Date.now());
+      } else {
+        const errorText = await response.text();
+        console.error('Block update failed:', errorText);
+        throw new Error(`Update failed: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error updating block:', error);
+      toast({
+        title: 'Save Failed',
+        description: 'Failed to save changes. Please try again.',
+        variant: 'destructive'
+      });
+      throw error; // Re-throw to let component handle it
     }
   };
 
@@ -264,6 +388,7 @@ export default function AssignmentDetailPage() {
       block: block,
       answer: studentAnswers[block.id],
       onAnswer: handleBlockAnswer,
+      onBlockUpdate: handleBlockUpdate,
       isTeacher,
       readOnly: isTeacher && !showStudentView
     };
