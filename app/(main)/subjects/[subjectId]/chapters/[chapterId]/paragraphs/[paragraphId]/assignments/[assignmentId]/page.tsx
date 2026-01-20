@@ -61,15 +61,32 @@ export default function AssignmentDetailPage() {
     const fetchData = async () => {
       try {
         // Fetch assignment info
+        console.log(`Fetching assignments for paragraph: ${paragraphId}`);
         const assignmentsResponse = await fetch(
           `/api/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}/assignments`
         );
+        console.log(`Assignments response status: ${assignmentsResponse.status}`);
+
         if (assignmentsResponse.ok) {
           const assignments = await assignmentsResponse.json();
+          console.log(`Found ${assignments.length} assignments:`, assignments.map((a: any) => ({ id: a.id, title: a.title })));
           const currentAssignment = assignments.find((a: Assignment) => a.id === assignmentId);
+          console.log(`Looking for assignment with ID: ${assignmentId}`);
+          console.log(`Current assignment found:`, currentAssignment);
+
           if (currentAssignment) {
             setAssignment(currentAssignment);
+          } else {
+            console.error(`Assignment ${assignmentId} not found in assignments list`);
+            toast({
+              title: 'Assignment Not Found',
+              description: `Could not find assignment with ID ${assignmentId}`,
+              variant: 'destructive'
+            });
           }
+        } else {
+          const errorText = await assignmentsResponse.text();
+          console.error(`Failed to fetch assignments: ${errorText}`);
         }
 
         // Fetch blocks for this assignment
