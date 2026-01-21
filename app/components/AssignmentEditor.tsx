@@ -555,6 +555,58 @@ export function AssignmentEditor({
                           </div>
                         )}
 
+                        {block.type === 'drag_drop' && (
+                          <div className="space-y-4">
+                            <Input
+                              value={block.data.prompt}
+                              onChange={(e) => updateBlock(block.id, { ...block.data, prompt: e.target.value })}
+                              placeholder="Enter your matching prompt..."
+                              className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
+                            />
+                            <div className="grid grid-cols-2 gap-8 mt-4">
+                              <div className="space-y-2">
+                                <div className="text-sm text-gray-600 font-medium mb-2">Column A:</div>
+                                {block.data.pairs?.map((pair: any, pairIndex: number) => (
+                                  <div key={`left-${pairIndex}`} className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-blue-600 w-6">{String.fromCharCode(65 + pairIndex)}.</span>
+                                    <Input
+                                      value={pair.left}
+                                      onChange={(e) => {
+                                        const newPairs = [...block.data.pairs];
+                                        newPairs[pairIndex] = { ...newPairs[pairIndex], left: e.target.value };
+                                        updateBlock(block.id, { ...block.data, pairs: newPairs });
+                                      }}
+                                      placeholder="Left item"
+                                      className="flex-1 border-none shadow-none p-0 focus:ring-0"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="space-y-2">
+                                <div className="text-sm text-gray-600 font-medium mb-2">Column B:</div>
+                                {block.data.pairs?.map((pair: any, pairIndex: number) => (
+                                  <div key={`right-${pairIndex}`} className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-green-600 w-6">{pairIndex + 1}.</span>
+                                    <Input
+                                      value={pair.right}
+                                      onChange={(e) => {
+                                        const newPairs = [...block.data.pairs];
+                                        newPairs[pairIndex] = { ...newPairs[pairIndex], right: e.target.value };
+                                        updateBlock(block.id, { ...block.data, pairs: newPairs });
+                                      }}
+                                      placeholder="Right item"
+                                      className="flex-1 border-none shadow-none p-0 focus:ring-0"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="text-sm text-gray-500 italic mt-2">
+                              Students will draw lines to connect matching items between Column A and Column B
+                            </div>
+                          </div>
+                        )}
+
                         {block.type === 'ordering' && (
                           <div className="space-y-4">
                             <Input
@@ -589,7 +641,7 @@ export function AssignmentEditor({
                         )}
 
                         {/* Other block types show as JSON for now */}
-                        {!['text', 'multiple_choice', 'open_question', 'fill_in_blank', 'ordering', 'divider'].includes(block.type) && (
+                        {!['text', 'multiple_choice', 'open_question', 'fill_in_blank', 'drag_drop', 'ordering', 'divider'].includes(block.type) && (
                           <div className="text-sm text-gray-500 italic">
                             {BLOCK_TEMPLATES.find(t => t.type === block.type)?.label} block - content will be rendered here
                           </div>
@@ -736,6 +788,70 @@ export function AssignmentEditor({
                               className="mt-2"
                             />
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {block.type === 'drag_drop' && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Prompt</Label>
+                          <Input
+                            value={block.data.prompt}
+                            onChange={(e) => updateBlock(block.id, { ...block.data, prompt: e.target.value })}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Matching Pairs</Label>
+                          <div className="grid grid-cols-2 gap-6 mt-2">
+                            <div className="space-y-2">
+                              <div className="text-sm font-medium text-blue-600">Column A:</div>
+                              {block.data.pairs?.map((pair: any, index: number) => (
+                                <Input
+                                  key={`left-${index}`}
+                                  value={pair.left}
+                                  onChange={(e) => {
+                                    const newPairs = [...block.data.pairs];
+                                    newPairs[index] = { ...newPairs[index], left: e.target.value };
+                                    updateBlock(block.id, { ...block.data, pairs: newPairs });
+                                  }}
+                                  placeholder={`Item ${String.fromCharCode(65 + index)}`}
+                                  className="w-full"
+                                />
+                              ))}
+                            </div>
+                            <div className="space-y-2">
+                              <div className="text-sm font-medium text-green-600">Column B:</div>
+                              {block.data.pairs?.map((pair: any, index: number) => (
+                                <Input
+                                  key={`right-${index}`}
+                                  value={pair.right}
+                                  onChange={(e) => {
+                                    const newPairs = [...block.data.pairs];
+                                    newPairs[index] = { ...newPairs[index], right: e.target.value };
+                                    updateBlock(block.id, { ...block.data, pairs: newPairs });
+                                  }}
+                                  placeholder={`Match ${index + 1}`}
+                                  className="w-full"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <div className="text-sm text-gray-500 mt-2">
+                            Students will draw lines to connect items between Column A and Column B
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newPairs = [...(block.data.pairs || []), { left: '', right: '' }];
+                              updateBlock(block.id, { ...block.data, pairs: newPairs });
+                            }}
+                            className="mt-3"
+                          >
+                            Add Pair
+                          </Button>
                         </div>
                       </div>
                     )}
