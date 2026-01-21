@@ -95,8 +95,8 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
     icon: <FileText className="h-4 w-4" />,
     label: 'Fill in Blank',
     defaultData: {
-      text: 'The ___ is the powerhouse of the cell.',
-      answers: ['mitochondria'],
+      text: 'The capital of France is ___.',
+      answers: ['paris'],
       case_sensitive: false
     }
   },
@@ -155,6 +155,7 @@ export function AssignmentEditor({
   const [blocks, setBlocks] = useState<AssignmentBlock[]>(initialBlocks);
   const [editingBlock, setEditingBlock] = useState<string | null>(null);
   const [draggedBlock, setDraggedBlock] = useState<string | null>(null);
+  const [draggedTemplate, setDraggedTemplate] = useState<BlockTemplate | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const { user } = useContext(AppContext) as any;
@@ -219,8 +220,18 @@ export function AssignmentEditor({
     setBlocks(newBlocks);
   };
 
-  const handleDragStart = (e: React.DragEvent, blockId: string) => {
-    setDraggedBlock(blockId);
+  const handleDragStart = (e: React.DragEvent, dragId: string) => {
+    if (dragId.startsWith('template-')) {
+      const templateId = dragId.replace('template-', '');
+      const template = BLOCK_TEMPLATES.find(t => t.id === templateId);
+      if (template) {
+        setDraggedTemplate(template);
+        setDraggedBlock(null);
+      }
+    } else {
+      setDraggedBlock(dragId);
+      setDraggedTemplate(null);
+    }
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -231,11 +242,37 @@ export function AssignmentEditor({
 
   const handleDragEnd = () => {
     setDraggedBlock(null);
+    setDraggedTemplate(null);
     setDragOverIndex(null);
   };
 
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
+
+    // Handle template drop (adding new block)
+    if (draggedTemplate) {
+      const newBlock: AssignmentBlock = {
+        id: `block-${Date.now()}`,
+        type: draggedTemplate.type,
+        position: dropIndex,
+        data: { ...draggedTemplate.defaultData }
+      };
+
+      const newBlocks = [...blocks];
+      newBlocks.splice(dropIndex, 0, newBlock);
+
+      // Update positions
+      newBlocks.forEach((block, index) => {
+        block.position = index;
+      });
+
+      setBlocks(newBlocks);
+      setDraggedTemplate(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // Handle block reordering
     if (!draggedBlock) return;
 
     const draggedIndex = blocks.findIndex(b => b.id === draggedBlock);
@@ -309,21 +346,20 @@ export function AssignmentEditor({
               </div>
             </div>
 
-            {/* Block toolbar */}
+            {/* Block toolbar - drag to add */}
             <div className="flex flex-wrap gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700 mr-2">Add blocks:</span>
+              <span className="text-sm font-medium text-gray-700 mr-2">Drag blocks to paper:</span>
               {BLOCK_TEMPLATES.map((template) => (
-                <Button
+                <div
                   key={template.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addBlock(template)}
-                  className="flex items-center gap-1 h-8 px-2"
-                  title={template.label}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, `template-${template.id}`)}
+                  className="flex items-center gap-1 h-8 px-2 bg-white border border-gray-300 rounded cursor-move hover:bg-gray-50 transition-colors"
+                  title={`Drag to add ${template.label}`}
                 >
                   {template.icon}
                   <span className="text-xs">{template.label}</span>
-                </Button>
+                </div>
               ))}
             </div>
 
@@ -519,12 +555,41 @@ export function AssignmentEditor({
                           </div>
                         )}
 
+                        {block.type === 'ordering' && (
+                          <div className="space-y-4">
+                            <Input
+                              value={block.data.prompt}
+                              onChange={(e) => updateBlock(block.id, { ...block.data, prompt: e.target.value })}
+                              placeholder="Enter your ordering prompt..."
+                              className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
+                            />
+                            <div className="space-y-2 pl-4">
+                              <div className="text-sm text-gray-600 mb-2">Items to order:</div>
+                              {block.data.items?.map((item: string, itemIndex: number) => (
+                                <div key={itemIndex} className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-gray-500 w-6">{itemIndex + 1}.</span>
+                                  <Input
+                                    value={item}
+                                    onChange={(e) => {
+                                      const newItems = [...block.data.items];
+                                      newItems[itemIndex] = e.target.value;
+                                      updateBlock(block.id, { ...block.data, items: newItems });
+                                    }}
+                                    placeholder={`Item ${itemIndex + 1}`}
+                                    className="flex-1 border-none shadow-none p-0 focus:ring-0"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {block.type === 'divider' && (
                           <hr className="border-t-2 border-gray-300 my-4" />
                         )}
 
                         {/* Other block types show as JSON for now */}
-                        {!['text', 'multiple_choice', 'open_question', 'fill_in_blank', 'divider'].includes(block.type) && (
+                        {!['text', 'multiple_choice', 'open_question', 'fill_in_blank', 'ordering', 'divider'].includes(block.type) && (
                           <div className="text-sm text-gray-500 italic">
                             {BLOCK_TEMPLATES.find(t => t.type === block.type)?.label} block - content will be rendered here
                           </div>
@@ -671,6 +736,48 @@ export function AssignmentEditor({
                               className="mt-2"
                             />
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {block.type === 'ordering' && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Prompt</Label>
+                          <Input
+                            value={block.data.prompt}
+                            onChange={(e) => updateBlock(block.id, { ...block.data, prompt: e.target.value })}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Items to Order</Label>
+                          {block.data.items?.map((item: string, index: number) => (
+                            <div key={index} className="flex items-center gap-2 mt-2">
+                              <span className="text-sm font-medium w-6">{index + 1}.</span>
+                              <Input
+                                value={item}
+                                onChange={(e) => {
+                                  const newItems = [...block.data.items];
+                                  newItems[index] = e.target.value;
+                                  updateBlock(block.id, { ...block.data, items: newItems });
+                                }}
+                                placeholder={`Item ${index + 1}`}
+                                className="flex-1"
+                              />
+                            </div>
+                          ))}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newItems = [...(block.data.items || []), ''];
+                              updateBlock(block.id, { ...block.data, items: newItems });
+                            }}
+                            className="mt-2"
+                          >
+                            Add Item
+                          </Button>
                         </div>
                       </div>
                     )}
