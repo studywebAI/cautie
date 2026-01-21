@@ -1,8 +1,125 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { updateProgressSnapshot } from '@/lib/progress'
 
 export const dynamic = 'force-dynamic'
+
+// POST - Submit student answer for a block
+export async function POST(
+  request: Request,
+  { params }: { params: { subjectId: string; chapterId: string; paragraphId: string; assignmentId: string; blockId: string } }
+) {
+  try {
+    const cookieStore = cookies()
+    const supabase = await createClient(cookieStore)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { answerData } = await request.json()
+
+    // Verify the block belongs to this assignment
+    const { data: block, error: blockError } = await supabase
+      .from('blocks')
+      .select('assignment_id, type, data')
+      .eq('id', params.blockId)
+      .single()
+
+    if (blockError || !block) {
+      return NextResponse.json({ error: 'Block not found' }, { status: 404 })
+    }
+
+    if (block.assignment_id !== params.assignmentId) {
+      return NextResponse.json({ error: 'Block does not belong to this assignment' }, { status: 403 })
+    }
+
+    // Verify assignment access
+    const { data: assignment, error: assignmentError } = await supabase
+      .from('assignments')
+      .select(`
+        *,
+        paragraphs!inner(
+          chapter_id,
+          chapters!inner(
+            subject_id,
+            subjects!inner(class_id)
+          )
+        )
+      `)
+      .eq('id', params.assignmentId)
+      .eq('paragraphs.chapter_id', params.chapterId)
+      .single()
+
+    if (assignmentError || !assignment) {
+      return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
+    }
+
+    const classId = assignment.paragraphs.chapters.subjects.class_id
+
+    if (!classId) {
+      return NextResponse.json({ error: 'Assignment not associated with a class' }, { status: 400 })
+    }
+
+    // Check if user is member of the class
+    const { data: membership, error: memberError } = await supabase
+      .from('class_members')
+      .select('role')
+      .eq('class_id', classId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (memberError || !membership) {
+      return NextResponse.json({ error: 'Access denied - not a class member' }, { status: 403 })
+    }
+
+    // Insert student answer
+    const { data: studentAnswer, error: insertError } = await supabase
+      .from('student_answers')
+      .insert({
+        student_id: user.id,
+        block_id: params.blockId,
+        answer_data: answerData,
+        is_correct: null, // Will be set by grading
+        graded_by_ai: false
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Error inserting student answer:', insertError)
+      return NextResponse.json({ error: 'Failed to submit answer' }, { status: 500 })
+    }
+
+    // If OpenQuestionBlock with AI grading, queue grading job
+    if (block.type === 'open_question' && (block.data as any)?.ai_grading) {
+      const { error: jobError } = await supabase
+        .from('ai_grading_queue')
+        .insert({
+          answer_id: studentAnswer.id
+        })
+
+      if (jobError) {
+        console.error('Error creating grading job:', jobError)
+        // Don't fail the submission, just log
+      }
+    }
+
+    // Update progress_snapshots
+    await updateProgressSnapshot(params.paragraphId, user.id)
+
+    return NextResponse.json({
+      message: 'Answer submitted successfully',
+      answer: studentAnswer
+    })
+
+  } catch (error) {
+    console.error('Unexpected error in block POST:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
 
 // PUT - Update a specific block
 export async function PUT(

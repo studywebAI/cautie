@@ -182,7 +182,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {[...Array(6)].map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
@@ -255,7 +255,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
             )}
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {subjects.map((subject) => (
               <Card key={subject.id} className="group hover:shadow-lg transition-shadow cursor-pointer">
                 <Link href={`/subjects/${subject.id}`}>

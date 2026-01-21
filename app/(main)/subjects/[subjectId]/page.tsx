@@ -143,41 +143,52 @@ export default function SubjectDetailPage() {
       <div className="space-y-6">
         {chapters.map((chapter) => (
           <Card key={chapter.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                  <div>
-                    <CardTitle className="text-lg">{chapter.title}</CardTitle>
-                    <CardDescription>{chapter.description}</CardDescription>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Left side - AI Summary */}
+                <div className="md:col-span-1">
+                  <div className="bg-muted/50 rounded-lg p-4 h-full">
+                    <h4 className="font-medium text-sm mb-3">Chapter Summary</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {chapter.ai_summary || 'AI summary will be generated when content is added.'}
+                    </p>
                   </div>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => {
-                      setSelectedChapterId(chapter.id);
-                      setIsCreateParagraphOpen(true);
-                    }}>
-                      Add Paragraph
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>Edit Chapter</DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Paragraphs */}
-              <div className="space-y-3">
-                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                  Paragraphs
-                </h4>
-                {chapter.paragraphs?.map((paragraph) => (
+
+                {/* Right side - Chapter content */}
+                <div className="md:col-span-2">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      <div>
+                        <h3 className="text-lg font-semibold">{chapter.title}</h3>
+                        {chapter.description && (
+                          <p className="text-sm text-muted-foreground">{chapter.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => {
+                          setSelectedChapterId(chapter.id);
+                          setIsCreateParagraphOpen(true);
+                        }}>
+                          Add Paragraph
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>Edit Chapter</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Paragraphs */}
+                  <div className="space-y-3">
+                    {chapter.paragraphs?.map((paragraph) => (
                   <div key={paragraph.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
@@ -211,6 +222,8 @@ export default function SubjectDetailPage() {
                 {(!chapter.paragraphs || chapter.paragraphs.length === 0) && (
                   <p className="text-sm text-muted-foreground italic">No paragraphs yet</p>
                 )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

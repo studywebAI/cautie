@@ -12,6 +12,11 @@ export { LayoutBlock } from './LayoutBlock';
 export { ComplexBlock } from './ComplexBlock';
 export { BlockRenderer } from './BlockRenderer';
 export { BlockEditor } from './BlockEditor';
+export { FillInBlankBlock } from './FillInBlankBlock';
+export { DragDropBlock } from './DragDropBlock';
+export { OrderingBlock } from './OrderingBlock';
+export { MediaEmbedBlock } from './MediaEmbedBlock';
+export { DividerBlock } from './DividerBlock';
 
 // Types
 export type {
