@@ -278,7 +278,7 @@ export function AssignmentEditor({
       {/* Main content - Paper-like layout */}
       <div className="flex-1 flex flex-col">
         {/* Header like a test paper */}
-        <div className="bg-white border-b p-6">
+        <div className="bg-white border-b p-4">
           <div className="max-w-4xl mx-auto">
             <div className="flex justify-between items-start mb-4">
               <div>
@@ -296,9 +296,9 @@ export function AssignmentEditor({
         </div>
 
         {/* Paper content area */}
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-4">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white border-2 border-gray-300 min-h-[800px] p-8 shadow-sm">
+            <div className="bg-white border-2 border-gray-300 min-h-[800px] p-6 shadow-sm">
               {blocks.length === 0 ? (
                 <div className="flex items-center justify-center h-64 text-gray-400">
                   <div className="text-center">
@@ -308,7 +308,7 @@ export function AssignmentEditor({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-3">
                   {blocks.map((block, index) => (
                     <div
                       key={block.id}
@@ -324,8 +324,8 @@ export function AssignmentEditor({
                       }`}
                     >
                       {/* Block controls */}
-                      <div className="absolute -left-20 top-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="flex items-center gap-1">
+                      <div className="absolute -left-12 top-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-0.5">
                           {/* Move handle */}
                           <div className="cursor-move p-1 hover:bg-gray-100 rounded">
                             <GripVertical className="h-4 w-4 text-gray-400" />
@@ -342,7 +342,7 @@ export function AssignmentEditor({
                           </Button>
                         </div>
                         {/* Quick actions */}
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-0.5">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -376,12 +376,12 @@ export function AssignmentEditor({
                       </div>
 
                       {/* Block number */}
-                      <div className="absolute -left-8 top-0 text-gray-400 font-medium">
+                      <div className="absolute -left-4 top-0 text-gray-400 font-medium">
                         {index + 1}.
                       </div>
 
                       {/* Block content with inline editing */}
-                      <div className="border-b border-gray-200 pb-4 pl-4">
+                      <div className="border-b border-gray-200 pb-2">
                         {block.type === 'text' && (
                           <div className="space-y-2">
                             <Textarea
@@ -401,9 +401,9 @@ export function AssignmentEditor({
                               placeholder="Enter your question..."
                               className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
                             />
-                            <div className="space-y-2 pl-4">
+                            <div className="space-y-1 pl-2">
                               {block.data.options?.map((option: any, optionIndex: number) => (
-                                <div key={option.id} className="flex items-center gap-3">
+                                <div key={option.id} className="flex items-center gap-2">
                                   <Checkbox
                                     checked={option.correct}
                                     onCheckedChange={(checked) => {
@@ -436,7 +436,7 @@ export function AssignmentEditor({
                               placeholder="Enter your question..."
                               className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
                             />
-                            <div className="pl-4 space-y-2">
+                            <div className="pl-2 space-y-1">
                               <div className="text-sm text-gray-600">
                                 (Answer space below - {block.data.max_score} points)
                               </div>
