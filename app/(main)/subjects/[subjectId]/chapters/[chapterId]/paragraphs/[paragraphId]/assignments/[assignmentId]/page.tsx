@@ -86,7 +86,6 @@ export default function AssignmentDetailPage() {
           title: 'Answer Submitted',
           description: 'Your answer has been saved.',
         });
-        setIsSubmitted(true);
       } else {
         throw new Error('Failed to submit answer');
       }
@@ -116,10 +115,10 @@ export default function AssignmentDetailPage() {
         subjectId={subjectId}
         chapterId={chapterId}
         paragraphId={paragraphId}
-        initialBlocks={blocks}
+        initialBlocks={blocks as any}
         onSave={(savedBlocks) => {
           // Refresh blocks after save
-          setBlocks(savedBlocks);
+          setBlocks(savedBlocks as any);
         }}
         onPreview={() => {
           // Could switch to preview mode
