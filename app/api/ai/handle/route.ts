@@ -74,6 +74,9 @@ const flowMap: Record<
   gradeOpenQuestion: () =>
     import("@/ai/flows/grade-open-question").then(m => m.gradeOpenQuestion),
 
+  modifyContent: () =>
+    import("@/ai/flows/modify-content").then(m => m.modifyContent),
+
   explainAnswer: () =>
     import("@/ai/flows/explain-answer").then(m => m.explainAnswer),
 };

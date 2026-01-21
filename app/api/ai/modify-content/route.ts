@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import OpenAI from 'openai';
-
-// Initialize OpenAI client
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-}) : null;
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,43 +25,42 @@ export async function POST(request: NextRequest) {
       context = `Modifying an entire assignment with ${assignmentData?.blocks?.length || 0} blocks`;
     }
 
-    let aiResponse: string;
+    // Call the unified Gemini AI flow
+    const aiResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/handle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        flowName: 'modifyContent',
+        input: {
+          prompt,
+          scope,
+          blockData,
+          pageData,
+          assignmentData,
+          blockType
+        }
+      })
+    });
 
-    if (openai) {
-      // Create AI prompt
-      const systemPrompt = `You are an AI assistant helping teachers modify educational content. Your task is to modify the provided content based on the user's request.
-
-Context: ${context}
-Content to modify: ${contentToModify}
-
-User request: ${prompt}
-
-Please provide the modified content in the appropriate format for the block type. Be helpful, accurate, and maintain educational quality.`;
-
-      // Call OpenAI
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
+    if (!aiResponse.ok) {
+      // Fallback to mock response for development
+      const mockResponse = generateMockResponse(prompt, blockType, blockData);
+      return NextResponse.json({
+        success: true,
+        modifiedData: mockResponse,
+        originalScope: scope
       });
-
-      aiResponse = completion.choices[0]?.message?.content || '';
-    } else {
-      // Mock response for development
-      aiResponse = generateMockResponse(prompt, blockType, contentToModify);
     }
 
-    if (!aiResponse) {
-      throw new Error('No response from AI');
+    const aiResult = await aiResponse.json();
+
+    if (!aiResult.success) {
+      throw new Error('AI modification failed');
     }
 
     // Parse and format the response based on scope
     if (scope === 'block') {
-      const modifiedData = parseBlockResponse(aiResponse, blockType, blockData);
+      const modifiedData = parseBlockResponse(aiResult.modifiedData, blockType, blockData);
       return NextResponse.json({
         success: true,
         modifiedData,
@@ -119,53 +112,59 @@ function extractBlockContent(data: any, type: string): string {
   }
 }
 
-function parseBlockResponse(aiResponse: string, blockType: string, originalData: any): any {
-  // Clean up AI response and parse it back into block data format
-  const cleaned = aiResponse.trim();
+function parseBlockResponse(modifiedData: any, blockType: string, originalData: any): any {
+  // Handle the modified data from Gemini flow
+  if (typeof modifiedData === 'string') {
+    // Fallback for string responses (mock)
+    const cleaned = modifiedData.trim();
 
-  switch (blockType) {
-    case 'text':
-      // Extract just the text content
-      return { ...originalData, content: cleaned };
+    switch (blockType) {
+      case 'text':
+        // Extract just the text content
+        return { ...originalData, content: cleaned };
 
-    case 'multiple_choice':
-      // Try to parse question and options
-      const lines = cleaned.split('\n');
-      const question = lines.find(line => line.startsWith('Question:'))?.replace('Question:', '').trim() || originalData.question;
-      const optionsText = lines.find(line => line.startsWith('Options:'))?.replace('Options:', '').trim();
-      const options = optionsText ? optionsText.split(',').map((text: string, index: number) => ({
-        id: String.fromCharCode(97 + index),
-        text: text.trim(),
-        correct: index === 0 // First option as correct by default
-      })) : originalData.options;
+      case 'multiple_choice':
+        // Try to parse question and options
+        const lines = cleaned.split('\n');
+        const question = lines.find(line => line.startsWith('Question:'))?.replace('Question:', '').trim() || originalData.question;
+        const optionsText = lines.find(line => line.startsWith('Options:'))?.replace('Options:', '').trim();
+        const options = optionsText ? optionsText.split(',').map((text: string, index: number) => ({
+          id: String.fromCharCode(97 + index),
+          text: text.trim(),
+          correct: index === 0 // First option as correct by default
+        })) : originalData.options;
 
-      return { ...originalData, question, options };
+        return { ...originalData, question, options };
 
-    case 'open_question':
-      // Extract question and criteria
-      const questionMatch = cleaned.match(/Question:\s*(.+?)(?:\n|$)/i);
-      const criteriaMatch = cleaned.match(/Criteria:\s*(.+?)(?:\n|$)/i);
+      case 'open_question':
+        // Extract question and criteria
+        const questionMatch = cleaned.match(/Question:\s*(.+?)(?:\n|$)/i);
+        const criteriaMatch = cleaned.match(/Criteria:\s*(.+?)(?:\n|$)/i);
 
-      return {
-        ...originalData,
-        question: questionMatch ? questionMatch[1].trim() : originalData.question,
-        grading_criteria: criteriaMatch ? criteriaMatch[1].trim() : originalData.grading_criteria
-      };
+        return {
+          ...originalData,
+          question: questionMatch ? questionMatch[1].trim() : originalData.question,
+          grading_criteria: criteriaMatch ? criteriaMatch[1].trim() : originalData.grading_criteria
+        };
 
-    case 'fill_in_blank':
-      // Extract text and answers
-      const textMatch = cleaned.match(/Text:\s*(.+?)(?:\n|$)/i);
-      const answersMatch = cleaned.match(/Answers:\s*(.+?)(?:\n|$)/i);
+      case 'fill_in_blank':
+        // Extract text and answers
+        const textMatch = cleaned.match(/Text:\s*(.+?)(?:\n|$)/i);
+        const answersMatch = cleaned.match(/Answers:\s*(.+?)(?:\n|$)/i);
 
-      return {
-        ...originalData,
-        text: textMatch ? textMatch[1].trim() : originalData.text,
-        answers: answersMatch ? answersMatch[1].split(',').map((a: string) => a.trim()) : originalData.answers
-      };
+        return {
+          ...originalData,
+          text: textMatch ? textMatch[1].trim() : originalData.text,
+          answers: answersMatch ? answersMatch[1].split(',').map((a: string) => a.trim()) : originalData.answers
+        };
 
-    default:
-      // For complex blocks, return as-is but try to update content
-      return { ...originalData, content: cleaned };
+      default:
+        // For complex blocks, return as-is but try to update content
+        return { ...originalData, content: cleaned };
+    }
+  } else {
+    // For object responses from Gemini flow, merge with original data
+    return { ...originalData, ...modifiedData };
   }
 }
 
