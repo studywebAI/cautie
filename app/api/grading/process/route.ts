@@ -70,11 +70,11 @@ export async function POST() {
       return NextResponse.json({ error: 'Not an open question' }, { status: 400 })
     }
 
-    // Call AI grading
+    // Call AI grading using the handle endpoint
     const answerData = studentAnswer.answer_data as any
     const blockConfig = blockData.data as any
 
-    const aiResponse = await fetch('http://localhost:3000/api/ai/handle', {
+    const aiResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/handle`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -90,6 +90,8 @@ export async function POST() {
     });
 
     if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('AI grading failed:', errorText);
       throw new Error('AI grading failed');
     }
 

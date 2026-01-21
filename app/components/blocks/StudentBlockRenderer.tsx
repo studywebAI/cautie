@@ -9,19 +9,32 @@ import { StudentFillInBlankBlock } from './StudentFillInBlankBlock';
 import { StudentMediaBlock } from './StudentMediaBlock';
 import { StudentDividerBlock } from './StudentDividerBlock';
 
+interface GradingResult {
+  score: number;
+  feedback: string;
+  graded_by_ai: boolean;
+  graded_at?: string;
+}
+
 interface StudentBlockRendererProps {
   block: BaseBlock;
   onSubmit: (answerData: any) => void;
+  gradingResult?: GradingResult;
+  isSubmitted?: boolean;
 }
 
 export const StudentBlockRenderer: React.FC<StudentBlockRendererProps> = ({
   block,
   onSubmit,
+  gradingResult,
+  isSubmitted,
 }) => {
   const renderBlock = () => {
     const commonProps = {
       block: block as any,
       onSubmit,
+      gradingResult,
+      isSubmitted,
     };
 
     switch (block.type) {

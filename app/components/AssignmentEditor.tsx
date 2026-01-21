@@ -22,7 +22,9 @@ import {
   PenTool,
   ArrowUp,
   ArrowDown,
-  Trash2
+  Trash2,
+  Sparkles,
+  Send
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AppContext } from '@/contexts/app-context';
@@ -154,12 +156,100 @@ export function AssignmentEditor({
 }: AssignmentEditorProps) {
   const [blocks, setBlocks] = useState<AssignmentBlock[]>(initialBlocks);
   const [editingBlock, setEditingBlock] = useState<string | null>(null);
+  const [aiBlock, setAiBlock] = useState<string | null>(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiScope, setAiScope] = useState<'block' | 'page' | 'assignment'>('block');
+  const [aiTyping, setAiTyping] = useState<string>('');
   const [draggedBlock, setDraggedBlock] = useState<string | null>(null);
   const [draggedTemplate, setDraggedTemplate] = useState<BlockTemplate | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragPreview, setDragPreview] = useState<{x: number, y: number, width: number, height: number} | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isStudentView, setIsStudentView] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [history, setHistory] = useState<AssignmentBlock[][]>([initialBlocks]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const { toast } = useToast();
   const { user } = useContext(AppContext) as any;
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Undo/Redo functionality
+  const saveToHistory = (newBlocks: AssignmentBlock[]) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push([...newBlocks]);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    setHasUnsavedChanges(true);
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      setBlocks(history[historyIndex - 1]);
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setBlocks(history[historyIndex + 1]);
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'z':
+            if (e.shiftKey) {
+              e.preventDefault();
+              redo();
+            } else {
+              e.preventDefault();
+              undo();
+            }
+            break;
+          case 'y':
+            e.preventDefault();
+            redo();
+            break;
+          case 's':
+            e.preventDefault();
+            handleSave();
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [historyIndex, history]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (hasUnsavedChanges) {
+      const autoSaveTimer = setTimeout(() => {
+        handleSave();
+      }, 30000); // Auto-save after 30 seconds of inactivity
+
+      return () => clearTimeout(autoSaveTimer);
+    }
+  }, [hasUnsavedChanges, blocks]);
 
   // Get subject name - fetch from API
   const [subjectName, setSubjectName] = useState<string>("Mathematics");
@@ -183,24 +273,24 @@ export function AssignmentEditor({
     }
   }, [subjectId]);
 
-  const addBlock = (template: BlockTemplate) => {
-    const newBlock: AssignmentBlock = {
-      id: `block-${Date.now()}`,
-      type: template.type,
-      position: blocks.length,
-      data: { ...template.defaultData }
-    };
-    setBlocks(prev => [...prev, newBlock]);
-  };
+
 
   const updateBlock = (blockId: string, newData: any) => {
-    setBlocks(prev => prev.map(block =>
-      block.id === blockId ? { ...block, data: newData } : block
-    ));
+    setBlocks(prev => {
+      const newBlocks = prev.map(block =>
+        block.id === blockId ? { ...block, data: newData } : block
+      );
+      saveToHistory(newBlocks);
+      return newBlocks;
+    });
   };
 
   const deleteBlock = (blockId: string) => {
-    setBlocks(prev => prev.filter(block => block.id !== blockId));
+    setBlocks(prev => {
+      const newBlocks = prev.filter(block => block.id !== blockId);
+      saveToHistory(newBlocks);
+      return newBlocks;
+    });
   };
 
   const moveBlock = (blockId: string, direction: 'up' | 'down') => {
@@ -219,6 +309,19 @@ export function AssignmentEditor({
     });
 
     setBlocks(newBlocks);
+    saveToHistory(newBlocks);
+  };
+
+  const addBlock = (template: BlockTemplate) => {
+    const newBlock: AssignmentBlock = {
+      id: `block-${Date.now()}`,
+      type: template.type,
+      position: blocks.length,
+      data: { ...template.defaultData }
+    };
+    const newBlocks = [...blocks, newBlock];
+    setBlocks(newBlocks);
+    saveToHistory(newBlocks);
   };
 
   const handleDragStart = (e: React.DragEvent, dragId: string) => {
@@ -265,11 +368,6 @@ export function AssignmentEditor({
 
     // Only handle template drops on the paper (not reordering existing blocks)
     if (draggedTemplate) {
-      // Calculate position relative to paper
-      const paperRect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - paperRect.left - 160; // Center horizontally
-      const y = e.clientY - paperRect.top - 60; // Center vertically
-
       const newBlock: AssignmentBlock = {
         id: `block-${Date.now()}`,
         type: draggedTemplate.type,
@@ -277,14 +375,104 @@ export function AssignmentEditor({
         data: { ...draggedTemplate.defaultData }
       };
 
-      setBlocks(prev => [...prev, newBlock]);
+      const newBlocks = [...blocks, newBlock];
+      setBlocks(newBlocks);
+      saveToHistory(newBlocks);
       setDraggedTemplate(null);
     }
 
     setDragOverIndex(null);
   };
 
+  const handleAiRequest = async () => {
+    if (!aiBlock || !aiPrompt.trim()) return;
+
+    const block = blocks.find(b => b.id === aiBlock);
+    if (!block) return;
+
+    // Check if user has premium subscription (this would be checked against your database)
+    const hasPremium = user?.subscription === 'premium'; // This is a placeholder
+
+    if (!hasPremium) {
+      toast({
+        title: 'Premium Feature',
+        description: 'AI content modification is available with a premium subscription.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setAiTyping('AI is thinking...');
+
+    try {
+      const response = await fetch('/api/ai/modify-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: aiPrompt,
+          scope: aiScope,
+          blockData: aiScope === 'block' ? block.data : null,
+          pageData: aiScope === 'page' ? blocks : null,
+          assignmentData: aiScope === 'assignment' ? { blocks, subjectId, chapterId, paragraphId } : null,
+          blockType: block.type
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        // Live typing animation for block modifications
+        if (aiScope === 'block' && result.modifiedData) {
+          await animateBlockUpdate(aiBlock, result.modifiedData);
+        }
+
+        setAiBlock(null);
+        setAiPrompt('');
+        setAiScope('block');
+        setAiTyping('');
+
+        toast({
+          title: 'AI Modification Complete',
+          description: 'Content has been updated with AI assistance.',
+        });
+      } else {
+        throw new Error('AI request failed');
+      }
+    } catch (error) {
+      setAiTyping('');
+      toast({
+        title: 'AI Error',
+        description: 'Failed to modify content with AI.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const animateBlockUpdate = async (blockId: string, newData: any) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+
+    // Create typing animation for text-based content
+    if (block.type === 'text' && newData.content) {
+      const targetText = newData.content;
+      const words = targetText.split(' ');
+      let currentText = '';
+
+      for (let i = 0; i < words.length; i++) {
+        currentText += (i > 0 ? ' ' : '') + words[i];
+        updateBlock(blockId, { ...newData, content: currentText });
+
+        // Typing delay - faster for shorter content
+        await new Promise(resolve => setTimeout(resolve, Math.min(100, 2000 / words.length)));
+      }
+    } else {
+      // For non-text blocks, update immediately
+      updateBlock(blockId, newData);
+    }
+  };
+
   const handleSave = async () => {
+    setIsSaving(true);
     try {
       // Save all blocks to the database
       for (const block of blocks) {
@@ -306,6 +494,9 @@ export function AssignmentEditor({
         }
       }
 
+      setLastSaved(new Date());
+      setHasUnsavedChanges(false);
+
       toast({
         title: 'Assignment Saved',
         description: 'All blocks have been saved successfully.',
@@ -318,6 +509,8 @@ export function AssignmentEditor({
         description: 'Failed to save assignment.',
         variant: 'destructive'
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -328,7 +521,7 @@ export function AssignmentEditor({
         {/* Header like a test paper */}
         <div className="bg-white border-b p-4">
           <div className="max-w-6xl mx-auto">
-            <div className="flex justify-between items-start mb-4">
+            <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'justify-between items-start'} mb-4`}>
               <div>
                 <div className="text-sm text-gray-600">Name: {user?.email || 'Student Name'}</div>
                 <div className="text-sm text-gray-600">Class: {subjectName}</div>
@@ -338,35 +531,97 @@ export function AssignmentEditor({
               </div>
             </div>
 
-            {/* Block toolbar - drag to add */}
-            <div className="flex flex-wrap gap-2 mb-4 p-3 bg-white border rounded-lg">
-              <span className="text-sm font-medium text-gray-700 mr-2">Drag blocks to paper:</span>
-              {BLOCK_TEMPLATES.map((template) => (
-                <div
-                  key={template.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, `template-${template.id}`)}
-                  className="flex items-center gap-1 h-8 px-2 bg-white border border-gray-300 rounded cursor-move hover:bg-gray-50 transition-colors"
-                  title={`Drag to add ${template.label}`}
-                >
-                  {template.icon}
-                  <span className="text-xs">{template.label}</span>
-                </div>
-              ))}
+            {/* Block toolbar - drag to add (hidden in student view) */}
+            {!isStudentView && (
+              <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'flex-wrap'} gap-2 mb-4 p-3 bg-white border rounded-lg`}>
+              <span className="text-sm font-medium text-gray-700">Drag blocks to paper:</span>
+              <div className={`flex ${isMobile ? 'flex-wrap' : 'flex-wrap'} gap-2`}>
+                {BLOCK_TEMPLATES.map((template) => (
+                  <div
+                    key={template.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, `template-${template.id}`)}
+                    className="flex items-center gap-1 h-8 px-2 bg-white border border-gray-300 rounded cursor-move hover:bg-gray-50 transition-colors"
+                    title={`Drag to add ${template.label}`}
+                  >
+                    {template.icon}
+                    <span className="text-xs">{template.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
+            )}
 
             <div className="flex justify-between items-center border-t-2 border-black pt-4">
-              <h1 className="text-2xl font-bold">Assignment</h1>
-              <div className="flex gap-2">
-                {onPreview && (
-                  <Button onClick={onPreview} variant="outline" size="sm">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Preview
-                  </Button>
+              <div className="flex items-center gap-4">
+                <h1 className="text-2xl font-bold">Assignment</h1>
+                {lastSaved && (
+                  <span className="text-sm text-gray-500">
+                    Saved {new Date(lastSaved).toLocaleTimeString()}
+                  </span>
                 )}
-                <Button onClick={handleSave} size="sm">
+                {hasUnsavedChanges && (
+                  <span className="text-sm text-orange-600 font-medium">• Unsaved changes</span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {/* Undo/Redo */}
+                <Button
+                  onClick={undo}
+                  variant="outline"
+                  size="sm"
+                  disabled={historyIndex === 0}
+                  title="Undo (Ctrl+Z)"
+                >
+                  ↶
+                </Button>
+                <Button
+                  onClick={redo}
+                  variant="outline"
+                  size="sm"
+                  disabled={historyIndex >= history.length - 1}
+                  title="Redo (Ctrl+Y)"
+                >
+                  ↷
+                </Button>
+
+                {/* Student View Toggle */}
+                <Button
+                  onClick={() => setIsStudentView(!isStudentView)}
+                  variant="outline"
+                  size="sm"
+                  title={isStudentView ? "Switch to Teacher View" : "Switch to Student View"}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  {isStudentView ? "Teacher" : "Student"}
+                </Button>
+
+                {/* Export */}
+                <Button
+                  onClick={() => {
+                    const dataStr = JSON.stringify({ blocks, subjectName, assignmentId }, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'assignment.json';
+                    link.click();
+                  }}
+                  variant="outline"
+                  size="sm"
+                  title="Export Assignment"
+                >
+                  📄 Export
+                </Button>
+
+                <Button
+                  onClick={handleSave}
+                  size="sm"
+                  disabled={isSaving}
+                  title="Save (Ctrl+S)"
+                >
                   <Save className="mr-2 h-4 w-4" />
-                  Save Assignment
+                  {isSaving ? 'Saving...' : 'Save'}
                 </Button>
               </div>
             </div>
@@ -374,12 +629,12 @@ export function AssignmentEditor({
         </div>
 
         {/* Paper content area */}
-        <div className="flex-1 p-4">
-          <div className="max-w-6xl mx-auto">
+        <div className={`flex-1 ${isMobile ? 'p-2' : 'p-4'}`}>
+          <div className={isMobile ? 'max-w-full mx-2' : 'max-w-6xl mx-auto'}>
             <div
-              className="bg-white border-2 border-gray-300 min-h-[1200px] p-8 shadow-sm relative"
-              onDrop={handlePaperDrop}
-              onDragOver={(e) => e.preventDefault()}
+              className={`bg-white border-2 border-gray-300 ${isMobile ? 'min-h-[800px] p-4' : 'min-h-[1200px] p-8'} shadow-sm relative ${isStudentView ? 'pointer-events-none select-text' : ''}`}
+              onDrop={isStudentView ? undefined : handlePaperDrop}
+              onDragOver={isStudentView ? undefined : (e) => e.preventDefault()}
             >
               {blocks.length === 0 ? (
                 <div className="flex items-center justify-center h-64 text-gray-400">
@@ -394,19 +649,20 @@ export function AssignmentEditor({
                   {blocks.map((block, index) => (
                     <div
                       key={block.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, block.id)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={(e) => handleDragOver(e, index)}
+                      draggable={!isStudentView}
+                      onDragStart={isStudentView ? undefined : (e) => handleDragStart(e, block.id)}
+                      onDragEnd={isStudentView ? undefined : handleDragEnd}
+                      onDragOver={isStudentView ? undefined : (e) => handleDragOver(e, index)}
 
                       className={`relative group border-2 transition-colors ${
                         draggedBlock === block.id ? 'opacity-50' : ''
                       } ${
                         dragOverIndex === index ? 'border-blue-500 bg-blue-50' : 'border-transparent'
-                      }`}
+                      } ${isStudentView ? 'border-transparent' : ''}`}
                     >
-                      {/* Block controls */}
-                      <div className="absolute -left-12 top-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Block controls - hidden in student view */}
+                      {!isStudentView && (
+                        <div className="absolute -left-12 top-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="flex items-center gap-0.5">
                           {/* Move handle */}
                           <div className="cursor-move p-1 hover:bg-gray-100 rounded">
@@ -421,6 +677,17 @@ export function AssignmentEditor({
                             title="Edit block"
                           >
                             <PenTool className="h-3 w-3" />
+                          </Button>
+                          {/* AI button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setAiBlock(block.id)}
+                            className="h-6 w-6 p-0 text-purple-600 hover:text-purple-700 relative"
+                            title="AI Assistant (Premium)"
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white"></div>
                           </Button>
                         </div>
                         {/* Quick actions */}
@@ -455,9 +722,10 @@ export function AssignmentEditor({
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
-                      </div>
+                        </div>
+                      )}
 
-                      {/* Block number */}
+                      {/* Block number - hidden in student view */}
                       <div className="absolute -left-4 top-0 text-gray-400 font-medium">
                         {index + 1}.
                       </div>
@@ -922,6 +1190,86 @@ export function AssignmentEditor({
                   </div>
                 );
               })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Assistant Interface */}
+      {aiBlock && (
+        <div className={`fixed z-50 ${isMobile ? 'bottom-4 left-4 right-4' : 'bottom-4 right-4'}`}>
+          <div className={`bg-white rounded-lg shadow-xl border p-4 ${isMobile ? 'w-full max-w-sm' : 'w-80'} max-h-96 flex flex-col`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-600" />
+                <span className="font-medium text-gray-800">AI Assistant</span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setAiBlock(null)}>
+                ×
+              </Button>
+            </div>
+
+            <div className="flex-1 space-y-3">
+              {aiTyping ? (
+                <div className="text-center py-4">
+                  <div className="inline-flex items-center gap-2 text-purple-600">
+                    <Sparkles className="h-4 w-4 animate-spin" />
+                    <span className="text-sm font-medium">{aiTyping}</span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-sm text-gray-600">
+                    How would you like to modify this content?
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Scope:</Label>
+                    <div className="flex gap-1">
+                      {[
+                        { value: 'block', label: 'This Block' },
+                        { value: 'page', label: 'Whole Page' },
+                        { value: 'assignment', label: 'Whole Assignment' }
+                      ].map((option) => (
+                        <Button
+                          key={option.value}
+                          variant={aiScope === option.value ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setAiScope(option.value as any)}
+                          className="text-xs h-7"
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">What to do:</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        placeholder="e.g., Translate to Spanish, add more questions..."
+                        className="flex-1 h-8 text-sm"
+                        onKeyPress={(e) => e.key === 'Enter' && handleAiRequest()}
+                      />
+                      <Button
+                        onClick={handleAiRequest}
+                        size="sm"
+                        className="h-8 px-2"
+                        disabled={!aiPrompt.trim()}
+                      >
+                        <Send className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-gray-500">
+                    💡 Try: "Make this easier", "Add examples", "Create quiz questions"
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

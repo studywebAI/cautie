@@ -9,8 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { AppContext } from '@/contexts/app-context';
 import { useContext } from 'react';
 import Link from 'next/link';
-import { StudentBlockRenderer } from '@/components/blocks/StudentBlockRenderer';
 import { AssignmentEditor } from '@/components/AssignmentEditor';
+import { StudentAssignmentView } from '@/components/subjects/StudentAssignmentView';
 
 type Assignment = {
   id: string;
@@ -129,59 +129,18 @@ export default function AssignmentDetailPage() {
 
   // Student view
   return (
-    <div className="max-w-4xl mx-auto space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center gap-4 border-b pb-4">
-        <Button variant="outline" size="icon" asChild>
-          <Link href={`/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}`}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">
-            {String.fromCharCode(97 + assignment.assignment_index)}. {assignment.title}
-          </h1>
-          <p className="text-muted-foreground">Complete the assignment below</p>
-        </div>
-      </div>
-
-      {/* Assignment blocks for students */}
-      <div className="space-y-6">
-        {blocks.length === 0 ? (
-          <Card className="p-12 text-center">
-            <FileText className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No content yet</h3>
-            <p className="text-muted-foreground">
-              The teacher hasn't added any content to this assignment yet.
-            </p>
-          </Card>
-        ) : (
-          blocks.map((block, index) => (
-            <Card key={block.id} className="shadow-sm">
-              <CardContent className="p-6">
-                <StudentBlockRenderer
-                  block={block as any}
-                  onSubmit={(answerData: any) => handleBlockSubmit(block.id, answerData)}
-                />
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {/* Navigation between assignments */}
-      {blocks.length > 0 && (
-        <div className="flex justify-between pt-6 border-t">
-          <Button variant="outline" disabled>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Previous Assignment
-          </Button>
-          <Button disabled>
-            Next Assignment
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      )}
-    </div>
+    <StudentAssignmentView
+      subjectId={subjectId}
+      chapterId={chapterId}
+      paragraphId={paragraphId}
+      assignmentId={assignmentId}
+      onNavigateBack={() => router.push(`/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}`)}
+      onNavigateNext={() => {
+        // TODO: Implement navigation to next assignment
+      }}
+      onNavigatePrev={() => {
+        // TODO: Implement navigation to previous assignment
+      }}
+    />
   );
 }
