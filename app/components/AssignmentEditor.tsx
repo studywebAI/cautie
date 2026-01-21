@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,7 @@ import { AppContext } from '@/contexts/app-context';
 interface BlockTemplate {
   id: string;
   type: string;
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   defaultData: any;
 }
@@ -56,14 +56,14 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
   {
     id: 'text',
     type: 'text',
-    icon: 'T',
+    icon: <Type className="h-4 w-4" />,
     label: 'Text',
     defaultData: { content: 'Enter your text here...', style: 'normal' }
   },
   {
     id: 'multiple_choice',
     type: 'multiple_choice',
-    icon: 'MC',
+    icon: <CheckSquare className="h-4 w-4" />,
     label: 'Multiple Choice',
     defaultData: {
       question: 'Enter your question?',
@@ -80,7 +80,7 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
   {
     id: 'open_question',
     type: 'open_question',
-    icon: 'OQ',
+    icon: <MessageSquare className="h-4 w-4" />,
     label: 'Open Question',
     defaultData: {
       question: 'Enter your question?',
@@ -92,7 +92,7 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
   {
     id: 'fill_in_blank',
     type: 'fill_in_blank',
-    icon: 'FB',
+    icon: <FileText className="h-4 w-4" />,
     label: 'Fill in Blank',
     defaultData: {
       text: 'The ___ is the powerhouse of the cell.',
@@ -103,7 +103,7 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
   {
     id: 'drag_drop',
     type: 'drag_drop',
-    icon: 'DD',
+    icon: <Move className="h-4 w-4" />,
     label: 'Drag & Drop',
     defaultData: {
       prompt: 'Match the items:',
@@ -116,7 +116,7 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
   {
     id: 'ordering',
     type: 'ordering',
-    icon: 'OR',
+    icon: <ListOrdered className="h-4 w-4" />,
     label: 'Ordering',
     defaultData: {
       prompt: 'Put these in order:',
@@ -127,7 +127,7 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
   {
     id: 'media_embed',
     type: 'media_embed',
-    icon: 'ME',
+    icon: <Link className="h-4 w-4" />,
     label: 'Media Embed',
     defaultData: {
       embed_url: 'https://www.youtube.com/watch?v=...',
@@ -137,7 +137,7 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
   {
     id: 'divider',
     type: 'divider',
-    icon: '—',
+    icon: <Minus className="h-4 w-4" />,
     label: 'Divider',
     defaultData: { style: 'line' }
   }
@@ -159,8 +159,27 @@ export function AssignmentEditor({
   const { toast } = useToast();
   const { user } = useContext(AppContext) as any;
 
-  // Get subject name - for now using subjectId, should be fetched from API
-  const subjectName = "Subject Name"; // TODO: Fetch from API
+  // Get subject name - fetch from API
+  const [subjectName, setSubjectName] = useState<string>("Loading...");
+
+  useEffect(() => {
+    const fetchSubject = async () => {
+      try {
+        const response = await fetch(`/api/subjects/${subjectId}`);
+        if (response.ok) {
+          const subjectData = await response.json();
+          setSubjectName(subjectData.title || subjectData.name || "Unknown Subject");
+        }
+      } catch (error) {
+        console.error('Failed to fetch subject:', error);
+        setSubjectName("Unknown Subject");
+      }
+    };
+
+    if (subjectId) {
+      fetchSubject();
+    }
+  }, [subjectId]);
 
   const addBlock = (template: BlockTemplate) => {
     const newBlock: AssignmentBlock = {
@@ -274,9 +293,9 @@ export function AssignmentEditor({
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Main content - Paper-like layout */}
-      <div className="flex-1 flex flex-col">
+    <div className="h-screen bg-gray-50">
+      {/* Main content - Full width paper-like layout */}
+      <div className="flex flex-col">
         {/* Header like a test paper */}
         <div className="bg-white border-b p-4">
           <div className="max-w-4xl mx-auto">
@@ -289,8 +308,39 @@ export function AssignmentEditor({
                 Date: {new Date().toLocaleDateString()}
               </div>
             </div>
-            <div className="border-t-2 border-black pt-4">
-              <h1 className="text-2xl font-bold text-center">Assignment</h1>
+
+            {/* Block toolbar */}
+            <div className="flex flex-wrap gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+              <span className="text-sm font-medium text-gray-700 mr-2">Add blocks:</span>
+              {BLOCK_TEMPLATES.map((template) => (
+                <Button
+                  key={template.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addBlock(template)}
+                  className="flex items-center gap-1 h-8 px-2"
+                  title={template.label}
+                >
+                  {template.icon}
+                  <span className="text-xs">{template.label}</span>
+                </Button>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center border-t-2 border-black pt-4">
+              <h1 className="text-2xl font-bold">Assignment</h1>
+              <div className="flex gap-2">
+                {onPreview && (
+                  <Button onClick={onPreview} variant="outline" size="sm">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </Button>
+                )}
+                <Button onClick={handleSave} size="sm">
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Assignment
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -640,34 +690,6 @@ export function AssignmentEditor({
           </div>
         </div>
       )}
-
-      {/* Mini sidebar on the right with small icons */}
-      <div className="w-16 bg-white border-l border-gray-200 flex flex-col items-center py-4 space-y-2">
-        {BLOCK_TEMPLATES.map((template) => (
-          <Button
-            key={template.id}
-            variant="ghost"
-            size="sm"
-            onClick={() => addBlock(template)}
-            className="w-10 h-10 p-0 flex items-center justify-center text-xs font-medium hover:bg-gray-100"
-            title={template.label}
-          >
-            {template.icon}
-          </Button>
-        ))}
-
-        <div className="flex-1"></div>
-
-        <Button onClick={handleSave} className="w-10 h-10 p-0" title="Save">
-          <Save className="h-4 w-4" />
-        </Button>
-
-        {onPreview && (
-          <Button onClick={onPreview} variant="outline" className="w-10 h-10 p-0" title="Preview">
-            <Eye className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
     </div>
   );
 }
