@@ -41,20 +41,37 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Get all members
-    const { data: members, error } = await supabase
+    // Get all members with profile info
+    const { data: membersData, error } = await supabase
       .from('class_members')
       .select(`
         id,
         user_id,
         role,
-        created_at,
-        profiles:user_id (
-          full_name,
-          avatar_url
-        )
+        created_at
       `)
       .eq('class_id', resolvedParams.classId)
+
+    if (error) {
+      console.error('Error fetching members:', error)
+      return NextResponse.json({ error: 'Failed to fetch members' }, { status: 500 })
+    }
+
+    // Get profile info separately
+    const members = await Promise.all(
+      (membersData || []).map(async (member) => {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', member.user_id)
+          .single()
+
+        return {
+          ...member,
+          profiles: profile || { full_name: null, avatar_url: null }
+        }
+      })
+    )
 
     if (error) {
       console.error('Error fetching members:', error)
