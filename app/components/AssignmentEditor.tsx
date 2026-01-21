@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useContext } from 'react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -18,7 +17,12 @@ import {
   Minus,
   Save,
   Eye,
-  Plus
+  Plus,
+  GripVertical,
+  PenTool,
+  ArrowUp,
+  ArrowDown,
+  Trash2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AppContext } from '@/contexts/app-context';
@@ -149,6 +153,9 @@ export function AssignmentEditor({
   onPreview
 }: AssignmentEditorProps) {
   const [blocks, setBlocks] = useState<AssignmentBlock[]>(initialBlocks);
+  const [editingBlock, setEditingBlock] = useState<string | null>(null);
+  const [draggedBlock, setDraggedBlock] = useState<string | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const { user } = useContext(AppContext) as any;
 
@@ -191,6 +198,42 @@ export function AssignmentEditor({
     });
 
     setBlocks(newBlocks);
+  };
+
+  const handleDragStart = (e: React.DragEvent, blockId: string) => {
+    setDraggedBlock(blockId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedBlock(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (!draggedBlock) return;
+
+    const draggedIndex = blocks.findIndex(b => b.id === draggedBlock);
+    if (draggedIndex === -1 || draggedIndex === dropIndex) return;
+
+    const newBlocks = [...blocks];
+    const [draggedBlockData] = newBlocks.splice(draggedIndex, 1);
+    newBlocks.splice(dropIndex, 0, draggedBlockData);
+
+    // Update positions
+    newBlocks.forEach((block, index) => {
+      block.position = index;
+    });
+
+    setBlocks(newBlocks);
+    setDraggedBlock(null);
+    setDragOverIndex(null);
   };
 
   const handleSave = async () => {
@@ -267,14 +310,78 @@ export function AssignmentEditor({
               ) : (
                 <div className="space-y-6">
                   {blocks.map((block, index) => (
-                    <div key={block.id} className="relative group">
+                    <div
+                      key={block.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, block.id)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDrop(e, index)}
+                      className={`relative group border-2 transition-colors ${
+                        draggedBlock === block.id ? 'opacity-50' : ''
+                      } ${
+                        dragOverIndex === index ? 'border-blue-500 bg-blue-50' : 'border-transparent'
+                      }`}
+                    >
+                      {/* Block controls */}
+                      <div className="absolute -left-20 top-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1">
+                          {/* Move handle */}
+                          <div className="cursor-move p-1 hover:bg-gray-100 rounded">
+                            <GripVertical className="h-4 w-4 text-gray-400" />
+                          </div>
+                          {/* Edit button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingBlock(block.id)}
+                            className="h-6 w-6 p-0"
+                            title="Edit block"
+                          >
+                            <PenTool className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        {/* Quick actions */}
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => moveBlock(block.id, 'up')}
+                            disabled={index === 0}
+                            className="h-6 w-6 p-0"
+                            title="Move up"
+                          >
+                            <ArrowUp className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => moveBlock(block.id, 'down')}
+                            disabled={index === blocks.length - 1}
+                            className="h-6 w-6 p-0"
+                            title="Move down"
+                          >
+                            <ArrowDown className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteBlock(block.id)}
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                            title="Delete block"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+
                       {/* Block number */}
                       <div className="absolute -left-8 top-0 text-gray-400 font-medium">
                         {index + 1}.
                       </div>
 
                       {/* Block content with inline editing */}
-                      <div className="border-b border-gray-200 pb-4">
+                      <div className="border-b border-gray-200 pb-4 pl-4">
                         {block.type === 'text' && (
                           <div className="space-y-2">
                             <Textarea
@@ -373,36 +480,6 @@ export function AssignmentEditor({
                           </div>
                         )}
                       </div>
-
-                      {/* Block controls */}
-                      <div className="absolute -right-16 top-0 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => moveBlock(block.id, 'up')}
-                          disabled={index === 0}
-                          className="h-6 w-6 p-0"
-                        >
-                          ↑
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => moveBlock(block.id, 'down')}
-                          disabled={index === blocks.length - 1}
-                          className="h-6 w-6 p-0"
-                        >
-                          ↓
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteBlock(block.id)}
-                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                        >
-                          ×
-                        </Button>
-                      </div>
                     </div>
                   ))}
                 </div>
@@ -411,6 +488,158 @@ export function AssignmentEditor({
           </div>
         </div>
       </div>
+
+      {/* Edit Panel */}
+      {editingBlock && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">
+                  Edit {BLOCK_TEMPLATES.find(t => t.type === blocks.find(b => b.id === editingBlock)?.type)?.label}
+                </h3>
+                <Button variant="ghost" onClick={() => setEditingBlock(null)}>
+                  ×
+                </Button>
+              </div>
+
+              {(() => {
+                const block = blocks.find(b => b.id === editingBlock);
+                if (!block) return null;
+
+                return (
+                  <div className="space-y-4">
+                    {block.type === 'text' && (
+                      <div>
+                        <Label>Content</Label>
+                        <Textarea
+                          value={block.data.content}
+                          onChange={(e) => updateBlock(block.id, { ...block.data, content: e.target.value })}
+                          rows={6}
+                          className="mt-1"
+                        />
+                      </div>
+                    )}
+
+                    {block.type === 'multiple_choice' && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Question</Label>
+                          <Input
+                            value={block.data.question}
+                            onChange={(e) => updateBlock(block.id, { ...block.data, question: e.target.value })}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Options</Label>
+                          {block.data.options?.map((option: any, index: number) => (
+                            <div key={index} className="flex items-center gap-2 mt-2">
+                              <input
+                                type="radio"
+                                name={`correct-${block.id}`}
+                                checked={option.correct}
+                                onChange={() => {
+                                  const newOptions = block.data.options.map((opt: any, i: number) => ({
+                                    ...opt,
+                                    correct: i === index
+                                  }));
+                                  updateBlock(block.id, { ...block.data, options: newOptions });
+                                }}
+                              />
+                              <Input
+                                value={option.text}
+                                onChange={(e) => {
+                                  const newOptions = [...block.data.options];
+                                  newOptions[index] = { ...newOptions[index], text: e.target.value };
+                                  updateBlock(block.id, { ...block.data, options: newOptions });
+                                }}
+                                placeholder={`Option ${String.fromCharCode(65 + index)}`}
+                                className="flex-1"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {block.type === 'open_question' && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Question</Label>
+                          <Input
+                            value={block.data.question}
+                            onChange={(e) => updateBlock(block.id, { ...block.data, question: e.target.value })}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Grading Criteria</Label>
+                          <Input
+                            value={block.data.grading_criteria}
+                            onChange={(e) => updateBlock(block.id, { ...block.data, grading_criteria: e.target.value })}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Max Score</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={block.data.max_score}
+                            onChange={(e) => updateBlock(block.id, { ...block.data, max_score: parseInt(e.target.value) })}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {block.type === 'fill_in_blank' && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Text with Blanks</Label>
+                          <Textarea
+                            value={block.data.text}
+                            onChange={(e) => updateBlock(block.id, { ...block.data, text: e.target.value })}
+                            placeholder="Use ___ for blanks"
+                            rows={4}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Correct Answers (one per blank)</Label>
+                          {block.data.text.split('___').slice(0, -1).map((_: string, index: number) => (
+                            <Input
+                              key={index}
+                              value={block.data.answers?.[index] || ''}
+                              onChange={(e) => {
+                                const newAnswers = [...(block.data.answers || [])];
+                                newAnswers[index] = e.target.value;
+                                updateBlock(block.id, { ...block.data, answers: newAnswers });
+                              }}
+                              placeholder={`Answer for blank ${index + 1}`}
+                              className="mt-2"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2 pt-4 border-t">
+                      <Button variant="outline" onClick={() => setEditingBlock(null)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={() => setEditingBlock(null)}>
+                        Done
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mini sidebar on the right with small icons */}
       <div className="w-16 bg-white border-l border-gray-200 flex flex-col items-center py-4 space-y-2">
