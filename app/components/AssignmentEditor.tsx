@@ -157,6 +157,7 @@ export function AssignmentEditor({
   const [draggedBlock, setDraggedBlock] = useState<string | null>(null);
   const [draggedTemplate, setDraggedTemplate] = useState<BlockTemplate | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragPreview, setDragPreview] = useState<{x: number, y: number, width: number, height: number} | null>(null);
   const { toast } = useToast();
   const { user } = useContext(AppContext) as any;
 
@@ -227,10 +228,17 @@ export function AssignmentEditor({
       if (template) {
         setDraggedTemplate(template);
         setDraggedBlock(null);
+        // Initialize drag preview
+        setDragPreview({ x: e.clientX, y: e.clientY, width: 320, height: 120 });
       }
     } else {
       setDraggedBlock(dragId);
       setDraggedTemplate(null);
+      // For block reordering, show existing block size
+      const block = blocks.find(b => b.id === dragId);
+      if (block) {
+        setDragPreview({ x: e.clientX, y: e.clientY, width: 320, height: 120 });
+      }
     }
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -238,12 +246,18 @@ export function AssignmentEditor({
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     setDragOverIndex(index);
+
+    // Update drag preview position
+    if (dragPreview) {
+      setDragPreview(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
+    }
   };
 
   const handleDragEnd = () => {
     setDraggedBlock(null);
     setDraggedTemplate(null);
     setDragOverIndex(null);
+    setDragPreview(null);
   };
 
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
@@ -335,7 +349,7 @@ export function AssignmentEditor({
       <div className="flex flex-col">
         {/* Header like a test paper */}
         <div className="bg-white border-b p-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <div className="text-sm text-gray-600">Name: {user?.email || 'Student Name'}</div>
@@ -383,8 +397,8 @@ export function AssignmentEditor({
 
         {/* Paper content area */}
         <div className="flex-1 p-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white border-2 border-gray-300 min-h-[800px] p-6 shadow-sm">
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-white border-2 border-gray-300 min-h-[1200px] p-8 shadow-sm relative">
               {blocks.length === 0 ? (
                 <div className="flex items-center justify-center h-64 text-gray-400">
                   <div className="text-center">
@@ -649,6 +663,23 @@ export function AssignmentEditor({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Drag Preview */}
+              {dragPreview && (
+                <div
+                  className="fixed pointer-events-none border-2 border-blue-500 bg-blue-100 bg-opacity-70 rounded-lg shadow-lg z-50"
+                  style={{
+                    left: dragPreview.x - dragPreview.width / 2,
+                    top: dragPreview.y - dragPreview.height / 2,
+                    width: dragPreview.width,
+                    height: dragPreview.height,
+                  }}
+                >
+                  <div className="p-4 text-center text-blue-700 font-medium">
+                    {draggedTemplate ? draggedTemplate.label : 'Block'}
+                  </div>
                 </div>
               )}
             </div>
