@@ -37,41 +37,61 @@ export async function GET(
     const caseInsensitiveMatch = allSubjects?.find(s => s.id?.toLowerCase() === subjectId?.toLowerCase());
     console.log(`🔍 Case-insensitive match:`, caseInsensitiveMatch);
 
-    // Try the actual query
-    const { data: subject, error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const userRole = profile?.role || 'student';
+    const isTeacher = userRole === 'teacher';
+
+    // First fetch the subject to check access
+    const { data: subject, error: fetchError } = await supabase
       .from('subjects')
       .select('*')
       .eq('id', subjectId)
       .single();
 
-    if (error) {
-      console.log(`❌ Subject fetch error:`, error);
-      console.log(`❌ Error code:`, error.code);
-      console.log(`❌ Error details:`, error.details);
-
-      // Try alternative queries
-      console.log(`🔍 Trying alternative query methods...`);
-
-      // Query without .single()
-      const { data: multipleResults, error: multiError } = await supabase
-        .from('subjects')
-        .select('*')
-        .eq('id', subjectId);
-
-      console.log(`🔍 Multiple results query:`, multipleResults, multiError);
-
-      return NextResponse.json({
-        error: 'Subject not found',
-        subjectId: subjectId,
-        subjectIdType: typeof subjectId,
-        dbError: error.message,
-        errorCode: error.code,
-        allSubjectIds: allSubjects?.map(s => s.id),
-        exactMatch: !!exactMatch
-      }, { status: 404 });
+    if (fetchError || !subject) {
+      console.log(`❌ Subject not found:`, fetchError);
+      return NextResponse.json({ error: 'Subject not found' }, { status: 404 });
     }
 
-    console.log(`✅ Subject found:`, subject);
+    // Check access
+    let hasAccess = false;
+    if (subject.class_id) {
+      if (isTeacher) {
+        // Check if teacher owns the class that contains this subject
+        const { data: classData } = await supabase
+          .from('classes')
+          .select('owner_id')
+          .eq('id', subject.class_id)
+          .maybeSingle();
+        hasAccess = classData?.owner_id === user.id;
+      } else {
+        // Check if student is member of the class
+        const { data: membership } = await supabase
+          .from('class_members')
+          .select('role')
+          .eq('class_id', subject.class_id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+        hasAccess = !!membership;
+      }
+    }
+
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
+    console.log(`✅ Subject found and access granted:`, subject);
     return NextResponse.json(subject);
 
   } catch (err) {

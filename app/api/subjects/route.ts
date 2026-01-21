@@ -30,11 +30,11 @@ export async function GET(request: Request) {
     let subjects: any[] = [];
 
     if (isTeacher) {
-      // Teachers see subjects they own
+      // Teachers see subjects from classes they own
       const { data: ownedSubjects, error: ownedError } = await supabase
         .from('subjects')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('*, classes!inner(*)')
+        .eq('classes.owner_id', user.id);
 
       if (ownedError) {
         console.log(`Owned subjects fetch error:`, ownedError);
