@@ -4,107 +4,67 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-// GET class members
-export async function GET(request: Request, { params }: { params: { classId: string } }) {
-  const { classId } = params
-  const cookieStore = cookies()
-  const supabase = await createClient(cookieStore)
+// GET - Get class members
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ classId: string }> }
+) {
+  try {
+    const cookieStore = cookies()
+    const supabase = await createClient(cookieStore)
 
-  const { data: { user } } = await supabase.auth.getUser()
-  console.log('DEBUG: Members GET - User:', user?.id)
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-  // Check if user owns the class
-  const { data: classData, error: classError } = await supabase
-    .from('classes')
-    .select('owner_id')
-    .eq('id', classId)
-    .single()
+    const resolvedParams = await params
 
-  console.log('DEBUG: Members GET - Class data:', { classData, classError, classId, userId: user.id })
-
-  if (classError) {
-    console.log('DEBUG: Members GET - Class not found')
-    return NextResponse.json({ error: 'Class not found' }, { status: 404 })
-  }
-
-  if (!classData) {
-    console.log('DEBUG: Members GET - Class not found')
-    return NextResponse.json({ error: 'Class not found' }, { status: 404 })
-  }
-
-  let hasAccess = false;
-  if (classData.owner_id === user.id) {
-    hasAccess = true;
-  } else {
-    // Check if user is a teacher member
-    const { data: memberData, error: memberError } = await supabase
+    // Check if user has access to this class (owner or member)
+    const { data: membership, error: memberError } = await supabase
       .from('class_members')
       .select('role')
-      .eq('class_id', classId)
+      .eq('class_id', resolvedParams.classId)
       .eq('user_id', user.id)
       .single()
 
-    console.log('DEBUG: Members GET - Member check:', { memberData, memberError })
+    const { data: classData } = await supabase
+      .from('classes')
+      .select('owner_id')
+      .eq('id', resolvedParams.classId)
+      .single()
 
-    if (!memberError && memberData && memberData.role === 'teacher') {
-      hasAccess = true;
-    }
-  }
+    const isOwner = classData?.owner_id === user.id
+    const isMember = !!membership
 
-  if (!hasAccess) {
-    console.log('DEBUG: Members GET - Access denied')
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
-  // Get class members
-  const { data, error } = await supabase
-    .from('class_members')
-    .select('user_id, role')
-    .eq('class_id', classId)
-
-  if (error) {
-    console.error('Error fetching class members:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  // Get profiles for these users
-  const userIds = data.map(m => m.user_id)
-  const { data: profiles, error: profilesError } = await supabase
-    .from('profiles')
-    .select('id, full_name, email')
-    .in('id', userIds)
-
-  if (profilesError) {
-    console.error('Error fetching profiles:', profilesError)
-  }
-
-  // Transform data to match Student type
-  const members = data.map(member => {
-    const profile = profiles?.find(p => p.id === member.user_id)
-    let name = profile?.full_name
-
-    // If no full_name, derive from email
-    if (!name && profile?.email) {
-      name = profile.email.split('@')[0] // Take part before @
+    if (!isOwner && !isMember) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Final fallback
-    if (!name) {
-      name = `Student ${member.user_id.slice(-4)}`
+    // Get all members
+    const { data: members, error } = await supabase
+      .from('class_members')
+      .select(`
+        id,
+        user_id,
+        role,
+        created_at,
+        profiles:user_id (
+          full_name,
+          avatar_url
+        )
+      `)
+      .eq('class_id', resolvedParams.classId)
+
+    if (error) {
+      console.error('Error fetching members:', error)
+      return NextResponse.json({ error: 'Failed to fetch members' }, { status: 500 })
     }
 
-    return {
-      id: member.user_id,
-      name: name,
-      email: profile?.email || `${member.user_id.slice(-4)}@example.com`,
-      avatarUrl: null,
-      overallProgress: 0, // Placeholder - would calculate from assignments
-      role: member.role
-    }
-  })
+    return NextResponse.json(members || [])
 
-  return NextResponse.json(members)
+  } catch (error) {
+    console.error('Unexpected error in class members GET:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }

@@ -71,6 +71,9 @@ const flowMap: Record<
   generateClassIdeas: () =>
     import("@/ai/flows/generate-class-ideas").then(m => m.generateClassIdeas),
 
+  gradeOpenQuestion: () =>
+    import("@/ai/flows/grade-open-question").then(m => m.gradeOpenQuestion),
+
   explainAnswer: () =>
     import("@/ai/flows/explain-answer").then(m => m.explainAnswer),
 };

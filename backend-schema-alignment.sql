@@ -2,11 +2,12 @@
 -- Align database to match the specification
 
 -- 1. Update class_members to have id column as PK
-ALTER TABLE public.class_members ADD COLUMN id UUID DEFAULT gen_random_uuid();
-UPDATE public.class_members SET id = gen_random_uuid() WHERE id IS NULL; -- In case of existing rows
-ALTER TABLE public.class_members DROP CONSTRAINT class_members_pkey;
-ALTER TABLE public.class_members ADD CONSTRAINT class_members_pkey PRIMARY KEY (id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_class_members_unique ON public.class_members(class_id, user_id);
+-- Note: Skip this step if id column already exists (from previous runs)
+-- ALTER TABLE public.class_members ADD COLUMN id UUID DEFAULT gen_random_uuid();
+-- UPDATE public.class_members SET id = gen_random_uuid() WHERE id IS NULL;
+-- ALTER TABLE public.class_members DROP CONSTRAINT IF EXISTS class_members_pkey;
+-- ALTER TABLE public.class_members ADD CONSTRAINT class_members_pkey PRIMARY KEY (id);
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_class_members_unique ON public.class_members(class_id, user_id);
 
 -- 2. Align assignments table: remove class_id, make paragraph_id NOT NULL
 ALTER TABLE public.assignments DROP COLUMN class_id;
