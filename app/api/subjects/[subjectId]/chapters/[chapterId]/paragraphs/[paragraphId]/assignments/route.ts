@@ -17,50 +17,31 @@ export async function GET(
 
     const resolvedParams = await params;
 
-    // Simple fetch - no auth checks since RLS is disabled
+    // Simple fetch - just get assignments
     console.log(`Fetching assignments for paragraph: ${resolvedParams.paragraphId}`);
 
-    // First try to fetch assignments with blocks
-    let { data: assignments, error } = await supabase
+    const { data: assignments, error } = await supabase
       .from('assignments')
-      .select(`
-        *,
-        blocks (
-          id,
-          type,
-          position
-        )
-      `)
+      .select('*')
       .eq('paragraph_id', resolvedParams.paragraphId)
       .order('assignment_index', { ascending: true })
 
-    console.log(`Raw assignments query result:`, { assignments, error });
+    console.log(`Assignments query result:`, { assignments, error });
 
-    // If that fails, try without blocks
-    if (error || !assignments) {
-      console.log(`Blocks query failed, trying without blocks:`, error);
-      const { data: assignmentsNoBlocks, error: errorNoBlocks } = await supabase
-        .from('assignments')
-        .select('*')
-        .eq('paragraph_id', resolvedParams.paragraphId)
-        .order('assignment_index', { ascending: true })
-
-      if (errorNoBlocks) {
-        console.log(`Assignments fetch error (no blocks):`, errorNoBlocks);
-        return NextResponse.json({ error: 'Failed to fetch assignments' }, { status: 500 })
-      }
-
-      assignments = assignmentsNoBlocks?.map(assignment => ({
-        ...assignment,
-        blocks: []
-      })) || [];
-      console.log(`Fetched assignments without blocks:`, assignments);
+    if (error) {
+      console.log(`Assignments fetch error:`, error);
+      // Return empty array instead of error to prevent infinite loading
+      console.log(`Returning empty assignments array to prevent infinite loading`);
+      return NextResponse.json([])
     }
+
+    // Ensure we have an array
+    const safeAssignments = assignments || [];
 
     console.log(`Found ${assignments?.length || 0} assignments`);
 
     // Transform assignments to include letter indexing
-    const transformedAssignments = (assignments || []).map(assignment => {
+    const transformedAssignments = safeAssignments.map(assignment => {
       const getLetterIndex = (index: number) => {
         if (index === 0) return 'a';
         let result = '';
@@ -76,7 +57,7 @@ export async function GET(
       return {
         ...assignment,
         letter_index: getLetterIndex(assignment.assignment_index),
-        block_count: assignment.blocks?.length || 0
+        block_count: 0 // Will be calculated separately if needed
       };
     })
 

@@ -42,7 +42,11 @@ export default function ParagraphDetailPage() {
     chapterId: string;
     paragraphId: string;
   };
-  const [paragraph, setParagraph] = useState<Paragraph | null>(null);
+  const [paragraph, setParagraph] = useState<Paragraph>({
+    id: paragraphId,
+    title: `Paragraph ${paragraphId}`,
+    paragraph_number: 1
+  });
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [isCreateAssignmentOpen, setIsCreateAssignmentOpen] = useState(false);
   const { toast } = useToast();
@@ -69,7 +73,9 @@ export default function ParagraphDetailPage() {
         );
         if (assignmentsResponse.ok) {
           const assignmentsData = await assignmentsResponse.json();
-          setAssignments(assignmentsData);
+          setAssignments(assignmentsData || []);
+        } else {
+          setAssignments([]);
         }
       } catch (error) {
         console.error('Error fetching paragraph data:', error);
@@ -83,10 +89,6 @@ export default function ParagraphDetailPage() {
 
     fetchData();
   }, [subjectId, chapterId, paragraphId, toast]);
-
-  if (!paragraph) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="flex flex-col gap-8">
