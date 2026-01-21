@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { gradeOpenQuestion } from '@/lib/ai-grading'
 import { updateProgressSnapshot } from '@/lib/progress'
 
 export const dynamic = 'force-dynamic'
@@ -75,13 +74,26 @@ export async function POST() {
     const answerData = studentAnswer.answer_data as any
     const blockConfig = blockData.data as any
 
-    const gradingResult = await gradeOpenQuestion(
-      blockConfig.question,
-      blockConfig.grading_criteria,
-      blockConfig.max_score,
-      'en', // TODO: get from user preferences
-      answerData.text
-    )
+    const aiResponse = await fetch('http://localhost:3000/api/ai/handle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        flowName: 'gradeOpenQuestion',
+        input: {
+          question: blockConfig.question,
+          criteria: blockConfig.grading_criteria,
+          maxScore: blockConfig.max_score,
+          language: 'en',
+          studentAnswer: answerData.text
+        }
+      })
+    });
+
+    if (!aiResponse.ok) {
+      throw new Error('AI grading failed');
+    }
+
+    const gradingResult = await aiResponse.json();
 
     // Update student answer
     await supabase
