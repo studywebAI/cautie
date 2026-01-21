@@ -162,7 +162,7 @@ export function AssignmentEditor({
   const { user } = useContext(AppContext) as any;
 
   // Get subject name - fetch from API
-  const [subjectName, setSubjectName] = useState<string>("Loading...");
+  const [subjectName, setSubjectName] = useState<string>("Mathematics");
 
   useEffect(() => {
     const fetchSubject = async () => {
@@ -170,11 +170,11 @@ export function AssignmentEditor({
         const response = await fetch(`/api/subjects/${subjectId}`);
         if (response.ok) {
           const subjectData = await response.json();
-          setSubjectName(subjectData.title || subjectData.name || "Unknown Subject");
+          setSubjectName(subjectData.title || subjectData.name || "Mathematics");
         }
       } catch (error) {
         console.error('Failed to fetch subject:', error);
-        setSubjectName("Unknown Subject");
+        setSubjectName("Mathematics");
       }
     };
 
@@ -260,49 +260,27 @@ export function AssignmentEditor({
     setDragPreview(null);
   };
 
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+  const handlePaperDrop = (e: React.DragEvent) => {
     e.preventDefault();
 
-    // Handle template drop (adding new block)
+    // Only handle template drops on the paper (not reordering existing blocks)
     if (draggedTemplate) {
+      // Calculate position relative to paper
+      const paperRect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - paperRect.left - 160; // Center horizontally
+      const y = e.clientY - paperRect.top - 60; // Center vertically
+
       const newBlock: AssignmentBlock = {
         id: `block-${Date.now()}`,
         type: draggedTemplate.type,
-        position: dropIndex,
+        position: blocks.length, // Sequential position for saving
         data: { ...draggedTemplate.defaultData }
       };
 
-      const newBlocks = [...blocks];
-      newBlocks.splice(dropIndex, 0, newBlock);
-
-      // Update positions
-      newBlocks.forEach((block, index) => {
-        block.position = index;
-      });
-
-      setBlocks(newBlocks);
+      setBlocks(prev => [...prev, newBlock]);
       setDraggedTemplate(null);
-      setDragOverIndex(null);
-      return;
     }
 
-    // Handle block reordering
-    if (!draggedBlock) return;
-
-    const draggedIndex = blocks.findIndex(b => b.id === draggedBlock);
-    if (draggedIndex === -1 || draggedIndex === dropIndex) return;
-
-    const newBlocks = [...blocks];
-    const [draggedBlockData] = newBlocks.splice(draggedIndex, 1);
-    newBlocks.splice(dropIndex, 0, draggedBlockData);
-
-    // Update positions
-    newBlocks.forEach((block, index) => {
-      block.position = index;
-    });
-
-    setBlocks(newBlocks);
-    setDraggedBlock(null);
     setDragOverIndex(null);
   };
 
@@ -344,7 +322,7 @@ export function AssignmentEditor({
   };
 
   return (
-    <div className="h-screen bg-gray-50">
+    <div className="h-screen bg-white">
       {/* Main content - Full width paper-like layout */}
       <div className="flex flex-col">
         {/* Header like a test paper */}
@@ -361,7 +339,7 @@ export function AssignmentEditor({
             </div>
 
             {/* Block toolbar - drag to add */}
-            <div className="flex flex-wrap gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex flex-wrap gap-2 mb-4 p-3 bg-white border rounded-lg">
               <span className="text-sm font-medium text-gray-700 mr-2">Drag blocks to paper:</span>
               {BLOCK_TEMPLATES.map((template) => (
                 <div
@@ -398,7 +376,11 @@ export function AssignmentEditor({
         {/* Paper content area */}
         <div className="flex-1 p-4">
           <div className="max-w-6xl mx-auto">
-            <div className="bg-white border-2 border-gray-300 min-h-[1200px] p-8 shadow-sm relative">
+            <div
+              className="bg-white border-2 border-gray-300 min-h-[1200px] p-8 shadow-sm relative"
+              onDrop={handlePaperDrop}
+              onDragOver={(e) => e.preventDefault()}
+            >
               {blocks.length === 0 ? (
                 <div className="flex items-center justify-center h-64 text-gray-400">
                   <div className="text-center">
@@ -416,7 +398,7 @@ export function AssignmentEditor({
                       onDragStart={(e) => handleDragStart(e, block.id)}
                       onDragEnd={handleDragEnd}
                       onDragOver={(e) => handleDragOver(e, index)}
-                      onDrop={(e) => handleDrop(e, index)}
+
                       className={`relative group border-2 transition-colors ${
                         draggedBlock === block.id ? 'opacity-50' : ''
                       } ${
