@@ -123,16 +123,16 @@ export default function SubjectDetailPage() {
       <header>
         <div className="flex items-center gap-4">
           <Link href="/subjects" className="text-muted-foreground hover:text-foreground">
-            Study Materials
+            Subjects
           </Link>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          <h1 className="text-3xl font-bold font-headline">{subject.name}</h1>
+          <h1 className="text-base">{subject.name}</h1>
         </div>
         <p className="text-muted-foreground mt-2">{subject.description}</p>
       </header>
 
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Chapters</h2>
+        <h2 className="text-sm">Chapters</h2>
         <Button onClick={() => setIsCreateChapterOpen(true)}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Chapter
@@ -144,65 +144,29 @@ export default function SubjectDetailPage() {
         {chapters.map((chapter) => (
           <Card key={chapter.id}>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Left side - AI Summary */}
-                <div className="md:col-span-1">
-                  <div className="bg-muted/50 rounded-lg p-4 h-full">
-                    <h4 className="font-medium text-sm mb-3">Chapter Summary</h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {chapter.ai_summary || 'AI summary will be generated when content is added.'}
-                    </p>
+              {/* Chapter header with photo and title */}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="relative">
+                  <div className="text-2xl font-bold text-center bg-gray-200 rounded-lg w-16 h-16 flex items-center justify-center">
+                    📚
+                  </div>
+                  <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                    {chapter.chapter_number}
                   </div>
                 </div>
+                <div className="flex-1">
+                  <h3 className="text-sm">{chapter.title}</h3>
+                </div>
+              </div>
 
-                {/* Right side - Chapter content */}
-                <div className="md:col-span-2">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <BookOpen className="h-5 w-5 text-primary" />
-                      <div>
-                        <h3 className="text-lg font-semibold">{chapter.title}</h3>
-                        {chapter.description && (
-                          <p className="text-sm text-muted-foreground">{chapter.description}</p>
-                        )}
-                      </div>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => {
-                          setSelectedChapterId(chapter.id);
-                          setIsCreateParagraphOpen(true);
-                        }}>
-                          Add Paragraph
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>Edit Chapter</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  {/* Paragraphs */}
-                  <div className="space-y-3">
-                    {chapter.paragraphs?.map((paragraph) => (
-                  <div key={paragraph.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium bg-primary/10 text-primary px-2 py-1 rounded">
-                          {chapter.chapter_number}.{paragraph.paragraph_number}
-                        </span>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{paragraph.title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {paragraph.assignment_count} assignments • {paragraph.progress_percent}% complete
-                          </p>
-                        </div>
-                      </div>
+              {/* Paragraphs */}
+              <div className="space-y-2">
+                {chapter.paragraphs?.map((paragraph) => (
+                  <div key={paragraph.id} className="cursor-pointer hover:bg-muted p-2 rounded flex items-center justify-between" onClick={() => window.location.href = `/subjects/${subjectId}/chapters/${chapter.id}/paragraphs/${paragraph.id}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">
+                        {chapter.chapter_number}.{paragraph.paragraph_number} {paragraph.title}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-16 bg-muted rounded-full h-2">
@@ -211,19 +175,13 @@ export default function SubjectDetailPage() {
                           style={{ width: `${paragraph.progress_percent}%` }}
                         />
                       </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href={`/subjects/${subjectId}/chapters/${chapter.id}/paragraphs/${paragraph.id}`}>
-                          View Assignments ({paragraph.assignment_count})
-                        </Link>
-                      </Button>
+                      <span className="text-sm">{paragraph.progress_percent}%</span>
                     </div>
                   </div>
                 ))}
                 {(!chapter.paragraphs || chapter.paragraphs.length === 0) && (
-                  <p className="text-sm text-muted-foreground italic">No paragraphs yet</p>
+                  <p className="text-sm text-muted-foreground">No paragraphs yet</p>
                 )}
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>

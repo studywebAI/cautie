@@ -261,10 +261,10 @@ export default function ChapterOverviewPage({}: ChapterOverviewPageProps) {
             📚
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-base">
               {chapter.chapter_number}
             </h1>
-            <p className="text-lg">
+            <p className="text-sm">
               {chapter.title}
             </p>
           </div>
@@ -295,7 +295,7 @@ export default function ChapterOverviewPage({}: ChapterOverviewPageProps) {
       {user?.role === 'student' && (
         <Card>
           <CardHeader>
-            <CardTitle>Your Progress</CardTitle>
+            <CardTitle className="text-sm">Your Progress</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
@@ -320,11 +320,11 @@ export default function ChapterOverviewPage({}: ChapterOverviewPageProps) {
 
       {/* Paragraphs Grid */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Paragraphs</h2>
+        <h2 className="text-sm mb-4">Paragraphs</h2>
 
         {paragraphs.length === 0 ? (
           <Card className="p-12 text-center">
-            <h3 className="text-lg font-semibold mb-2">No paragraphs yet</h3>
+            <h3 className="text-sm mb-2">No paragraphs yet</h3>
             <p className="text-muted-foreground">
               This chapter doesn't have any paragraphs yet.
             </p>
@@ -339,7 +339,7 @@ export default function ChapterOverviewPage({}: ChapterOverviewPageProps) {
               >
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span className="text-lg">
+                    <span className="text-sm">
                       {chapter.chapter_number}.{paragraph.paragraph_number} {paragraph.title}
                     </span>
                     <span className="text-sm">{paragraph.completion_percent}%</span>

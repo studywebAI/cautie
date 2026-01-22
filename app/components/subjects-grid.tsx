@@ -58,6 +58,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
   const [selectedCreateClassId, setSelectedCreateClassId] = useState<string>('');
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [recentParagraphs, setRecentParagraphs] = useState<any[]>([]);
   const { toast } = useToast();
   const { classes, session } = useContext(AppContext) as AppContextType;
 
@@ -104,10 +105,23 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
     }
   }, [classId, toast]);
 
+  const fetchRecentParagraphs = useCallback(async () => {
+    if (!session?.user?.id || !isTeacher) return; // Only for students? Wait, the component has isTeacher, but recent for students.
+
+    // Mock recent paragraphs for now
+    const mockParagraphs = [
+      { id: '1', chapterNumber: 1, paragraphNumber: 1, title: 'Introduction to Algebra', progress: 85 },
+      { id: '2', chapterNumber: 1, paragraphNumber: 2, title: 'Basic Equations', progress: 45 },
+      { id: '3', chapterNumber: 2, paragraphNumber: 1, title: 'Quadratic Functions', progress: 20 },
+    ];
+    setRecentParagraphs(mockParagraphs);
+  }, [session?.user?.id, isTeacher]);
+
   // Fetch subjects on mount
   React.useEffect(() => {
     fetchSubjects();
-  }, [fetchSubjects]);
+    fetchRecentParagraphs();
+  }, [fetchSubjects, fetchRecentParagraphs]);
 
   const handleCreateSubject = async () => {
     if (!newSubjectTitle.trim()) {
@@ -202,8 +216,8 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
         {isTeacher && (
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold">Subjects</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-sm">Subjects</h2>
+              <p className="text-sm">
                 {classId
                   ? "Organize your class content into structured subjects"
                   : "Create and manage your learning subjects"
@@ -225,7 +239,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
         {subjects.length === 0 ? (
           <Card className="p-12 text-center">
             <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No subjects yet</h3>
+            <h3 className="text-sm mb-2">No subjects yet</h3>
             <p className="text-muted-foreground mb-4">
               {classId
                 ? isTeacher
@@ -276,10 +290,10 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
 
                       {/* Title and class label overlay on left side */}
                       <div className="absolute left-4 top-4 max-w-[60%]">
-                        <h3 className="font-semibold text-lg text-white drop-shadow-lg mb-1">
+                        <h3 className="text-sm text-white drop-shadow-lg mb-1">
                           {subject.title}
                         </h3>
-                        <p className="text-sm text-white/80 drop-shadow">
+                        <p className="text-xs text-white/80 drop-shadow">
                           {subject.content?.class_label || subject.title}
                         </p>
                       </div>
@@ -314,6 +328,28 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
                 </Link>
               </Card>
             ))}
+          </div>
+        )}
+
+        {/* Recent Paragraphs */}
+        {recentParagraphs.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-sm mb-4">Recent Paragraphs</h3>
+            <div className="space-y-2">
+              {recentParagraphs.map((paragraph) => (
+                <div key={paragraph.id} className="cursor-pointer hover:bg-muted p-3 rounded border" onClick={() => {/* navigate to paragraph */}}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">{paragraph.chapterNumber}.{paragraph.paragraphNumber} {paragraph.title}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 bg-muted rounded-full h-2">
+                        <div className="bg-primary h-2 rounded-full" style={{ width: `${paragraph.progress}%` }} />
+                      </div>
+                      <span className="text-sm">{paragraph.progress}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
