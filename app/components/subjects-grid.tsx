@@ -188,10 +188,8 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
   };
 
   const generatePlaceholderIcon = (seed?: string) => {
-    // Simple deterministic icon generation based on seed
-    const icons = ['📚', '🎓', '📖', '🔬', '🎨', '🌍', '⚡', '🔥', '💡', '🎯'];
-    const index = seed ? seed.split('').reduce((a, b) => a + b.charCodeAt(0), 0) % icons.length : 0;
-    return icons[index];
+    // Return a simple icon text
+    return 'Book';
   };
 
   if (isLoading) {

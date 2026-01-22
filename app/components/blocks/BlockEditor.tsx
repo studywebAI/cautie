@@ -360,9 +360,8 @@ export function BlockEditor({
               key={index}
               className="absolute cursor-move select-none"
               style={{
-                left: block.x || 100,
-                top: block.y || 100 + index * 120,
-                minWidth: '200px'
+                left: block.x || (50 + (index % 3) * 250),
+                top: block.y || (50 + Math.floor(index / 3) * 200)
               }}
               draggable
               onDragStart={(e) => handleDragStart(e, index)}
@@ -392,13 +391,7 @@ export function BlockEditor({
           ))}
         </div>
 
-        {/* Save Button */}
-        <div className="absolute top-4 right-4">
-          <Button onClick={saveBlocks} disabled={isLoading}>
-            <Save className="mr-2 h-4 w-4" />
-            {isLoading ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </div>
+
       </div>
 
       {/* Collapsible Block Palette */}
