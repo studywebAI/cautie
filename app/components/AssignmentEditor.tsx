@@ -167,6 +167,9 @@ export function AssignmentEditor({
   const [draggedTemplate, setDraggedTemplate] = useState<BlockTemplate | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragPreview, setDragPreview] = useState<{x: number, y: number, width: number, height: number} | null>(null);
+  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState<{x: number, y: number} | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isStudentView, setIsStudentView] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -297,23 +300,14 @@ export function AssignmentEditor({
     });
   };
 
-  const moveBlock = (blockId: string, direction: 'up' | 'down') => {
-    const currentIndex = blocks.findIndex(b => b.id === blockId);
-    if (currentIndex === -1) return;
-
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    if (newIndex < 0 || newIndex >= blocks.length) return;
-
-    const newBlocks = [...blocks];
-    [newBlocks[currentIndex], newBlocks[newIndex]] = [newBlocks[newIndex], newBlocks[currentIndex]];
-
-    // Update positions
-    newBlocks.forEach((block, index) => {
-      block.position = index;
+  const updateBlockPosition = (blockId: string, x: number, y: number) => {
+    setBlocks(prev => {
+      const newBlocks = prev.map(block =>
+        block.id === blockId ? { ...block, x, y } : block
+      );
+      saveToHistory(newBlocks);
+      return newBlocks;
     });
-
-    setBlocks(newBlocks);
-    saveToHistory(newBlocks);
   };
 
   const addBlock = (template: BlockTemplate, x = 100, y = 100) => {
@@ -330,6 +324,37 @@ export function AssignmentEditor({
     saveToHistory(newBlocks);
   };
 
+  const handleMouseDown = (e: React.MouseEvent, blockId: string) => {
+    if (isStudentView) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    setDragOffset({ x: offsetX, y: offsetY });
+    setIsDragging(true);
+    setSelectedBlock(blockId);
+    setDraggedBlock(blockId);
+
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !draggedBlock || !dragOffset) return;
+
+    const paperRect = e.currentTarget.getBoundingClientRect();
+    const newX = e.clientX - paperRect.left - dragOffset.x;
+    const newY = e.clientY - paperRect.top - dragOffset.y;
+
+    updateBlockPosition(draggedBlock, Math.max(0, newX), Math.max(0, newY));
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setDraggedBlock(null);
+    setDragOffset(null);
+  };
+
   const handleDragStart = (e: React.DragEvent, dragId: string) => {
     if (dragId.startsWith('template-')) {
       const templateId = dragId.replace('template-', '');
@@ -338,14 +363,6 @@ export function AssignmentEditor({
         setDraggedTemplate(template);
         setDraggedBlock(null);
         // Initialize drag preview
-        setDragPreview({ x: e.clientX, y: e.clientY, width: 320, height: 120 });
-      }
-    } else {
-      setDraggedBlock(dragId);
-      setDraggedTemplate(null);
-      // For block reordering, show existing block size
-      const block = blocks.find(b => b.id === dragId);
-      if (block) {
         setDragPreview({ x: e.clientX, y: e.clientY, width: 320, height: 120 });
       }
     }
@@ -619,6 +636,8 @@ export function AssignmentEditor({
                 className={`bg-white border-2 border-gray-300 ${isMobile ? 'min-h-[800px]' : 'min-h-[1200px]'} shadow-sm relative overflow-hidden ${isStudentView ? 'pointer-events-none select-text' : ''}`}
                 onDrop={isStudentView ? undefined : handlePaperDrop}
                 onDragOver={isStudentView ? undefined : (e) => e.preventDefault()}
+                onMouseMove={!isStudentView ? handleMouseMove : undefined}
+                onMouseUp={!isStudentView ? handleMouseUp : undefined}
               >
                 {blocks.length === 0 ? (
                   <div className="flex items-center justify-center h-64 text-gray-400 absolute inset-0">
@@ -633,28 +652,22 @@ export function AssignmentEditor({
                     {blocks.map((block, index) => (
                       <div
                         key={block.id}
-                        draggable={!isStudentView}
-                        onDragStart={isStudentView ? undefined : (e) => handleDragStart(e, block.id)}
-                        onDragEnd={isStudentView ? undefined : handleDragEnd}
-
-                        className={`absolute cursor-move select-none group border-2 transition-colors ${
-                          draggedBlock === block.id ? 'opacity-50' : 'border-transparent'
-                        } ${isStudentView ? 'border-transparent' : ''}`}
+                        onMouseDown={!isStudentView ? (e) => handleMouseDown(e, block.id) : undefined}
+                        onClick={() => !isStudentView && setSelectedBlock(selectedBlock === block.id ? null : block.id)}
+                        className={`absolute select-none border-2 transition-colors cursor-pointer ${
+                          selectedBlock === block.id ? 'border-blue-500 bg-blue-50' :
+                          isDragging && draggedBlock === block.id ? 'opacity-50 border-blue-300' :
+                          'border-gray-300 hover:border-gray-400'
+                        } ${isStudentView ? 'cursor-default' : ''}`}
                         style={{
                           left: block.x || (50 + (index % 3) * 250),
                           top: block.y || (50 + Math.floor(index / 3) * 200),
-                          minWidth: '200px'
+                          minWidth: '300px'
                         }}
                       >
-                        {/* Block controls - hidden in student view */}
-                        {!isStudentView && (
-                          <div className="absolute -left-12 top-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="flex items-center gap-0.5">
-                            {/* Move handle */}
-                            <div className="cursor-move p-1 hover:bg-gray-100 rounded">
-                              <GripVertical className="h-4 w-4 text-gray-400" />
-                            </div>
-                            {/* Edit button */}
+                        {/* Block controls - shown when selected */}
+                        {selectedBlock === block.id && !isStudentView && (
+                          <div className="absolute -top-10 left-0 right-0 flex justify-center gap-1 bg-white border border-gray-300 rounded shadow-sm p-1">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -664,7 +677,6 @@ export function AssignmentEditor({
                             >
                               <PenTool className="h-3 w-3" />
                             </Button>
-                            {/* AI button */}
                             <Button
                               variant="ghost"
                               size="sm"
@@ -674,29 +686,6 @@ export function AssignmentEditor({
                             >
                               <Sparkles className="h-3 w-3" />
                               <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white"></div>
-                            </Button>
-                          </div>
-                          {/* Quick actions */}
-                          <div className="flex flex-col gap-0.5">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => moveBlock(block.id, 'up')}
-                              disabled={index === 0}
-                              className="h-6 w-6 p-0"
-                              title="Move up"
-                            >
-                              <ArrowUp className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => moveBlock(block.id, 'down')}
-                              disabled={index === blocks.length - 1}
-                              className="h-6 w-6 p-0"
-                              title="Move down"
-                            >
-                              <ArrowDown className="h-3 w-3" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -708,13 +697,7 @@ export function AssignmentEditor({
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
-                          </div>
                         )}
-
-                        {/* Block number - hidden in student view */}
-                        <div className="absolute -left-4 top-0 text-gray-400 font-medium">
-                          {index + 1}.
-                        </div>
 
                         {/* Block content with inline editing */}
                         <div className="border-b border-gray-200 pb-2">
