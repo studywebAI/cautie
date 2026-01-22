@@ -60,6 +60,21 @@ export function BlockEditor({
     loadBlocks();
   }, [assignmentId]);
 
+  // Load from localStorage first for fast loading
+  useEffect(() => {
+    const saved = localStorage.getItem(`blocks-${assignmentId}`);
+    if (saved) {
+      try {
+        const parsedBlocks = JSON.parse(saved);
+        setBlocks(parsedBlocks);
+      } catch (error) {
+        console.error('Error loading blocks from localStorage:', error);
+      }
+    }
+    // Then load from API
+    loadBlocks();
+  }, [assignmentId]);
+
   const loadBlocks = async () => {
     try {
       const response = await fetch(`/api/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}/assignments/${assignmentId}/blocks`);
@@ -131,11 +146,13 @@ export function BlockEditor({
     const updatedBlocks = [...blocks];
     updatedBlocks[index] = { ...updatedBlocks[index], data };
     setBlocks(updatedBlocks);
+    localStorage.setItem(`blocks-${assignmentId}`, JSON.stringify(updatedBlocks));
   };
 
   const removeBlock = (index: number) => {
     const updatedBlocks = blocks.filter((_, i) => i !== index);
     setBlocks(updatedBlocks);
+    localStorage.setItem(`blocks-${assignmentId}`, JSON.stringify(updatedBlocks));
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -355,7 +372,6 @@ export function BlockEditor({
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <Badge variant="outline" className="text-xs">
-                      {BLOCK_TYPES.find(bt => bt.value === block.type)?.icon}
                       {BLOCK_TYPES.find(bt => bt.value === block.type)?.label}
                     </Badge>
                     <Button
@@ -408,7 +424,6 @@ export function BlockEditor({
                     e.dataTransfer.setData('blockType', blockType.value);
                   }}
                 >
-                  <div className="text-lg mb-1">{blockType.icon}</div>
                   <div className="text-xs">{blockType.label}</div>
                 </div>
               ))}
