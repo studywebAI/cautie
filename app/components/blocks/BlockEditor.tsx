@@ -8,13 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, X, GripVertical, Save, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { PlusCircle, X, GripVertical, Save, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, ChevronRight as ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 type Block = {
   id?: string;
   type: string;
   position: number;
+  x?: number;
+  y?: number;
   data: any;
 };
 
@@ -50,6 +52,7 @@ export function BlockEditor({
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
   const [isLoading, setIsLoading] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const { toast } = useToast();
 
   // Load existing blocks on mount
@@ -113,10 +116,12 @@ export function BlockEditor({
     }
   };
 
-  const addBlock = (type: string) => {
+  const addBlock = (type: string, x = 100, y = 100) => {
     const newBlock: Block = {
       type,
       position: blocks.length,
+      x,
+      y,
       data: getDefaultDataForType(type)
     };
     setBlocks([...blocks, newBlock]);
@@ -138,25 +143,18 @@ export function BlockEditor({
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === dropIndex) return;
-
-    const newBlocks = [...blocks];
-    const draggedBlock = newBlocks[draggedIndex];
-    newBlocks.splice(draggedIndex, 1);
-    newBlocks.splice(dropIndex, 0, draggedBlock);
-
-    setBlocks(newBlocks);
-    setDraggedIndex(null);
-  };
-
-  const handleDragEnd = () => {
+  const handleDragEnd = (e: React.DragEvent, index: number) => {
+    if (draggedIndex !== null) {
+      const canvas = e.currentTarget.closest('.flex-1');
+      const rect = canvas?.getBoundingClientRect();
+      if (rect) {
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const updatedBlocks = [...blocks];
+        updatedBlocks[index] = { ...updatedBlocks[index], x: Math.max(0, x), y: Math.max(0, y) };
+        setBlocks(updatedBlocks);
+      }
+    }
     setDraggedIndex(null);
   };
 
@@ -320,105 +318,104 @@ export function BlockEditor({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Assignment Content</h2>
-        <Button onClick={saveBlocks} disabled={isLoading}>
-          <Save className="mr-2 h-4 w-4" />
-          {isLoading ? 'Saving...' : 'Save Changes'}
-        </Button>
+    <div className="flex h-screen">
+      {/* Canvas */}
+      <div
+        className="flex-1 relative bg-gray-50 overflow-hidden"
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          const blockType = e.dataTransfer.getData('blockType');
+          if (blockType) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            addBlock(blockType, x, y);
+          }
+        }}
+      >
+        <div className="absolute inset-0">
+          {blocks.map((block, index) => (
+            <div
+              key={index}
+              className="absolute cursor-move select-none"
+              style={{
+                left: block.x || 100,
+                top: block.y || 100 + index * 120,
+                minWidth: '200px'
+              }}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragEnd={(e) => handleDragEnd(e, index)}
+            >
+              <Card className="shadow-md">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className="text-xs">
+                      {BLOCK_TYPES.find(bt => bt.value === block.type)?.icon}
+                      {BLOCK_TYPES.find(bt => bt.value === block.type)?.label}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeBlock(index)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {renderBlockEditor(block, index)}
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+        </div>
+
+        {/* Save Button */}
+        <div className="absolute top-4 right-4">
+          <Button onClick={saveBlocks} disabled={isLoading}>
+            <Save className="mr-2 h-4 w-4" />
+            {isLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
       </div>
 
-      {/* Block List */}
-      <div className="space-y-4">
-        {blocks.map((block, index) => (
-          <Card
-            key={index}
-            className="relative cursor-move"
-            draggable
-            onDragStart={(e) => handleDragStart(e, index)}
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, index)}
-            onDragEnd={handleDragEnd}
-          >
-            {/* Side arrows */}
-            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4">
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                <ChevronLeft className="h-3 w-3" />
-              </Button>
-            </div>
-            <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4">
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                <ChevronRight className="h-3 w-3" />
-              </Button>
-            </div>
-
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                {/* Top controls */}
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    <GripVertical className="h-3 w-3 mr-1" />
-                    Move
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    AI Help
-                  </Button>
+      {/* Collapsible Block Palette */}
+      <div className={`bg-white border-l shadow-lg transition-all duration-300 ${isPaletteOpen ? 'w-64' : 'w-12'}`}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsPaletteOpen(!isPaletteOpen)}
+          className="w-full h-12 flex items-center justify-center"
+        >
+          <ArrowRight className={`h-4 w-4 transition-transform ${isPaletteOpen ? 'rotate-180' : ''}`} />
+        </Button>
+        {isPaletteOpen && (
+          <div className="p-4">
+            <h3 className="text-sm font-medium mb-4">Blocks</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {BLOCK_TYPES.map((blockType) => (
+                <div
+                  key={blockType.value}
+                  className="cursor-grab border rounded p-2 text-center hover:bg-gray-50"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('blockType', blockType.value);
+                  }}
+                >
+                  <div className="text-lg mb-1">{blockType.icon}</div>
+                  <div className="text-xs">{blockType.label}</div>
                 </div>
-
-                {/* Corner control */}
-                <div className="absolute top-2 right-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeBlock(index)}
-                    className="h-6 w-6 p-0"
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-
-                <Badge variant="outline">
-                  {BLOCK_TYPES.find(bt => bt.value === block.type)?.icon}
-                  {BLOCK_TYPES.find(bt => bt.value === block.type)?.label}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {renderBlockEditor(block, index)}
-            </CardContent>
-          </Card>
-        ))}
-
-        {blocks.length === 0 && (
-          <Card className="p-12 text-center">
-            <p className="text-muted-foreground">No content blocks added yet. Add your first block below.</p>
-          </Card>
+              ))}
+            </div>
+          </div>
         )}
       </div>
-
-      {/* Add Block */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Add Content Block</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-            {BLOCK_TYPES.map((blockType) => (
-              <Button
-                key={blockType.value}
-                variant="outline"
-                className="h-16 flex flex-col items-center justify-center gap-1"
-                onClick={() => addBlock(blockType.value)}
-              >
-                <span className="text-lg">{blockType.icon}</span>
-                <span className="text-xs">{blockType.label}</span>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
