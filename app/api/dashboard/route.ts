@@ -15,47 +15,52 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch all dashboard data in parallel
+    // Fetch all dashboard data directly from database
     const [
-      classesRes,
-      assignmentsRes,
-      personalTasksRes,
-      profileRes
+      classesResult,
+      assignmentsResult,
+      personalTasksResult,
+      profileResult
     ] = await Promise.all([
-      fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/classes`, {
-        headers: { cookie: cookieStore.toString() }
-      }),
-      fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/assignments`, {
-        headers: { cookie: cookieStore.toString() }
-      }),
-      fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/personal-tasks`, {
-        headers: { cookie: cookieStore.toString() }
-      }),
+      supabase.from('classes').select('*').or(`owner_id.eq.${user.id},user_id.eq.${user.id}`).order('created_at', { ascending: false }),
+      supabase.from('assignments').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('personal_tasks').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('profiles').select('role').eq('id', user.id).single()
     ])
 
-    const [classes, assignments, personalTasks] = await Promise.all([
-      classesRes.json(),
-      assignmentsRes.json(),
-      personalTasksRes.json()
-    ])
+    if (classesResult.error) {
+      console.error('Classes fetch error:', classesResult.error)
+    }
+    if (assignmentsResult.error) {
+      console.error('Assignments fetch error:', assignmentsResult.error)
+    }
+    if (personalTasksResult.error) {
+      console.error('Personal tasks fetch error:', personalTasksResult.error)
+    }
+    if (profileResult.error) {
+      console.error('Profile fetch error:', profileResult.error)
+    }
 
-    const role = profileRes.data?.role || 'student'
+    const classes = classesResult.data || []
+    const assignments = assignmentsResult.data || []
+    const personalTasks = personalTasksResult.data || []
+    const role = profileResult.data?.role || 'student'
 
     // Get students for teachers
-    let students = []
+    let students: any[] = []
     if (role === 'teacher' && classes.length > 0) {
       const ownedClassIds = classes.filter((c: any) => c.owner_id === user.id).map((c: any) => c.id)
       if (ownedClassIds.length > 0 && ownedClassIds.length <= 10) {
-        const studentPromises = ownedClassIds.map((id: string) =>
-          fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/classes/${id}/members`, {
-            headers: { cookie: cookieStore.toString() }
-          }).then(res => res.json())
-        )
-        const studentsPerClass = await Promise.all(studentPromises)
-        const allStudents = studentsPerClass.flat()
-        students = Array.from(new Set(allStudents.map((s: any) => s.id)))
-          .map(id => allStudents.find((s: any) => s.id === id))
+        const { data: studentsData, error: studentsError } = await supabase
+          .from('class_members')
+          .select('user_id, profiles(*)')
+          .in('class_id', ownedClassIds)
+
+        if (!studentsError && studentsData) {
+          students = Array.from(new Set(studentsData.map((s: any) => s.user_id)))
+            .map(id => studentsData.find((s: any) => s.user_id === id))
+            .filter(Boolean)
+        }
       }
     }
 
