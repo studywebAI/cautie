@@ -29,7 +29,10 @@ type Block = {
 export default function AssignmentDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { subjectId, chapterId, paragraphId, assignmentId } = params as any;
+  const subjectId = params.subjectId as string;
+  const chapterId = params.chapterId as string;
+  const paragraphId = params.paragraphId as string;
+  const assignmentId = params.assignmentId as string;
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const { toast } = useToast();

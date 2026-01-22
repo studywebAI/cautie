@@ -44,6 +44,8 @@ interface AssignmentBlock {
   position: number;
   x?: number;
   y?: number;
+  width?: number;
+  height?: number;
   data: any;
 }
 
@@ -170,6 +172,10 @@ export function AssignmentEditor({
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<{x: number, y: number} | null>(null);
+  const [dragStartTime, setDragStartTime] = useState<number | null>(null);
+  const [pendingSelection, setPendingSelection] = useState<string | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStart, setResizeStart] = useState<{x: number, y: number, width: number, height: number} | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isStudentView, setIsStudentView] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -247,6 +253,55 @@ export function AssignmentEditor({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [historyIndex, history]);
 
+  // Global mouse event listeners for dragging and resizing
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (isResizing && selectedBlock && resizeStart) {
+        const newWidth = resizeStart.width + (e.clientX - resizeStart.x);
+        const newHeight = resizeStart.height + (e.clientY - resizeStart.y);
+        updateBlockSize(selectedBlock, newWidth, newHeight);
+      } else if (isDragging && draggedBlock && dragOffset) {
+        const paperRect = document.querySelector('[data-paper]')?.getBoundingClientRect();
+        if (paperRect) {
+          const newX = e.clientX - paperRect.left - dragOffset.x;
+          const newY = e.clientY - paperRect.top - dragOffset.y;
+          const block = blocks.find(b => b.id === draggedBlock);
+          if (block) {
+            // Update drag preview position continuously
+            setDragPreview({
+              x: e.clientX,
+              y: e.clientY,
+              width: block.width || 300,
+              height: block.height || 120
+            });
+          }
+          updateBlockPosition(draggedBlock, Math.max(0, newX), Math.max(0, newY));
+        }
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false);
+      setDraggedBlock(null);
+      setDragOffset(null);
+      setDragPreview(null);
+      setPendingSelection(null);
+      setDragStartTime(null);
+      setIsResizing(false);
+      setResizeStart(null);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging, draggedBlock, dragOffset]);
+
   // Auto-save functionality - save before page unload
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -323,6 +378,16 @@ export function AssignmentEditor({
     });
   };
 
+  const updateBlockSize = (blockId: string, width: number, height: number) => {
+    setBlocks(prev => {
+      const newBlocks = prev.map(block =>
+        block.id === blockId ? { ...block, width: Math.max(200, width), height: Math.max(80, height) } : block
+      );
+      saveToHistory(newBlocks);
+      return newBlocks;
+    });
+  };
+
   const addBlock = (template: BlockTemplate, x = 100, y = 100) => {
     const newBlock: AssignmentBlock = {
       id: `block-${Date.now()}`,
@@ -344,10 +409,32 @@ export function AssignmentEditor({
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
 
+    // Set pending selection and start timer for drag detection
+    setPendingSelection(blockId);
     setDragOffset({ x: offsetX, y: offsetY });
-    setIsDragging(true);
-    setSelectedBlock(blockId);
-    setDraggedBlock(blockId);
+    setDragStartTime(Date.now());
+
+    // Set up drag start timeout (300ms)
+    setTimeout(() => {
+      if (pendingSelection === blockId && !isDragging) {
+        // Start dragging
+        setIsDragging(true);
+        setSelectedBlock(blockId);
+        setDraggedBlock(blockId);
+        setPendingSelection(null);
+
+        // Initialize drag preview for block
+        const block = blocks.find(b => b.id === blockId);
+        if (block) {
+          setDragPreview({
+            x: e.clientX,
+            y: e.clientY,
+            width: block.width || 300,
+            height: block.height || 120
+          });
+        }
+      }
+    }, 300);
 
     e.preventDefault();
   };
@@ -546,11 +633,11 @@ export function AssignmentEditor({
   };
 
   return (
-    <div className="h-screen bg-white">
+    <div className="h-screen bg-background">
       {/* Main content - Full width paper-like layout */}
       <div className="flex flex-col">
         {/* Header like a test paper */}
-        <div className="bg-white border-b p-4">
+        <div className="bg-background border-b p-4">
           <div className="max-w-6xl mx-auto">
             <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'justify-between items-start'} mb-4`}>
               <div>
@@ -626,15 +713,7 @@ export function AssignmentEditor({
                   📄 Export
                 </Button>
 
-                <Button
-                  onClick={handleSave}
-                  size="sm"
-                  disabled={isSaving}
-                  title="Save (Ctrl+S)"
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSaving ? 'Saving...' : 'Save'}
-                </Button>
+                {/* Auto-save enabled - no manual save button needed */}
               </div>
             </div>
           </div>
@@ -646,11 +725,10 @@ export function AssignmentEditor({
           <div className={`flex-1 ${isMobile ? 'p-2' : 'p-4'}`}>
             <div className={isMobile ? 'max-w-full mx-2' : 'max-w-6xl mx-auto'}>
               <div
-                className={`bg-white border-2 border-gray-300 ${isMobile ? 'min-h-[800px]' : 'min-h-[1200px]'} shadow-sm relative overflow-hidden ${isStudentView ? 'pointer-events-none select-text' : ''}`}
+                data-paper
+                className={`bg-background border-2 border-border ${isMobile ? 'min-h-[800px]' : 'min-h-[1200px]'} shadow-sm relative overflow-hidden ${isStudentView ? 'pointer-events-none select-text' : ''}`}
                 onDrop={isStudentView ? undefined : handlePaperDrop}
                 onDragOver={isStudentView ? undefined : (e) => e.preventDefault()}
-                onMouseMove={!isStudentView ? handleMouseMove : undefined}
-                onMouseUp={!isStudentView ? handleMouseUp : undefined}
               >
                 {blocks.length === 0 ? (
                   <div className="flex items-center justify-center h-64 text-gray-400 absolute inset-0">
@@ -665,9 +743,19 @@ export function AssignmentEditor({
                     {blocks.map((block, index) => (
                       <div
                         key={block.id}
-                        onMouseDown={!isStudentView ? (e) => handleMouseDown(e, block.id) : undefined}
-                        onClick={() => !isStudentView && setSelectedBlock(selectedBlock === block.id ? null : block.id)}
-                        className={`absolute select-none border-2 transition-colors cursor-pointer ${
+                        onMouseDown={!isStudentView ? (e) => {
+                          // Only start dragging if not clicking on controls
+                          if (!(e.target as HTMLElement).closest('.block-controls')) {
+                            handleMouseDown(e, block.id);
+                          }
+                        } : undefined}
+                        onClick={(e) => {
+                          // Prevent click if it was a drag
+                          if (!isDragging && !isStudentView && !(e.target as HTMLElement).closest('.block-controls')) {
+                            setSelectedBlock(selectedBlock === block.id ? null : block.id);
+                          }
+                        }}
+                        className={`absolute select-none border-2 transition-colors cursor-pointer group ${
                           selectedBlock === block.id ? 'border-blue-500 bg-blue-50' :
                           isDragging && draggedBlock === block.id ? 'opacity-50 border-blue-300' :
                           'border-gray-300 hover:border-gray-400'
@@ -675,41 +763,54 @@ export function AssignmentEditor({
                         style={{
                           left: block.x || (50 + (index % 3) * 250),
                           top: block.y || (50 + Math.floor(index / 3) * 200),
-                          minWidth: '300px'
+                          minWidth: '300px',
+                          width: block.width || 300,
+                          height: block.height || 'auto'
                         }}
                       >
                         {/* Block controls - shown when selected */}
                         {selectedBlock === block.id && !isStudentView && (
-                          <div className="absolute -top-10 left-0 right-0 flex justify-center gap-1 bg-white border border-gray-300 rounded shadow-sm p-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingBlock(block.id)}
-                              className="h-6 w-6 p-0"
-                              title="Edit block"
-                            >
-                              <PenTool className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setAiBlock(block.id)}
-                              className="h-6 w-6 p-0 text-purple-600 hover:text-purple-700 relative"
-                              title="AI Assistant (Premium)"
-                            >
-                              <Sparkles className="h-3 w-3" />
-                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white"></div>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteBlock(block.id)}
-                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                              title="Delete block"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
+                          <>
+                            <div className="block-controls absolute -top-10 left-0 right-0 flex justify-center gap-1 bg-white border border-gray-300 rounded shadow-sm p-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingBlock(block.id)}
+                                className="h-6 w-6 p-0"
+                                title="Edit block"
+                              >
+                                <PenTool className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setAiBlock(block.id)}
+                                className="h-6 w-6 p-0 text-purple-600 hover:text-purple-700 relative"
+                                title="AI Assistant (Premium)"
+                              >
+                                <Sparkles className="h-3 w-3" />
+                                <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white"></div>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteBlock(block.id)}
+                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                                title="Delete block"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+
+                            {/* Resize handles */}
+                            <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 rounded cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                                 onMouseDown={(e) => {
+                                   e.stopPropagation();
+                                   // TODO: Implement resize functionality
+                                 }}
+                                 title="Resize block">
+                            </div>
+                          </>
                         )}
 
                         {/* Block content with inline editing */}
@@ -955,7 +1056,7 @@ export function AssignmentEditor({
       {/* Edit Panel */}
       {editingBlock && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+          <div className="bg-background rounded-lg shadow-xl border max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">
@@ -1213,7 +1314,7 @@ export function AssignmentEditor({
       {/* AI Assistant Interface */}
       {aiBlock && (
         <div className={`fixed z-50 ${isMobile ? 'bottom-4 left-4 right-4' : 'bottom-4 right-4'}`}>
-          <div className={`bg-white rounded-lg shadow-xl border p-4 ${isMobile ? 'w-full max-w-sm' : 'w-80'} max-h-96 flex flex-col`}>
+          <div className={`bg-background rounded-lg shadow-xl border p-4 ${isMobile ? 'w-full max-w-sm' : 'w-80'} max-h-96 flex flex-col`}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-purple-600" />

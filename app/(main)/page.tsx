@@ -41,27 +41,14 @@ function StudentDashboard() {
     return <DashboardSkeleton />;
   }
 
-  const enrolledClasses = (Array.isArray(classes) ? classes : []).filter(c => c.user_id !== session?.user?.id);
+  const enrolledClasses = (Array.isArray(classes) ? classes : []).filter(c => c.owner_id !== session?.user?.id);
   const subjects: Subject[] = enrolledClasses.map(c => ({
     id: c.id,
     name: c.name,
     progress: 0 // Placeholder until progress is tracked
   }));
 
-  const alerts: Alert[] = (Array.isArray(assignments) ? assignments : [])
-    .filter(a => {
-        if (!a.due_date) return false;
-        const dueDate = parseISO(a.due_date);
-        const daysUntilDue = differenceInDays(dueDate, new Date());
-        return isFuture(dueDate) && daysUntilDue <= 3;
-    })
-    .map(a => ({
-        id: `alert-${a.id}`,
-        title: `Deadline Approaching: ${a.title}`,
-        description: `Your assignment for ${classes.find(c => c.id === a.class_id)?.name} is due soon.`,
-        variant: 'warning',
-        icon: 'AlertTriangle'
-    }));
+  const alerts: Alert[] = []; // Simplified - no due dates in current schema
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
@@ -106,15 +93,11 @@ function TeacherSummaryDashboard() {
     }
 
     // For teacher dashboard, we only care about classes they own.
-    const teacherClasses = (Array.isArray(classes) ? classes : []).filter(c => c.user_id === session?.user.id);
+    const teacherClasses = (Array.isArray(classes) ? classes : []).filter(c => c.owner_id === session?.user.id);
 
     const totalStudents = students.length;
 
-    const activeAssignments = (Array.isArray(assignments) ? assignments : []).filter(a => {
-        if (!a.due_date) return false;
-        const dueDate = parseISO(a.due_date);
-        return isFuture(dueDate);
-    }).length;
+    const activeAssignments = (Array.isArray(assignments) ? assignments : []).length;
 
     const lowProgressAlerts = 0; // Placeholder until progress is tracked
 
@@ -137,30 +120,26 @@ function TeacherSummaryDashboard() {
                         <p className="text-xs text-muted-foreground">classes managed</p>
                     </CardContent>
                 </Card>
-                <Link href="/students">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                             <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{totalStudents}</div>
-                            <p className="text-xs text-muted-foreground">students across all classes</p>
-                        </CardContent>
-                    </Card>
-                 </Link>
-                 <Link href="/assignments">
-                    <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Active Assignments</CardTitle>
-                             <FileText className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{activeAssignments}</div>
-                            <p className="text-xs text-muted-foreground">upcoming assignments</p>
-                        </CardContent>
-                    </Card>
-                 </Link>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                         <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{totalStudents}</div>
+                        <p className="text-xs text-muted-foreground">students across all classes</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Active Assignments</CardTitle>
+                         <FileText className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{activeAssignments}</div>
+                        <p className="text-xs text-muted-foreground">upcoming assignments</p>
+                    </CardContent>
+                </Card>
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
