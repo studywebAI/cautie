@@ -9,13 +9,13 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ subjectId: string; chapterId: string; paragraphId: string }> }
 ) {
-  console.log(`GET /api/subjects/[subjectId]/chapters/[chapterId]/paragraphs/${params}/assignments - Called`);
-
   try {
     const cookieStore = cookies()
     const supabase = await createClient(cookieStore)
 
     const resolvedParams = await params;
+
+    console.log(`GET /api/subjects/${resolvedParams.subjectId}/chapters/${resolvedParams.chapterId}/paragraphs/${resolvedParams.paragraphId}/assignments - Called`);
 
     // Simple fetch - just get assignments
     console.log(`Fetching assignments for paragraph: ${resolvedParams.paragraphId}`);
@@ -75,13 +75,13 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ subjectId: string; chapterId: string; paragraphId: string }> }
 ) {
-  console.log(`POST /api/subjects/[subjectId]/chapters/[chapterId]/paragraphs/${params}/assignments - Called`);
-
   try {
     const cookieStore = cookies()
     const supabase = await createClient(cookieStore)
 
     const resolvedParams = await params;
+
+    console.log(`POST /api/subjects/${resolvedParams.subjectId}/chapters/${resolvedParams.chapterId}/paragraphs/${resolvedParams.paragraphId}/assignments - Called`);
     const { title, answers_enabled = false } = await request.json()
 
     console.log(`Creating assignment for paragraph:`, resolvedParams.paragraphId, `title:`, title);

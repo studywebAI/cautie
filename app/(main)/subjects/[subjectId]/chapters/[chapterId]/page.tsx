@@ -10,14 +10,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppContext } from '@/contexts/app-context';
 import {
-  BookOpen,
   ArrowLeft,
   ChevronRight,
   CheckCircle,
-  Circle,
-  FileText,
-  AlertCircle,
-  Sparkles
+  AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -261,12 +257,15 @@ export default function ChapterOverviewPage({}: ChapterOverviewPageProps) {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">
-              Chapter {chapter.chapter_number}: {chapter.title}
+          <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-2xl">
+            📚
+          </div>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">
+              {chapter.chapter_number}
             </h1>
-            <p className="text-muted-foreground mt-1">
-              {subject?.title || 'Subject'} • {paragraphs.length} paragraph{paragraphs.length !== 1 ? 's' : ''}
+            <p className="text-lg">
+              {chapter.title}
             </p>
           </div>
         </div>
@@ -296,10 +295,7 @@ export default function ChapterOverviewPage({}: ChapterOverviewPageProps) {
       {user?.role === 'student' && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Your Progress
-            </CardTitle>
+            <CardTitle>Your Progress</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
@@ -320,20 +316,7 @@ export default function ChapterOverviewPage({}: ChapterOverviewPageProps) {
         </Card>
       )}
 
-      {/* AI Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Chapter Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground leading-relaxed">
-            {chapter.ai_summary || "Loading chapter summary..."}
-          </p>
-        </CardContent>
-      </Card>
+
 
       {/* Paragraphs Grid */}
       <div>
@@ -341,7 +324,6 @@ export default function ChapterOverviewPage({}: ChapterOverviewPageProps) {
 
         {paragraphs.length === 0 ? (
           <Card className="p-12 text-center">
-            <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No paragraphs yet</h3>
             <p className="text-muted-foreground">
               This chapter doesn't have any paragraphs yet.
@@ -358,17 +340,10 @@ export default function ChapterOverviewPage({}: ChapterOverviewPageProps) {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span className="text-lg">
-                      {paragraph.paragraph_number}. {paragraph.title}
+                      {chapter.chapter_number}.{paragraph.paragraph_number} {paragraph.title}
                     </span>
-                    {paragraph.completion_percent === 100 ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-gray-400" />
-                    )}
+                    <span className="text-sm">{paragraph.completion_percent}%</span>
                   </CardTitle>
-                  <div className="text-sm text-muted-foreground">
-                    {paragraph.assignment_count} assignment{paragraph.assignment_count !== 1 ? 's' : ''}
-                  </div>
                 </CardHeader>
                 <CardContent>
                   {user?.role === 'student' && (
@@ -380,11 +355,6 @@ export default function ChapterOverviewPage({}: ChapterOverviewPageProps) {
                       <Progress value={paragraph.completion_percent} className="h-2" />
                     </div>
                   )}
-
-                  <Button className="w-full" variant="outline">
-                    <FileText className="mr-2 h-4 w-4" />
-                    View Assignments
-                  </Button>
                 </CardContent>
               </Card>
             ))}
