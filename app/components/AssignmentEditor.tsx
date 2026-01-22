@@ -24,7 +24,8 @@ import {
   ArrowDown,
   Trash2,
   Sparkles,
-  Send
+  Send,
+  ChevronRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AppContext } from '@/contexts/app-context';
@@ -40,7 +41,9 @@ interface BlockTemplate {
 interface AssignmentBlock {
   id: string;
   type: string;
-  position: number; // Now just the order/index
+  position: number;
+  x?: number;
+  y?: number;
   data: any;
 }
 
@@ -171,6 +174,7 @@ export function AssignmentEditor({
   const [history, setHistory] = useState<AssignmentBlock[][]>([initialBlocks]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(true);
   const { toast } = useToast();
   const { user } = useContext(AppContext) as any;
 
@@ -312,11 +316,13 @@ export function AssignmentEditor({
     saveToHistory(newBlocks);
   };
 
-  const addBlock = (template: BlockTemplate) => {
+  const addBlock = (template: BlockTemplate, x = 100, y = 100) => {
     const newBlock: AssignmentBlock = {
       id: `block-${Date.now()}`,
       type: template.type,
       position: blocks.length,
+      x,
+      y,
       data: { ...template.defaultData }
     };
     const newBlocks = [...blocks, newBlock];
@@ -368,16 +374,11 @@ export function AssignmentEditor({
 
     // Only handle template drops on the paper (not reordering existing blocks)
     if (draggedTemplate) {
-      const newBlock: AssignmentBlock = {
-        id: `block-${Date.now()}`,
-        type: draggedTemplate.type,
-        position: blocks.length, // Sequential position for saving
-        data: { ...draggedTemplate.defaultData }
-      };
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-      const newBlocks = [...blocks, newBlock];
-      setBlocks(newBlocks);
-      saveToHistory(newBlocks);
+      addBlock(draggedTemplate, x, y);
       setDraggedTemplate(null);
     }
 
@@ -531,26 +532,7 @@ export function AssignmentEditor({
               </div>
             </div>
 
-            {/* Block toolbar - drag to add (hidden in student view) */}
-            {!isStudentView && (
-              <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'flex-wrap'} gap-2 mb-4 p-3 bg-white border rounded-lg`}>
-              <span className="text-sm font-medium text-gray-700">Drag blocks to paper:</span>
-              <div className={`flex ${isMobile ? 'flex-wrap' : 'flex-wrap'} gap-2`}>
-                {BLOCK_TEMPLATES.map((template) => (
-                  <div
-                    key={template.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, `template-${template.id}`)}
-                    className="flex items-center gap-1 h-8 px-2 bg-white border border-gray-300 rounded cursor-move hover:bg-gray-50 transition-colors"
-                    title={`Drag to add ${template.label}`}
-                  >
-                    {template.icon}
-                    <span className="text-xs">{template.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            )}
+
 
             <div className="flex justify-between items-center border-t-2 border-black pt-4">
               <div className="flex items-center gap-4">
@@ -628,312 +610,349 @@ export function AssignmentEditor({
           </div>
         </div>
 
-        {/* Paper content area */}
-        <div className={`flex-1 ${isMobile ? 'p-2' : 'p-4'}`}>
-          <div className={isMobile ? 'max-w-full mx-2' : 'max-w-6xl mx-auto'}>
-            <div
-              className={`bg-white border-2 border-gray-300 ${isMobile ? 'min-h-[800px] p-4' : 'min-h-[1200px] p-8'} shadow-sm relative ${isStudentView ? 'pointer-events-none select-text' : ''}`}
-              onDrop={isStudentView ? undefined : handlePaperDrop}
-              onDragOver={isStudentView ? undefined : (e) => e.preventDefault()}
-            >
-              {blocks.length === 0 ? (
-                <div className="flex items-center justify-center h-64 text-gray-400">
-                  <div className="text-center">
-                    <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">No content yet</p>
-                    <p className="text-sm">Add blocks from the sidebar to create your assignment</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {blocks.map((block, index) => (
-                    <div
-                      key={block.id}
-                      draggable={!isStudentView}
-                      onDragStart={isStudentView ? undefined : (e) => handleDragStart(e, block.id)}
-                      onDragEnd={isStudentView ? undefined : handleDragEnd}
-                      onDragOver={isStudentView ? undefined : (e) => handleDragOver(e, index)}
-
-                      className={`relative group border-2 transition-colors ${
-                        draggedBlock === block.id ? 'opacity-50' : ''
-                      } ${
-                        dragOverIndex === index ? 'border-blue-500 bg-blue-50' : 'border-transparent'
-                      } ${isStudentView ? 'border-transparent' : ''}`}
-                    >
-                      {/* Block controls - hidden in student view */}
-                      {!isStudentView && (
-                        <div className="absolute -left-12 top-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="flex items-center gap-0.5">
-                          {/* Move handle */}
-                          <div className="cursor-move p-1 hover:bg-gray-100 rounded">
-                            <GripVertical className="h-4 w-4 text-gray-400" />
-                          </div>
-                          {/* Edit button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingBlock(block.id)}
-                            className="h-6 w-6 p-0"
-                            title="Edit block"
-                          >
-                            <PenTool className="h-3 w-3" />
-                          </Button>
-                          {/* AI button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setAiBlock(block.id)}
-                            className="h-6 w-6 p-0 text-purple-600 hover:text-purple-700 relative"
-                            title="AI Assistant (Premium)"
-                          >
-                            <Sparkles className="h-3 w-3" />
-                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white"></div>
-                          </Button>
-                        </div>
-                        {/* Quick actions */}
-                        <div className="flex flex-col gap-0.5">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => moveBlock(block.id, 'up')}
-                            disabled={index === 0}
-                            className="h-6 w-6 p-0"
-                            title="Move up"
-                          >
-                            <ArrowUp className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => moveBlock(block.id, 'down')}
-                            disabled={index === blocks.length - 1}
-                            className="h-6 w-6 p-0"
-                            title="Move down"
-                          >
-                            <ArrowDown className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteBlock(block.id)}
-                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                            title="Delete block"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        </div>
-                      )}
-
-                      {/* Block number - hidden in student view */}
-                      <div className="absolute -left-4 top-0 text-gray-400 font-medium">
-                        {index + 1}.
-                      </div>
-
-                      {/* Block content with inline editing */}
-                      <div className="border-b border-gray-200 pb-2">
-                        {block.type === 'text' && (
-                          <div className="space-y-2">
-                            <Textarea
-                              value={block.data.content}
-                              onChange={(e) => updateBlock(block.id, { ...block.data, content: e.target.value })}
-                              placeholder="Enter your text here..."
-                              className="min-h-[60px] border-none shadow-none p-0 text-base resize-none focus:ring-0"
-                            />
-                          </div>
-                        )}
-
-                        {block.type === 'multiple_choice' && (
-                          <div className="space-y-4">
-                            <Input
-                              value={block.data.question}
-                              onChange={(e) => updateBlock(block.id, { ...block.data, question: e.target.value })}
-                              placeholder="Enter your question..."
-                              className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
-                            />
-                            <div className="space-y-1 pl-2">
-                              {block.data.options?.map((option: any, optionIndex: number) => (
-                                <div key={option.id} className="flex items-center gap-2">
-                                  <Checkbox
-                                    checked={option.correct}
-                                    onCheckedChange={(checked) => {
-                                      const newOptions = [...block.data.options];
-                                      newOptions[optionIndex] = { ...newOptions[optionIndex], correct: checked };
-                                      updateBlock(block.id, { ...block.data, options: newOptions });
-                                    }}
-                                  />
-                                  <Input
-                                    value={option.text}
-                                    onChange={(e) => {
-                                      const newOptions = [...block.data.options];
-                                      newOptions[optionIndex] = { ...newOptions[optionIndex], text: e.target.value };
-                                      updateBlock(block.id, { ...block.data, options: newOptions });
-                                    }}
-                                    placeholder={`Option ${String.fromCharCode(65 + optionIndex)}`}
-                                    className="flex-1 border-none shadow-none p-0 focus:ring-0"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {block.type === 'open_question' && (
-                          <div className="space-y-4">
-                            <Input
-                              value={block.data.question}
-                              onChange={(e) => updateBlock(block.id, { ...block.data, question: e.target.value })}
-                              placeholder="Enter your question..."
-                              className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
-                            />
-                            <div className="pl-2 space-y-1">
-                              <div className="text-sm text-gray-600">
-                                (Answer space below - {block.data.max_score} points)
-                              </div>
-                              <div className="border-b-2 border-gray-300 min-h-[80px] pb-4"></div> {/* Answer space */}
-                            </div>
-                          </div>
-                        )}
-
-                        {block.type === 'fill_in_blank' && (
-                          <div className="space-y-2">
-                            <div className="text-lg">
-                              {block.data.text.split('___').map((part: string, partIndex: number) => (
-                                <React.Fragment key={partIndex}>
-                                  {part}
-                                  {partIndex < block.data.text.split('___').length - 1 && (
-                                    <Input
-                                      value={block.data.answers?.[partIndex] || ''}
-                                      onChange={(e) => {
-                                        const newAnswers = [...(block.data.answers || [])];
-                                        newAnswers[partIndex] = e.target.value;
-                                        updateBlock(block.id, { ...block.data, answers: newAnswers });
-                                      }}
-                                      className="inline-block w-32 mx-1 border-b-2 border-gray-400 rounded-none"
-                                      placeholder="..."
-                                    />
-                                  )}
-                                </React.Fragment>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {block.type === 'drag_drop' && (
-                          <div className="space-y-4">
-                            <Input
-                              value={block.data.prompt}
-                              onChange={(e) => updateBlock(block.id, { ...block.data, prompt: e.target.value })}
-                              placeholder="Enter your matching prompt..."
-                              className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
-                            />
-                            <div className="grid grid-cols-2 gap-8 mt-4">
-                              <div className="space-y-2">
-                                <div className="text-sm text-gray-600 font-medium mb-2">Column A:</div>
-                                {block.data.pairs?.map((pair: any, pairIndex: number) => (
-                                  <div key={`left-${pairIndex}`} className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-blue-600 w-6">{String.fromCharCode(65 + pairIndex)}.</span>
-                                    <Input
-                                      value={pair.left}
-                                      onChange={(e) => {
-                                        const newPairs = [...block.data.pairs];
-                                        newPairs[pairIndex] = { ...newPairs[pairIndex], left: e.target.value };
-                                        updateBlock(block.id, { ...block.data, pairs: newPairs });
-                                      }}
-                                      placeholder="Left item"
-                                      className="flex-1 border-none shadow-none p-0 focus:ring-0"
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="space-y-2">
-                                <div className="text-sm text-gray-600 font-medium mb-2">Column B:</div>
-                                {block.data.pairs?.map((pair: any, pairIndex: number) => (
-                                  <div key={`right-${pairIndex}`} className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-green-600 w-6">{pairIndex + 1}.</span>
-                                    <Input
-                                      value={pair.right}
-                                      onChange={(e) => {
-                                        const newPairs = [...block.data.pairs];
-                                        newPairs[pairIndex] = { ...newPairs[pairIndex], right: e.target.value };
-                                        updateBlock(block.id, { ...block.data, pairs: newPairs });
-                                      }}
-                                      placeholder="Right item"
-                                      className="flex-1 border-none shadow-none p-0 focus:ring-0"
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="text-sm text-gray-500 italic mt-2">
-                              Students will draw lines to connect matching items between Column A and Column B
-                            </div>
-                          </div>
-                        )}
-
-                        {block.type === 'ordering' && (
-                          <div className="space-y-4">
-                            <Input
-                              value={block.data.prompt}
-                              onChange={(e) => updateBlock(block.id, { ...block.data, prompt: e.target.value })}
-                              placeholder="Enter your ordering prompt..."
-                              className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
-                            />
-                            <div className="space-y-2 pl-4">
-                              <div className="text-sm text-gray-600 mb-2">Items to order:</div>
-                              {block.data.items?.map((item: string, itemIndex: number) => (
-                                <div key={itemIndex} className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-gray-500 w-6">{itemIndex + 1}.</span>
-                                  <Input
-                                    value={item}
-                                    onChange={(e) => {
-                                      const newItems = [...block.data.items];
-                                      newItems[itemIndex] = e.target.value;
-                                      updateBlock(block.id, { ...block.data, items: newItems });
-                                    }}
-                                    placeholder={`Item ${itemIndex + 1}`}
-                                    className="flex-1 border-none shadow-none p-0 focus:ring-0"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {block.type === 'divider' && (
-                          <hr className="border-t-2 border-gray-300 my-4" />
-                        )}
-
-                        {/* Other block types show as JSON for now */}
-                        {!['text', 'multiple_choice', 'open_question', 'fill_in_blank', 'drag_drop', 'ordering', 'divider'].includes(block.type) && (
-                          <div className="text-sm text-gray-500 italic">
-                            {BLOCK_TEMPLATES.find(t => t.type === block.type)?.label} block - content will be rendered here
-                          </div>
-                        )}
-                      </div>
+        {/* Main content area with sidebar */}
+        <div className="flex-1 flex">
+          {/* Paper content area */}
+          <div className={`flex-1 ${isMobile ? 'p-2' : 'p-4'}`}>
+            <div className={isMobile ? 'max-w-full mx-2' : 'max-w-6xl mx-auto'}>
+              <div
+                className={`bg-white border-2 border-gray-300 ${isMobile ? 'min-h-[800px]' : 'min-h-[1200px]'} shadow-sm relative overflow-hidden ${isStudentView ? 'pointer-events-none select-text' : ''}`}
+                onDrop={isStudentView ? undefined : handlePaperDrop}
+                onDragOver={isStudentView ? undefined : (e) => e.preventDefault()}
+              >
+                {blocks.length === 0 ? (
+                  <div className="flex items-center justify-center h-64 text-gray-400 absolute inset-0">
+                    <div className="text-center">
+                      <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium">No content yet</p>
+                      <p className="text-sm">Add blocks from the sidebar to create your assignment</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ) : (
+                  <div className="absolute inset-0">
+                    {blocks.map((block, index) => (
+                      <div
+                        key={block.id}
+                        draggable={!isStudentView}
+                        onDragStart={isStudentView ? undefined : (e) => handleDragStart(e, block.id)}
+                        onDragEnd={isStudentView ? undefined : handleDragEnd}
 
-              {/* Drag Preview */}
-              {dragPreview && (
-                <div
-                  className="fixed pointer-events-none border-2 border-blue-500 bg-blue-100 bg-opacity-70 rounded-lg shadow-lg z-50"
-                  style={{
-                    left: dragPreview.x - dragPreview.width / 2,
-                    top: dragPreview.y - dragPreview.height / 2,
-                    width: dragPreview.width,
-                    height: dragPreview.height,
-                  }}
-                >
-                  <div className="p-4 text-center text-blue-700 font-medium">
-                    {draggedTemplate ? draggedTemplate.label : 'Block'}
+                        className={`absolute cursor-move select-none group border-2 transition-colors ${
+                          draggedBlock === block.id ? 'opacity-50' : 'border-transparent'
+                        } ${isStudentView ? 'border-transparent' : ''}`}
+                        style={{
+                          left: block.x || (50 + (index % 3) * 250),
+                          top: block.y || (50 + Math.floor(index / 3) * 200),
+                          minWidth: '200px'
+                        }}
+                      >
+                        {/* Block controls - hidden in student view */}
+                        {!isStudentView && (
+                          <div className="absolute -left-12 top-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-0.5">
+                            {/* Move handle */}
+                            <div className="cursor-move p-1 hover:bg-gray-100 rounded">
+                              <GripVertical className="h-4 w-4 text-gray-400" />
+                            </div>
+                            {/* Edit button */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingBlock(block.id)}
+                              className="h-6 w-6 p-0"
+                              title="Edit block"
+                            >
+                              <PenTool className="h-3 w-3" />
+                            </Button>
+                            {/* AI button */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setAiBlock(block.id)}
+                              className="h-6 w-6 p-0 text-purple-600 hover:text-purple-700 relative"
+                              title="AI Assistant (Premium)"
+                            >
+                              <Sparkles className="h-3 w-3" />
+                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white"></div>
+                            </Button>
+                          </div>
+                          {/* Quick actions */}
+                          <div className="flex flex-col gap-0.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveBlock(block.id, 'up')}
+                              disabled={index === 0}
+                              className="h-6 w-6 p-0"
+                              title="Move up"
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveBlock(block.id, 'down')}
+                              disabled={index === blocks.length - 1}
+                              className="h-6 w-6 p-0"
+                              title="Move down"
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteBlock(block.id)}
+                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                              title="Delete block"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          </div>
+                        )}
+
+                        {/* Block number - hidden in student view */}
+                        <div className="absolute -left-4 top-0 text-gray-400 font-medium">
+                          {index + 1}.
+                        </div>
+
+                        {/* Block content with inline editing */}
+                        <div className="border-b border-gray-200 pb-2">
+                          {block.type === 'text' && (
+                            <div className="space-y-2">
+                              <Textarea
+                                value={block.data.content}
+                                onChange={(e) => updateBlock(block.id, { ...block.data, content: e.target.value })}
+                                placeholder="Enter your text here..."
+                                className="min-h-[60px] border-none shadow-none p-0 text-base resize-none focus:ring-0"
+                              />
+                            </div>
+                          )}
+
+                          {block.type === 'multiple_choice' && (
+                            <div className="space-y-4">
+                              <Input
+                                value={block.data.question}
+                                onChange={(e) => updateBlock(block.id, { ...block.data, question: e.target.value })}
+                                placeholder="Enter your question..."
+                                className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
+                              />
+                              <div className="space-y-1 pl-2">
+                                {block.data.options?.map((option: any, optionIndex: number) => (
+                                  <div key={option.id} className="flex items-center gap-2">
+                                    <Checkbox
+                                      checked={option.correct}
+                                      onCheckedChange={(checked) => {
+                                        const newOptions = [...block.data.options];
+                                        newOptions[optionIndex] = { ...newOptions[optionIndex], correct: checked };
+                                        updateBlock(block.id, { ...block.data, options: newOptions });
+                                      }}
+                                    />
+                                    <Input
+                                      value={option.text}
+                                      onChange={(e) => {
+                                        const newOptions = [...block.data.options];
+                                        newOptions[optionIndex] = { ...newOptions[optionIndex], text: e.target.value };
+                                        updateBlock(block.id, { ...block.data, options: newOptions });
+                                      }}
+                                      placeholder={`Option ${String.fromCharCode(65 + optionIndex)}`}
+                                      className="flex-1 border-none shadow-none p-0 focus:ring-0"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {block.type === 'open_question' && (
+                            <div className="space-y-4">
+                              <Input
+                                value={block.data.question}
+                                onChange={(e) => updateBlock(block.id, { ...block.data, question: e.target.value })}
+                                placeholder="Enter your question..."
+                                className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
+                              />
+                              <div className="pl-2 space-y-1">
+                                <div className="text-sm text-gray-600">
+                                  (Answer space below - {block.data.max_score} points)
+                                </div>
+                                <div className="border-b-2 border-gray-300 min-h-[80px] pb-4"></div> {/* Answer space */}
+                              </div>
+                            </div>
+                          )}
+
+                          {block.type === 'fill_in_blank' && (
+                            <div className="space-y-2">
+                              <div className="text-lg">
+                                {block.data.text.split('___').map((part: string, partIndex: number) => (
+                                  <React.Fragment key={partIndex}>
+                                    {part}
+                                    {partIndex < block.data.text.split('___').length - 1 && (
+                                      <Input
+                                        value={block.data.answers?.[partIndex] || ''}
+                                        onChange={(e) => {
+                                          const newAnswers = [...(block.data.answers || [])];
+                                          newAnswers[partIndex] = e.target.value;
+                                          updateBlock(block.id, { ...block.data, answers: newAnswers });
+                                        }}
+                                        className="inline-block w-32 mx-1 border-b-2 border-gray-400 rounded-none"
+                                        placeholder="..."
+                                      />
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {block.type === 'drag_drop' && (
+                            <div className="space-y-4">
+                              <Input
+                                value={block.data.prompt}
+                                onChange={(e) => updateBlock(block.id, { ...block.data, prompt: e.target.value })}
+                                placeholder="Enter your matching prompt..."
+                                className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
+                              />
+                              <div className="grid grid-cols-2 gap-8 mt-4">
+                                <div className="space-y-2">
+                                  <div className="text-sm text-gray-600 font-medium mb-2">Column A:</div>
+                                  {block.data.pairs?.map((pair: any, pairIndex: number) => (
+                                    <div key={`left-${pairIndex}`} className="flex items-center gap-2">
+                                      <span className="text-sm font-medium text-blue-600 w-6">{String.fromCharCode(65 + pairIndex)}.</span>
+                                      <Input
+                                        value={pair.left}
+                                        onChange={(e) => {
+                                          const newPairs = [...block.data.pairs];
+                                          newPairs[pairIndex] = { ...newPairs[pairIndex], left: e.target.value };
+                                          updateBlock(block.id, { ...block.data, pairs: newPairs });
+                                        }}
+                                        placeholder="Left item"
+                                        className="flex-1 border-none shadow-none p-0 focus:ring-0"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="space-y-2">
+                                  <div className="text-sm text-gray-600 font-medium mb-2">Column B:</div>
+                                  {block.data.pairs?.map((pair: any, pairIndex: number) => (
+                                    <div key={`right-${pairIndex}`} className="flex items-center gap-2">
+                                      <span className="text-sm font-medium text-green-600 w-6">{pairIndex + 1}.</span>
+                                      <Input
+                                        value={pair.right}
+                                        onChange={(e) => {
+                                          const newPairs = [...block.data.pairs];
+                                          newPairs[pairIndex] = { ...newPairs[pairIndex], right: e.target.value };
+                                          updateBlock(block.id, { ...block.data, pairs: newPairs });
+                                        }}
+                                        placeholder="Right item"
+                                        className="flex-1 border-none shadow-none p-0 focus:ring-0"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="text-sm text-gray-500 italic mt-2">
+                                Students will draw lines to connect matching items between Column A and Column B
+                              </div>
+                            </div>
+                          )}
+
+                          {block.type === 'ordering' && (
+                            <div className="space-y-4">
+                              <Input
+                                value={block.data.prompt}
+                                onChange={(e) => updateBlock(block.id, { ...block.data, prompt: e.target.value })}
+                                placeholder="Enter your ordering prompt..."
+                                className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
+                              />
+                              <div className="space-y-2 pl-4">
+                                <div className="text-sm text-gray-600 mb-2">Items to order:</div>
+                                {block.data.items?.map((item: string, itemIndex: number) => (
+                                  <div key={itemIndex} className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-gray-500 w-6">{itemIndex + 1}.</span>
+                                    <Input
+                                      value={item}
+                                      onChange={(e) => {
+                                        const newItems = [...block.data.items];
+                                        newItems[itemIndex] = e.target.value;
+                                        updateBlock(block.id, { ...block.data, items: newItems });
+                                      }}
+                                      placeholder={`Item ${itemIndex + 1}`}
+                                      className="flex-1 border-none shadow-none p-0 focus:ring-0"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {block.type === 'divider' && (
+                            <hr className="border-t-2 border-gray-300 my-4" />
+                          )}
+
+                          {/* Other block types show as JSON for now */}
+                          {!['text', 'multiple_choice', 'open_question', 'fill_in_blank', 'drag_drop', 'ordering', 'divider'].includes(block.type) && (
+                            <div className="text-sm text-gray-500 italic">
+                              {BLOCK_TEMPLATES.find(t => t.type === block.type)?.label} block - content will be rendered here
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Drag Preview */}
+                {dragPreview && (
+                  <div
+                    className="fixed pointer-events-none border-2 border-blue-500 bg-blue-100 bg-opacity-70 rounded-lg shadow-lg z-50"
+                    style={{
+                      left: dragPreview.x - dragPreview.width / 2,
+                      top: dragPreview.y - dragPreview.height / 2,
+                      width: dragPreview.width,
+                      height: dragPreview.height,
+                    }}
+                  >
+                    <div className="p-4 text-center text-blue-700 font-medium">
+                      {draggedTemplate ? draggedTemplate.label : 'Block'}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Collapsible Block Palette */}
+          {!isStudentView && (
+            <div className={`bg-white border-l shadow-lg transition-all duration-300 ${isPaletteOpen ? 'w-64' : 'w-12'}`}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsPaletteOpen(!isPaletteOpen)}
+                className="w-full h-12 flex items-center justify-center"
+              >
+                <ChevronRight className={`h-4 w-4 transition-transform ${isPaletteOpen ? 'rotate-180' : ''}`} />
+              </Button>
+              {isPaletteOpen && (
+                <div className="p-4">
+                  <h3 className="text-sm font-medium mb-4">Blocks</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {BLOCK_TEMPLATES.map((template) => (
+                      <div
+                        key={template.id}
+                        className="cursor-grab border rounded p-2 text-center hover:bg-gray-50"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, `template-${template.id}`)}
+                      >
+                        <div className="text-lg mb-1">{template.icon}</div>
+                        <div className="text-xs">{template.label}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
       </div>
 
