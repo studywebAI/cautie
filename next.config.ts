@@ -1,6 +1,11 @@
 // next.config.ts
 import type { NextConfig } from 'next';
 import withPWA from 'next-pwa';
+import withBundleAnalyzer from '@next/bundle-analyzer';
+
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 const nextConfig: NextConfig = {
   typescript: {
@@ -56,4 +61,4 @@ const nextConfig: NextConfig = {
 };
 
 // Temporarily disable PWA to fix build
-export default nextConfig;
+export default bundleAnalyzer(nextConfig);

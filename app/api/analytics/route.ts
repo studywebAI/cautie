@@ -5,6 +5,10 @@ import { startOfWeek, subWeeks, format, differenceInMinutes } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
 
+// Simple in-memory cache (in production, use Redis)
+const cache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
+
 export async function GET(request: Request) {
   try {
     const cookieStore = cookies()
@@ -19,6 +23,14 @@ export async function GET(request: Request) {
     }
 
     const userId = user?.id || guestId;
+    const cacheKey = `analytics-${userId}`;
+
+    // Check cache first
+    const cached = cache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+      console.log('Returning cached analytics for user:', userId);
+      return NextResponse.json(cached.data);
+    }
 
     if (!userId) {
       return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
@@ -92,29 +104,62 @@ export async function GET(request: Request) {
     // Get assignment completion data
     const { data: submissions, error: submissionsError } = await supabase
       .from('submissions')
-      .select('assignments(title, due_date, class_id)')
+      .select(`
+        id,
+        assignments!inner(
+          title,
+          due_date
+        )
+      `)
       .eq('user_id', userId);
 
     if (submissionsError) {
       console.error('Submissions error:', submissionsError);
     }
 
-    const completedAssignments = submissions?.filter(sub => sub.assignments).length || 0;
+    const completedAssignments = submissions?.length || 0;
 
-    // Get total assignments (simplified - would need to join with enrolled classes)
+    // Get total assignments for user's classes
     const { data: classes, error: classesError } = await supabase
       .from('class_members')
-      .select('classes(id)')
+      .select('class_id')
       .eq('user_id', userId);
 
     let totalAssignments = 0;
     if (classes && !classesError) {
-      const classIds = classes.map(c => c.classes?.id).filter(Boolean);
+      const classIds = classes.map(c => c.class_id).filter(Boolean);
       if (classIds.length > 0) {
-        const { data: assignments, error: assignmentsError } = await supabase
+        // Try class_id first (legacy), then paragraph_id approach
+        let assignmentsQuery = supabase
           .from('assignments')
-          .select('id')
-          .in('class_id', classIds);
+          .select('id');
+
+        // Check if class_id column exists
+        const { data: columnCheck } = await supabase
+          .from('information_schema.columns')
+          .select('column_name')
+          .eq('table_name', 'assignments')
+          .eq('column_name', 'class_id');
+
+        if (columnCheck && columnCheck.length > 0) {
+          assignmentsQuery = assignmentsQuery.in('class_id', classIds);
+        } else {
+          // Use paragraph-based approach
+          assignmentsQuery = assignmentsQuery
+            .select(`
+              id,
+              paragraphs!inner(
+                chapter_id,
+                chapters!inner(
+                  subject_id,
+                  subjects!inner(class_id)
+                )
+              )
+            `)
+            .in('paragraphs.chapters.subjects.class_id', classIds);
+        }
+
+        const { data: assignments, error: assignmentsError } = await assignmentsQuery;
 
         if (!assignmentsError && assignments) {
           totalAssignments = assignments.length;
@@ -182,6 +227,9 @@ export async function GET(request: Request) {
       recommendations,
       lastUpdated: new Date().toISOString()
     };
+
+    // Cache the result
+    cache.set(cacheKey, { data: analytics, timestamp: Date.now() });
 
     return NextResponse.json(analytics);
   } catch (err) {

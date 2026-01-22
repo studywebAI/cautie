@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,7 @@ const pieChartConfig = {
   },
 } satisfies ChartConfig;
 
-export function AnalyticsDashboard() {
+export const AnalyticsDashboard = React.memo(function AnalyticsDashboard() {
   const context = useContext(AppContext) as AppContextType;
   const { session } = context;
   const { dictionary } = useDictionary();
@@ -261,4 +261,4 @@ export function AnalyticsDashboard() {
       </Card>
     </div>
   );
-}
+});

@@ -302,83 +302,19 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       if (session) {
           // User is logged in, fetch from Supabase
 
-          // First fetch classes to determine role
+          // Fetch all dashboard data from single endpoint
           try {
-              const classesRes = await fetch('/api/classes');
-              if (!classesRes.ok) {
-                throw new Error('Failed to fetch classes from API');
+              const dashboardRes = await fetch('/api/dashboard');
+              if (!dashboardRes.ok) {
+                throw new Error('Failed to fetch dashboard data');
               }
-              const classesData = await classesRes.json();
-              setClasses(classesData || []);
+              const dashboardData = await dashboardRes.json();
 
-              // Get role from profiles table (primary)
-              let userRole: UserRole = 'student';
-              try {
-                const { data: profile } = await supabase
-                  .from('profiles')
-                  .select('role')
-                  .eq('id', session.user.id)
-                  .single();
-
-                if (profile?.role) {
-                  userRole = profile.role as UserRole;
-                } else {
-                  // Fallback: Determine role based on class ownership/membership
-                  // Check if user owns any classes (teacher)
-                  const ownedClasses = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
-                    c.owner_id === session.user.id
-                  );
-                  if (ownedClasses.length > 0) {
-                    userRole = 'teacher';
-                  } else {
-                    // Check if user is a member of any classes (student)
-                    const memberClasses = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
-                      c.owner_id !== session.user.id
-                    );
-                    if (memberClasses.length > 0) {
-                      userRole = 'student';
-                    }
-                    // If no classes at all, stay as student (default)
-                  }
-                }
-              } catch (roleError) {
-                console.error('Error fetching user role from profiles:', roleError);
-                userRole = 'student'; // Default to student on error
-              }
-
-              setRoleState(userRole);
-
-              // Then fetch assignments and personal tasks
-              const [assignmentsRes, personalTasksRes] = await Promise.all([
-                  fetch('/api/assignments'),
-                  fetch('/api/personal-tasks'),
-              ]);
-              // Handle API failures gracefully
-              const assignmentsData = assignmentsRes.ok ? await assignmentsRes.json() : [];
-              if (!assignmentsRes.ok) {
-                console.error('Failed to fetch assignments, using empty array');
-              }
-              const personalTasksData = personalTasksRes.ok ? await personalTasksRes.json() : [];
-              if (!personalTasksRes.ok) {
-                console.error('Failed to fetch personal tasks, using empty array');
-              }
-              setAssignments(assignmentsData || []);
-              setPersonalTasks(personalTasksData || []);
-
-              // Fetch all students for all classes owned by the teacher
-              if (userRole === 'teacher') {
-                const ownedClassIds = (classesData as ClassInfo[] || []).filter((c: ClassInfo) =>
-                  c.owner_id === session.user.id
-                ).map((c: ClassInfo) => c.id);
-                if (ownedClassIds.length > 0 && ownedClassIds.length <= 10) { // Limit to prevent spam
-                   const studentPromises = ownedClassIds.map((id: string) => fetch(`/api/classes/${id}/members`).then(res => res.json()));
-                   const studentsPerClass = await Promise.all(studentPromises);
-                   const allStudents = studentsPerClass.flat();
-                   // Remove duplicates
-                   const uniqueStudents = Array.from(new Set(allStudents.map(s => s.id))).map(id => allStudents.find(s => s.id === id));
-                   setStudents(uniqueStudents || []);
-                }
-              }
+              setClasses(dashboardData.classes || []);
+              setAssignments(dashboardData.assignments || []);
+              setPersonalTasks(dashboardData.personalTasks || []);
+              setStudents(dashboardData.students || []);
+              setRoleState(dashboardData.role || 'student');
 
           } catch (error) {
               console.error("Failed to fetch Supabase data:", error);
