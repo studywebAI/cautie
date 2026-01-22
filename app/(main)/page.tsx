@@ -124,7 +124,7 @@ function TeacherSummaryDashboard() {
                         <p className="text-xs text-muted-foreground">classes managed</p>
                     </CardContent>
                 </Card>
-                 <Card
+                <Link href="/students">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Students</CardTitle>
@@ -171,7 +171,7 @@ function TeacherSummaryDashboard() {
                             <Link href="/classes">
                                 Manage All Classes
                                 <ArrowRight className="ml-2 h-4 w-4" />
-                          </Card>
+                            </Link>
                         </Button>
                     </div>
                 </CardHeader>
