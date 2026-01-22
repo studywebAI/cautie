@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { BlockProps, TextBlockContent } from './types';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,30 @@ export const TextBlock: React.FC<TextBlockProps> = ({
   const [isEditingState, setIsEditingState] = useState(isEditing);
   const [content, setContent] = useState(block.content.content || '');
   const [style, setStyle] = useState(block.content.style || 'normal');
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    const text = block.content.content || '';
+    if (style === 'normal' && text && !isEditingState) {
+      setIsTyping(true);
+      setDisplayedText('');
+      let i = 0;
+      const timer = setInterval(() => {
+        if (i < text.length) {
+          setDisplayedText(prev => prev + text[i]);
+          i++;
+        } else {
+          setIsTyping(false);
+          clearInterval(timer);
+        }
+      }, 50);
+      return () => clearInterval(timer);
+    } else {
+      setDisplayedText(text);
+      setIsTyping(false);
+    }
+  }, [block.content.content, style, isEditingState]);
 
   const handleSave = () => {
     if (onUpdate) {
@@ -80,7 +104,7 @@ export const TextBlock: React.FC<TextBlockProps> = ({
       default:
         return (
           <p className="text-base leading-relaxed text-foreground mb-4">
-            {displayContent || 'Start writing...'}
+            {displayedText || 'Start writing...'}{isTyping && <span className="animate-pulse">|</span>}
           </p>
         );
     }

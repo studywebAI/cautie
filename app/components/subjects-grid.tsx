@@ -332,26 +332,30 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
         )}
 
         {/* Recent Paragraphs */}
-        {recentParagraphs.length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-sm mb-4">Recent Paragraphs</h3>
-            <div className="space-y-2">
-              {recentParagraphs.map((paragraph) => (
-                <div key={paragraph.id} className="cursor-pointer hover:bg-muted p-3 rounded border" onClick={() => {/* navigate to paragraph */}}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">{paragraph.chapterNumber}.{paragraph.paragraphNumber} {paragraph.title}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 bg-muted rounded-full h-2">
-                        <div className="bg-primary h-2 rounded-full" style={{ width: `${paragraph.progress}%` }} />
+        <div className="mt-8">
+          {recentParagraphs.length > 0 ? (
+            <>
+              <h3 className="text-sm mb-4">Recent Paragraphs</h3>
+              <div className="space-y-2">
+                {recentParagraphs.map((paragraph) => (
+                  <div key={paragraph.id} className="cursor-pointer hover:bg-muted p-3 rounded border" onClick={() => {/* navigate to paragraph */}}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">{paragraph.chapterNumber}.{paragraph.paragraphNumber} {paragraph.title}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 bg-muted rounded-full h-2">
+                          <div className="bg-primary h-2 rounded-full" style={{ width: `${paragraph.progress}%` }} />
+                        </div>
+                        <span className="text-sm">{paragraph.progress}%</span>
                       </div>
-                      <span className="text-sm">{paragraph.progress}%</span>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">No progress yet</p>
+          )}
+        </div>
       </div>
 
       {/* Create Subject Dialog */}

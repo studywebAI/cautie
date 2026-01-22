@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, X, GripVertical, Save } from 'lucide-react';
+import { PlusCircle, X, GripVertical, Save, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 type Block = {
@@ -36,7 +37,6 @@ const BLOCK_TYPES = [
   { value: 'DragDropBlock', label: 'Drag & Drop', icon: '🎯' },
   { value: 'OrderingBlock', label: 'Ordering', icon: '🔢' },
   { value: 'MediaEmbedBlock', label: 'Media Embed', icon: '🔗' },
-  { value: 'DividerBlock', label: 'Divider', icon: '➖' },
 ];
 
 export function BlockEditor({
@@ -49,6 +49,7 @@ export function BlockEditor({
 }: BlockEditorProps) {
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
   const [isLoading, setIsLoading] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Load existing blocks on mount
@@ -130,6 +131,33 @@ export function BlockEditor({
   const removeBlock = (index: number) => {
     const updatedBlocks = blocks.filter((_, i) => i !== index);
     setBlocks(updatedBlocks);
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
+
+    const newBlocks = [...blocks];
+    const draggedBlock = newBlocks[draggedIndex];
+    newBlocks.splice(draggedIndex, 1);
+    newBlocks.splice(dropIndex, 0, draggedBlock);
+
+    setBlocks(newBlocks);
+    setDraggedIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
   };
 
   const getDefaultDataForType = (type: string) => {
@@ -304,23 +332,57 @@ export function BlockEditor({
       {/* Block List */}
       <div className="space-y-4">
         {blocks.map((block, index) => (
-          <Card key={index}>
+          <Card
+            key={index}
+            className="relative cursor-move"
+            draggable
+            onDragStart={(e) => handleDragStart(e, index)}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
+          >
+            {/* Side arrows */}
+            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4">
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                <ChevronLeft className="h-3 w-3" />
+              </Button>
+            </div>
+            <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4">
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                <ChevronRight className="h-3 w-3" />
+              </Button>
+            </div>
+
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
+                {/* Top controls */}
                 <div className="flex items-center gap-2">
-                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                  <Badge variant="outline">
-                    {BLOCK_TYPES.find(bt => bt.value === block.type)?.icon}
-                    {BLOCK_TYPES.find(bt => bt.value === block.type)?.label}
-                  </Badge>
+                  <Button variant="outline" size="sm">
+                    <GripVertical className="h-3 w-3 mr-1" />
+                    Move
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    AI Help
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeBlock(index)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+
+                {/* Corner control */}
+                <div className="absolute top-2 right-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeBlock(index)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+
+                <Badge variant="outline">
+                  {BLOCK_TYPES.find(bt => bt.value === block.type)?.icon}
+                  {BLOCK_TYPES.find(bt => bt.value === block.type)?.label}
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>

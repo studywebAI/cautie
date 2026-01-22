@@ -21,6 +21,7 @@ import {
   Send
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAutosave } from '@/hooks/use-autosave';
 
 interface Block {
   id: string;
@@ -71,6 +72,7 @@ export function StudentAssignmentView({
 
   const { toast } = useToast();
   const { user } = useContext(AppContext) as any;
+  const { autosave } = useAutosave();
 
   useEffect(() => {
     const fetchAssignmentData = async () => {
@@ -136,13 +138,17 @@ export function StudentAssignmentView({
   }, [subjectId, chapterId, paragraphId, assignmentId, user]);
 
   const handleAnswerChange = (blockId: string, answer: any) => {
-    setStudentAnswers(prev => ({
-      ...prev,
+    const newAnswers = {
+      ...studentAnswers,
       [blockId]: answer
-    }));
+    };
+    setStudentAnswers(newAnswers);
+
+    // Auto-save answers
+    autosave({ assignmentAnswers: newAnswers });
 
     // Update completion percentage
-    const answeredBlocks = Object.keys({ ...studentAnswers, [blockId]: answer }).length;
+    const answeredBlocks = Object.keys(newAnswers).length;
     const totalBlocks = blocks.length;
     setCompletionPercent(totalBlocks > 0 ? Math.round((answeredBlocks / totalBlocks) * 100) : 0);
   };
@@ -340,8 +346,8 @@ export function StudentAssignmentView({
             disabled={isSubmitting || Object.keys(studentAnswers).length === 0}
             className="flex items-center gap-2"
           >
-            <Save className="h-4 w-4" />
-            {isSubmitting ? 'Saving...' : 'Save Progress'}
+            <Send className="h-4 w-4" />
+            {isSubmitting ? 'Submitting...' : 'Submit Answers'}
           </Button>
         </div>
       </div>

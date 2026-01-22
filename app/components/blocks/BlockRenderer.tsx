@@ -69,15 +69,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
             </pre>
           </div>
         );
-      case 'divider':
-        return (
-          <div className={`p-4 border ${className || ''}`}>
-            <div className="text-sm text-muted-foreground">Divider Block</div>
-            <pre className="whitespace-pre-wrap font-mono text-xs mt-2">
-              {JSON.stringify(block.content, null, 2)}
-            </pre>
-          </div>
-        );
+
       case 'rich_text':
       case 'executable_code':
         // New types - will implement components for these

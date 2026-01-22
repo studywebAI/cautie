@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useContext } from 'react';
-import { AppContext } from '@/contexts/app-context-fixed';
+import { AppContext } from '@/contexts/app-context';
 
 interface AutosaveData {
   notes?: any[];
@@ -8,6 +8,7 @@ interface AutosaveData {
   wordwebDrawings?: any[];
   agendaItems?: any[];
   assignments?: any[];
+  assignmentAnswers?: any;
   classes?: any[];
   userPreferences?: any;
   colorThemes?: any;
