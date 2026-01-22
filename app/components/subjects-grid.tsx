@@ -108,11 +108,11 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
   const fetchRecentParagraphs = useCallback(async () => {
     if (!session?.user?.id || !isTeacher) return; // Only for students? Wait, the component has isTeacher, but recent for students.
 
-    // Mock recent paragraphs for now
+    // Mock recent paragraphs with substantive descriptions
     const mockParagraphs = [
-      { id: '1', chapterNumber: 1, paragraphNumber: 1, title: 'Introduction to Algebra', progress: 85 },
-      { id: '2', chapterNumber: 1, paragraphNumber: 2, title: 'Basic Equations', progress: 45 },
-      { id: '3', chapterNumber: 2, paragraphNumber: 1, title: 'Quadratic Functions', progress: 20 },
+      { id: '1', chapterNumber: 1, paragraphNumber: 1, title: 'The Verb Worden - Present Tense Conjugation', progress: 85 },
+      { id: '2', chapterNumber: 1, paragraphNumber: 2, title: 'Word Order in Dutch Sentences', progress: 45 },
+      { id: '3', chapterNumber: 2, paragraphNumber: 1, title: 'Separable Verbs and Their Usage', progress: 20 },
     ];
     setRecentParagraphs(mockParagraphs);
   }, [session?.user?.id, isTeacher]);
