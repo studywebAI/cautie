@@ -1,6 +1,6 @@
 'use client';
 import { UpcomingDeadlines } from "@/components/dashboard/upcoming-deadlines";
-import { useContext } from "react";
+import { useContext, lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AppContext, AppContextType, ClassInfo } from "@/contexts/app-context";
@@ -13,7 +13,8 @@ import { MySubjects } from "@/components/dashboard/my-subjects";
 import { parseISO, isFuture, differenceInDays } from 'date-fns';
 import type { Alert, Subject } from '@/lib/types';
 import { TodaysAgenda } from "@/components/dashboard/todays-agenda";
-import { AnalyticsDashboard } from "@/components/dashboard/analytics-dashboard";
+// Lazy load heavy components
+const AnalyticsDashboard = lazy(() => import("@/components/dashboard/analytics-dashboard").then(module => ({ default: module.AnalyticsDashboard })));
 
 function StudentDashboard() {
   const { isLoading, session, assignments, classes, personalTasks } = useContext(AppContext) as AppContextType;
@@ -74,7 +75,19 @@ function StudentDashboard() {
                     <TodaysAgenda assignments={assignments} personalTasks={personalTasks} classes={classes} />
                 </CardContent>
             </Card>
-            <AnalyticsDashboard />
+            <Suspense fallback={
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-8 w-1/2" />
+                  <Skeleton className="h-4 w-1/3" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-40 w-full" />
+                </CardContent>
+              </Card>
+            }>
+              <AnalyticsDashboard />
+            </Suspense>
             <MySubjects subjects={subjects} />
         </div>
         <div className="lg:col-span-1 flex flex-col gap-6 md:gap-8">

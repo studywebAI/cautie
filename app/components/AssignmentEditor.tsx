@@ -247,12 +247,25 @@ export function AssignmentEditor({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [historyIndex, history]);
 
-  // Auto-save functionality
+  // Auto-save functionality - save before page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (hasUnsavedChanges) {
+        // Synchronous save attempt (will be cancelled if it takes too long)
+        handleSave();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges, blocks]);
+
+  // Debounced auto-save on changes (5 seconds after last change)
   useEffect(() => {
     if (hasUnsavedChanges) {
       const autoSaveTimer = setTimeout(() => {
         handleSave();
-      }, 30000); // Auto-save after 30 seconds of inactivity
+      }, 5000); // Auto-save 5 seconds after changes stop
 
       return () => clearTimeout(autoSaveTimer);
     }
