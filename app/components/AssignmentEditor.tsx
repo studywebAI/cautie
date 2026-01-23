@@ -590,6 +590,15 @@ export function AssignmentEditor({
   };
 
   const handleSave = async () => {
+    if (!assignmentId || assignmentId === 'undefined') {
+      toast({
+        title: 'Cannot Save',
+        description: 'Assignment ID is missing. Please refresh the page.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
       // Save all blocks to the database

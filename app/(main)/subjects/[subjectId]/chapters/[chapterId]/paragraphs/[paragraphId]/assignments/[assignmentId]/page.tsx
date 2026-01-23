@@ -33,6 +33,12 @@ export default function AssignmentDetailPage() {
   const chapterId = params.chapterId as string;
   const paragraphId = params.paragraphId as string;
   const assignmentId = params.assignmentId as string;
+
+  // Redirect if assignmentId is missing
+  if (!assignmentId || assignmentId === 'undefined') {
+    router.push(`/subjects/${subjectId}/chapters/${chapterId}/paragraphs/${paragraphId}`);
+    return null;
+  }
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const { toast } = useToast();

@@ -57,7 +57,11 @@ export async function GET(
 
     if (assignmentError) {
       console.log(`Assignment fetch error:`, assignmentError);
-      return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
+      // Check if it's a "not found" error vs other database errors
+      if (assignmentError.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
+      }
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
     // Check permissions
