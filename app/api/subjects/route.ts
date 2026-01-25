@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server'
-import { supabaseClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 
 type SubjectCreateRequest = {
-  name: string
+  title: string
   description?: string
-  parentSubjectId?: string | null
+  classId?: string | null
 }
 
 type SubjectUpdateRequest = {
   id: string
-  name?: string
+  title?: string
   description?: string
-  parentSubjectId?: string | null
+  classId?: string | null
 }
 
 type SubjectDeleteRequest = {
@@ -20,30 +21,38 @@ type SubjectDeleteRequest = {
 
 export async function POST(req: Request) {
   try {
+    const cookieStore = cookies()
+    const supabase = await createClient(cookieStore)
     const json = await req.json()
-    
+
     // Validate create request
-    if (!json.name) {
+    if (!json.title) {
       return NextResponse.json({
-        error: 'Missing required field: name'
+        error: 'Missing required field: title'
       }, { status: 400 })
     }
-    
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // Create the subject in Supabase
-    const { data, error } = await supabaseClient.from('subjects')
-      .insert([{ 
-        name: json.name,
-        description: json.description || null,
-        parent_subject_id: json.parentSubjectId || null
+    const { data, error } = await supabase.from('subjects')
+      .insert([{
+        title: json.title,
+        user_id: user.id,
+        class_id: json.classId || null
       }])
       .single()
-    
+
     if (error) {
       return NextResponse.json({
         error: `Supabase error creating subject: ${error.message}`
       }, { status: 500 })
     }
-    
+
     return NextResponse.json({
       subject: data
     })
@@ -57,32 +66,32 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    const cookieStore = cookies()
+    const supabase = await createClient(cookieStore)
     const json = await req.json()
-    
+
     // Validate update request
-    if (!json.id || !json.name) {
+    if (!json.id) {
       return NextResponse.json({
-        error: 'Missing required fields: id and name'
+        error: 'Missing required field: id'
       }, { status: 400 })
     }
-    
+
     // Update the subject in Supabase
-    const { data, error } = await supabaseClient.from('subjects')
+    const { data, error } = await supabase.from('subjects')
       .update({
-        name: json.name,
-        description: json.description,
-        parent_subject_id: json.parentSubjectId
-      }, {
-        match: { id: json.id }
+        title: json.title,
+        class_id: json.classId
       })
+      .eq('id', json.id)
       .single()
-    
+
     if (error) {
       return NextResponse.json({
         error: `Supabase error updating subject: ${error.message}`
       }, { status: 500 })
     }
-    
+
     return NextResponse.json({
       subject: data
     })
@@ -96,19 +105,21 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const cookieStore = cookies()
+    const supabase = await createClient(cookieStore)
     const json = await req.json()
-    
+
     // Validate deletion request
     if (!json.id) {
       return NextResponse.json({
         error: 'Missing required field: id'
       }, { status: 400 })
     }
-    
+
     // Delete the subject from Supabase
-    const { error } = await supabaseClient.from('subjects')
+    const { error } = await supabase.from('subjects')
       .delete()
-      .match({ id: json.id })
+      .eq('id', json.id)
     
     if (error) {
       return NextResponse.json({
