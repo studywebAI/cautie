@@ -115,4 +115,5 @@ export async function GET(
   } catch (err) {
     console.error(`Unexpected error:`, err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
