@@ -1,22 +1,11 @@
 import { NextResponse } from 'next/server'
-import { supabaseClient } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
-type BlockCreateRequest = {
-  type: string
-  content: string
-  chapterId?: string | null
-  paragraphId?: string | null
-}
-
-type BlockUpdateRequest = {
-  id: string
-  type?: string
-  content?: string
-}
-
-type BlockDeleteRequest = {
-  id: string
-}
+// Create Supabase client
+const supabaseClient = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+)
 
 export async function POST(req: Request) {
   try {
@@ -73,7 +62,7 @@ export async function PUT(req: Request) {
         type: json.type,
         content: json.content
       }, {
-        match: { id: json.id }
+        where: { id: json.id }
       })
       .single()
     

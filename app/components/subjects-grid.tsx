@@ -237,7 +237,7 @@ export function SubjectsGrid({ classId, isTeacher = true }: SubjectsGridProps) {
         {subjects.length === 0 ? (
           <Card className="p-12 text-center">
             <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-sm mb-2">No subjects yet</h3>
+            <h3 className="mb-2">No subjects yet</h3>
             <p className="text-muted-foreground mb-4">
               {classId
                 ? isTeacher

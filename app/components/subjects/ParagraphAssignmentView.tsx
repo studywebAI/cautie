@@ -214,7 +214,7 @@ export function ParagraphAssignmentView({
           </Button>
 
           <div className="text-center">
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-base">
               {chapter?.title} - {paragraph?.title}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -236,13 +236,12 @@ export function ParagraphAssignmentView({
       </div>
 
       {/* Assignments list */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         {assignments.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
               <div className="text-center py-12">
-                <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No assignments yet</h3>
+                <h3 className="mb-2">No assignments yet</h3>
                 <p className="text-sm text-muted-foreground">
                   This paragraph doesn't have any assignments.
                 </p>
@@ -251,63 +250,26 @@ export function ParagraphAssignmentView({
           </Card>
         ) : (
           assignments.map((assignment) => (
-            <Card
+            <div
               key={assignment.id}
-              className="cursor-pointer hover:shadow-md transition-shadow"
+              className="cursor-pointer hover:bg-muted p-3 rounded flex items-center justify-between"
               onClick={() => handleAssignmentClick(assignment.id)}
             >
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4 flex-1">
-                    {/* Assignment letter index */}
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">
-                          {assignment.letter_index}
-                        </span>
-                      </div>
-                      {assignment.is_completed ? (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <Circle className="h-5 w-5 text-gray-400" />
-                      )}
-                    </div>
-
-                    {/* Assignment details */}
-                    <div className="flex-1">
-                      <h3 className="font-medium text-lg mb-2">{assignment.title}</h3>
-
-                      {/* Progress bar */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Progress</span>
-                          <span className="font-medium">{assignment.completion_percent}%</span>
-                        </div>
-                        <Progress
-                          value={assignment.completion_percent}
-                          className="h-2"
-                        />
-                      </div>
-
-                      {/* Additional info */}
-                      <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                        {assignment.answers_enabled && (
-                          <span className="flex items-center gap-1">
-                            <CheckCircle className="h-4 w-4" />
-                            Answers enabled
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action button */}
-                  <Button variant="outline" size="sm">
-                    {user?.role === 'teacher' ? 'View Submissions' : 'Start Assignment'}
-                  </Button>
+              <div className="flex items-center gap-2">
+                <span className="text-sm">
+                  {assignment.letter_index} {assignment.title}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-16 bg-muted rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${assignment.completion_percent}%` }}
+                  />
                 </div>
-              </CardContent>
-            </Card>
+                <span className="text-sm">{assignment.completion_percent}%</span>
+              </div>
+            </div>
           ))
         )}
       </div>

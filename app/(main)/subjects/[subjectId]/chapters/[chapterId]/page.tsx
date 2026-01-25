@@ -324,39 +324,34 @@ export default function ChapterOverviewPage({}: ChapterOverviewPageProps) {
 
         {paragraphs.length === 0 ? (
           <Card className="p-12 text-center">
-            <h3 className="text-sm mb-2">No paragraphs yet</h3>
+            <h3 className="mb-2">No paragraphs yet</h3>
             <p className="text-muted-foreground">
               This chapter doesn't have any paragraphs yet.
             </p>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-2">
             {paragraphs.map((paragraph) => (
-              <Card
+              <div
                 key={paragraph.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
+                className="cursor-pointer hover:bg-muted p-3 rounded flex items-center justify-between"
                 onClick={() => handleParagraphClick(paragraph.id)}
               >
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="text-sm">
-                      {chapter.chapter_number}.{paragraph.paragraph_number} {paragraph.title}
-                    </span>
-                    <span className="text-sm">{paragraph.completion_percent}%</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {user?.role === 'student' && (
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span>Progress</span>
-                        <span>{paragraph.completion_percent}%</span>
-                      </div>
-                      <Progress value={paragraph.completion_percent} className="h-2" />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    {chapter.chapter_number}.{paragraph.paragraph_number} {paragraph.title}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 bg-muted rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${paragraph.completion_percent}%` }}
+                    />
+                  </div>
+                  <span className="text-sm">{paragraph.completion_percent}%</span>
+                </div>
+              </div>
             ))}
           </div>
         )}

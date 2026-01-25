@@ -110,7 +110,7 @@ export default function ParagraphDetailPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-base">
             {paragraph.paragraph_number}. {paragraph.title}
           </h1>
           <p className="text-muted-foreground">Assignments in this paragraph</p>

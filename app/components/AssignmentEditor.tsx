@@ -662,7 +662,7 @@ export function AssignmentEditor({
 
             <div className="flex justify-between items-center border-t-2 border-black pt-4">
               <div className="flex items-center gap-4">
-                <h1 className="text-2xl font-bold">Assignment</h1>
+                <h1 className="text-base">Assignment</h1>
                 {lastSaved && (
                   <span className="text-sm text-gray-500">
                     Saved {new Date(lastSaved).toLocaleTimeString()}
@@ -742,8 +742,7 @@ export function AssignmentEditor({
                 {blocks.length === 0 ? (
                   <div className="flex items-center justify-center h-64 text-gray-400 absolute inset-0">
                     <div className="text-center">
-                      <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium">No content yet</p>
+                      <p className="mb-2">No content yet</p>
                       <p className="text-sm">Add blocks from the sidebar to create your assignment</p>
                     </div>
                   </div>
@@ -841,7 +840,7 @@ export function AssignmentEditor({
                                 value={block.data.question}
                                 onChange={(e) => updateBlock(block.id, { ...block.data, question: e.target.value })}
                                 placeholder="Enter your question..."
-                                className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
+                                className="text-base border-none shadow-none p-0 focus:ring-0"
                               />
                               <div className="space-y-1 pl-2">
                                 {block.data.options?.map((option: any, optionIndex: number) => (
@@ -876,7 +875,7 @@ export function AssignmentEditor({
                                 value={block.data.question}
                                 onChange={(e) => updateBlock(block.id, { ...block.data, question: e.target.value })}
                                 placeholder="Enter your question..."
-                                className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
+                                className="text-base border-none shadow-none p-0 focus:ring-0"
                               />
                               <div className="pl-2 space-y-1">
                                 <div className="text-sm text-gray-600">
@@ -889,7 +888,7 @@ export function AssignmentEditor({
 
                           {block.type === 'fill_in_blank' && (
                             <div className="space-y-2">
-                              <div className="text-lg">
+                              <div className="text-base">
                                 {block.data.text.split('___').map((part: string, partIndex: number) => (
                                   <React.Fragment key={partIndex}>
                                     {part}
@@ -917,7 +916,7 @@ export function AssignmentEditor({
                                 value={block.data.prompt}
                                 onChange={(e) => updateBlock(block.id, { ...block.data, prompt: e.target.value })}
                                 placeholder="Enter your matching prompt..."
-                                className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
+                                className="text-base border-none shadow-none p-0 focus:ring-0"
                               />
                               <div className="grid grid-cols-2 gap-8 mt-4">
                                 <div className="space-y-2">
@@ -969,7 +968,7 @@ export function AssignmentEditor({
                                 value={block.data.prompt}
                                 onChange={(e) => updateBlock(block.id, { ...block.data, prompt: e.target.value })}
                                 placeholder="Enter your ordering prompt..."
-                                className="text-lg font-medium border-none shadow-none p-0 focus:ring-0"
+                                className="text-base border-none shadow-none p-0 focus:ring-0"
                               />
                               <div className="space-y-2 pl-4">
                                 <div className="text-sm text-gray-600 mb-2">Items to order:</div>
@@ -1068,7 +1067,7 @@ export function AssignmentEditor({
           <div className="bg-background rounded-lg shadow-xl border max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">
+                <h3 className="text-base">
                   Edit {BLOCK_TEMPLATES.find(t => t.type === blocks.find(b => b.id === editingBlock)?.type)?.label}
                 </h3>
                 <Button variant="ghost" onClick={() => setEditingBlock(null)}>

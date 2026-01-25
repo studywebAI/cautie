@@ -250,7 +250,7 @@ export function StudentAssignmentView({
           </Button>
 
           <div>
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-base">
               {assignment?.letter_index}. {assignment?.title}
             </h2>
             <div className="flex items-center gap-4 mt-2">
@@ -295,8 +295,7 @@ export function StudentAssignmentView({
           <Card>
             <CardContent className="pt-6">
               <div className="text-center py-12">
-                <AlertCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No content yet</h3>
+                <h3 className="mb-2">No content yet</h3>
                 <p className="text-sm text-muted-foreground">
                   This assignment doesn't have any content blocks.
                 </p>
